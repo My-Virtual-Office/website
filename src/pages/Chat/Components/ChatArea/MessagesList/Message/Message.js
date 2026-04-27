@@ -2,8 +2,79 @@ import "./Message.css";
 import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
+// Import edit and delete icons
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import { useState } from "react";
 
 export default function Message({ message }) {
+  // --- Message State ---
+  
+  const [isEditing, setIsEditing] = useState(false); // Editing mode state
+  const [editedText, setEditedText] = useState(message.content || message.text || ""); // Edited text state
+  const [displayContent, setDisplayContent] = useState(message.content || message.text || ""); // Display content state
+  const [isDeleted, setIsDeleted] = useState(false); // Deleted state
+
+  // Handle editing message
+  const handleEditSubmit = async () => {
+    if (!editedText.trim() || editedText === displayContent) {
+      setIsEditing(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/chat/messages/${message.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Id": "1", // Hardcoded user ID
+          "X-User-Role": "USER"
+        },
+        body: JSON.stringify({ content: editedText })
+      });
+
+      if (response.ok) {
+        setDisplayContent(editedText); // Update UI immediately
+        setIsEditing(false); // Close edit box
+      } else {
+        alert("Edit failed");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  // Handle deleting message
+  const handleDelete = async () => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this message?");
+    if (!confirmDelete) return;
+
+    try {
+      const response = await fetch(`/api/chat/messages/${message.id}`, {
+        method: "DELETE",
+        headers: {
+          "X-User-Id": "1",
+          "X-User-Role": "USER"
+        }
+      });
+
+      if (response.ok) {
+        setIsDeleted(true); // Hide message locally without refresh
+      } else {
+        alert("Failed to delete the message!");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+
+  // --- Render ---
+
+  // Don't render if message is deleted
+  if (isDeleted) return null;
+
+  // System messages
   if (message.type === "system") {
     return (
       <div className="system-message">
@@ -17,25 +88,69 @@ export default function Message({ message }) {
       </div>
     );
   }
+
+  if (!displayContent || displayContent.trim() === "") return null;
+  // Show actions only for current user's messages
+  const isMyMessage = message.senderId === 1;
+
   return (
     <div className="message">
-      {/* Avatar */}
       <div className="message-avatar">
-        <img src={message.avatar} alt="user-avatar"></img>
+        <img src={message.avatar || "/avatar1.jpg"} alt="User"></img>
       </div>
 
-      {/* Content */}
       <div className="message-content">
-        {/* Header */}
-        <div className="message-header">
-          <span className="message-user">{message.user}</span>
-          <span className="message-time">{message.time}</span>
+        
+        {/* Message header */}
+        <div className="message-header" style={{ display: 'flex', alignItems: 'center' }}>
+          <span className="message-user">{message.user || `User ${message.senderId || '1'}`}</span>
+          <span className="message-time">
+            {message.time || (message.createdAt ? new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "")}
+          </span>
+          
+          {/* Show actions if it's my message and not in edit mode */}
+          {isMyMessage && !isEditing && (
+            <div className="message-actions" style={{ marginLeft: '12px', display: 'flex', gap: '8px' }}>
+              
+              <button onClick={() => setIsEditing(true)} title="Edit Message" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0 }}>
+                <EditOutlinedIcon fontSize="small" />
+              </button>
+              
+              <button onClick={handleDelete} title="Delete Message" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f87171', padding: 0 }}>
+                <DeleteOutlineOutlinedIcon fontSize="small" />
+              </button>
+
+            </div>
+          )}
         </div>
 
-        {/* Text */}
-        <div className="message-text">{message.text}</div>
+        {/* Message content */}
+        {isEditing ? (
+          <div className="edit-mode-box" style={{ marginTop: '4px' }}>
+            <textarea
+              value={editedText}
+              onChange={(e) => setEditedText(e.target.value)}
+              style={{ width: '100%', minHeight: '40px', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', fontFamily: 'inherit' }}
+            />
+            {/* Save and cancel buttons */}
+            <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+              <button 
+                onClick={handleEditSubmit} 
+                style={{ padding: '4px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>
+                Save
+              </button>
+              <button 
+                onClick={() => { setIsEditing(false); setEditedText(displayContent); }} 
+                style={{ padding: '4px 12px', background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="message-text">{displayContent}</div>
+        )}
 
-        {/* Attachment */}
+        {/* Attachments */}
         {message.attachment && (
           <div className="message-attachment">
             <div className="attachment-icon">

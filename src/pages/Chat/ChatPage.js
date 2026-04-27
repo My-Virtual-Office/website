@@ -6,7 +6,7 @@ import ChatArea from "./Components/ChatArea/ChatArea";
 import { useState } from "react";
 import MembersList from "./Components/MembersList/MembersList";
 export default function ChatPage() {
-  const [activeChannel, setActiveChannel] = useState("general");
+  const [activeChannel, setActiveChannel] = useState(null);
 
   return (
     <div className="chatPage">

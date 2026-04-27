@@ -14,7 +14,7 @@ export default function Signup() {
           <div className="signup-box">
             <h1 className="signup-title">Sign up</h1>
             <p className="signup-sub">
-              Create an account or <Link to="/">Login</Link>
+              Create an account or <Link to="/login">Login</Link>
             </p>
 
             <form className="signup-form">

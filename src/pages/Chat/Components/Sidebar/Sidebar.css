@@ -21,10 +21,7 @@
 }
 .sidebar-header span {
   padding: 16px;
-  width: 111px;
-  height: 24px;
   color: #1e293b;
-  font-family: Inter, sans-serif;
   font-weight: 700;
   font-size: 16px;
   line-height: 24px;
@@ -104,7 +101,8 @@
 }
 .channels-list {
   width: 191px;
-  height: 134px;
+  max-height: 134px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -198,10 +196,10 @@
 }
 .status-dot {
   position: absolute;
-  top: 62%;
-  left: 64%;
-  width: 8px;
-  height: 8px;
+  top: 77%;
+  left: 70%;
+  width: 10px;
+  height: 10px;
   opacity: 1;
   border-radius: 50%;
   border-width: 2px;

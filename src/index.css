@@ -1,3 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 body {
   margin: 0;
   /* font-family:
@@ -12,3 +15,8 @@ code {
   font-family:
     source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
+/* html,
+body {
+  overflow: hidden;
+  height: 100%;
+} */

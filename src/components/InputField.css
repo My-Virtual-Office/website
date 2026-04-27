@@ -1,4 +1,4 @@
-.input-group {
+ .input-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -13,7 +13,7 @@
 
 .input-group input {
   width: 100%;
-  padding: 14px 16px;
+  padding: 8px 12px;
   border: 1px solid #aaaa;
   font-size: 15px;
   transition: 0.2s;
@@ -26,4 +26,6 @@
 
 .input-group input::placeholder {
   color: #666666;
-}
+} 
+
+ 

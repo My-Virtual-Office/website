@@ -9,7 +9,7 @@ export default function InputField({
 }) {
   return (
     <div className="input-group">
-      <label>{label}</label>
+      <label >{label}</label>
       <input
         type={type}
         placeholder={placeholder}
