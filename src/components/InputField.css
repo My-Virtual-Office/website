@@ -1,7 +1,7 @@
- .input-group {
+.input-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   margin-bottom: 24px;
 }
 
@@ -26,6 +26,4 @@
 
 .input-group input::placeholder {
   color: #666666;
-} 
-
- 
+}

@@ -1,10 +1,51 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
 import InputField from "../../components/InputField";
 import Button from "../../components/Button";
+import { useState } from "react";
+import { loginUser } from "../../api/auth";
+
 import "./Login.css";
 
 export default function Login() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await loginUser({
+        email: email,
+        password: password,
+      });
+
+      localStorage.setItem("token", response.token);
+      navigate("/chat");
+    } catch (err) {
+      console.log("Response : ", err.response);
+      if (err.response) {
+        const backendData = err.response.data;
+
+        if (backendData && backendData.errorMessage === "User Not Found") {
+          setError("This email is not registered.");
+        } else {
+          setError("Invalid email or password.");
+        }
+      } else {
+        setError("Connection failed. Please try again later.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="login-page">
       <Header />
@@ -17,31 +58,42 @@ export default function Login() {
               Welcome back! Please login to your account.
             </p>
 
-            <InputField
-              label="Email Address"
-              type="email"
-              placeholder="email@digital.com"
-            />
+            {error && <p style={{ color: "red" }}>{error}</p>}
 
-            <InputField
-              label="Password"
-              type="password"
-              placeholder="••••••••"
-            />
+            <form onSubmit={handleSubmit}>
+              <InputField
+                label="Email Address"
+                type="email"
+                placeholder="email@digital.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                maxLength={100}
+              />
 
-            <div className="remember-row">
-              <label className="checkbox-label">
-                <input type="checkbox" />
-                <span>Remember Me</span>
-              </label>
-              <Link to="/forgot-password" className="forgot-link">
-                Forgot Password?
-              </Link>
-            </div>
+              <InputField
+                label="Password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
 
-            <Button onClick={() => console.log("Login clicked")} type="submit">
-              Login
-            </Button>
+              <div className="remember-row">
+                <label className="checkbox-label">
+                  <input type="checkbox" />
+                  <span>Remember Me</span>
+                </label>
+                <Link to="/forgot-password" className="forgot-link">
+                  Forgot Password?
+                </Link>
+              </div>
+
+              <Button type="submit" disabled={loading}>
+                {loading ? "Loading..." : "Login"}
+              </Button>
+            </form>
 
             <p className="signup-text">
               Don't have an account? <Link to="/signup">Sign Up</Link>

@@ -9,10 +9,14 @@ import { useState } from "react";
 
 export default function Message({ message }) {
   // --- Message State ---
-  
+
   const [isEditing, setIsEditing] = useState(false); // Editing mode state
-  const [editedText, setEditedText] = useState(message.content || message.text || ""); // Edited text state
-  const [displayContent, setDisplayContent] = useState(message.content || message.text || ""); // Display content state
+  const [editedText, setEditedText] = useState(
+    message.content || message.text || "",
+  ); // Edited text state
+  const [displayContent, setDisplayContent] = useState(
+    message.content || message.text || "",
+  ); // Display content state
   const [isDeleted, setIsDeleted] = useState(false); // Deleted state
 
   // Handle editing message
@@ -28,9 +32,9 @@ export default function Message({ message }) {
         headers: {
           "Content-Type": "application/json",
           "X-User-Id": "1", // Hardcoded user ID
-          "X-User-Role": "USER"
+          "X-User-Role": "USER",
         },
-        body: JSON.stringify({ content: editedText })
+        body: JSON.stringify({ content: editedText }),
       });
 
       if (response.ok) {
@@ -46,7 +50,9 @@ export default function Message({ message }) {
 
   // Handle deleting message
   const handleDelete = async () => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this message?");
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this message?",
+    );
     if (!confirmDelete) return;
 
     try {
@@ -54,8 +60,8 @@ export default function Message({ message }) {
         method: "DELETE",
         headers: {
           "X-User-Id": "1",
-          "X-User-Role": "USER"
-        }
+          "X-User-Role": "USER",
+        },
       });
 
       if (response.ok) {
@@ -67,7 +73,6 @@ export default function Message({ message }) {
       console.error("Error:", error);
     }
   };
-
 
   // --- Render ---
 
@@ -100,48 +105,110 @@ export default function Message({ message }) {
       </div>
 
       <div className="message-content">
-        
         {/* Message header */}
-        <div className="message-header" style={{ display: 'flex', alignItems: 'center' }}>
-          <span className="message-user">{message.user || `User ${message.senderId || '1'}`}</span>
-          <span className="message-time">
-            {message.time || (message.createdAt ? new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "")}
+        <div
+          className="message-header"
+          style={{ display: "flex", alignItems: "center" }}
+        >
+          <span className="message-user">
+            {message.user || `User ${message.senderId || "1"}`}
           </span>
-          
+          <span className="message-time">
+            {message.time ||
+              (message.createdAt
+                ? new Date(message.createdAt).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : "")}
+          </span>
+
           {/* Show actions if it's my message and not in edit mode */}
           {isMyMessage && !isEditing && (
-            <div className="message-actions" style={{ marginLeft: '12px', display: 'flex', gap: '8px' }}>
-              
-              <button onClick={() => setIsEditing(true)} title="Edit Message" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0 }}>
+            <div
+              className="message-actions"
+              style={{ marginLeft: "12px", display: "flex", gap: "8px" }}
+            >
+              <button
+                onClick={() => setIsEditing(true)}
+                title="Edit Message"
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "#94a3b8",
+                  padding: 0,
+                }}
+              >
                 <EditOutlinedIcon fontSize="small" />
               </button>
-              
-              <button onClick={handleDelete} title="Delete Message" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f87171', padding: 0 }}>
+
+              <button
+                onClick={handleDelete}
+                title="Delete Message"
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "#f87171",
+                  padding: 0,
+                }}
+              >
                 <DeleteOutlineOutlinedIcon fontSize="small" />
               </button>
-
             </div>
           )}
         </div>
 
         {/* Message content */}
         {isEditing ? (
-          <div className="edit-mode-box" style={{ marginTop: '4px' }}>
+          <div className="edit-mode-box" style={{ marginTop: "4px" }}>
             <textarea
               value={editedText}
               onChange={(e) => setEditedText(e.target.value)}
-              style={{ width: '100%', minHeight: '40px', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', fontFamily: 'inherit' }}
+              style={{
+                width: "100%",
+                minHeight: "40px",
+                padding: "8px",
+                borderRadius: "6px",
+                border: "1px solid #cbd5e1",
+                fontSize: "14px",
+                fontFamily: "inherit",
+              }}
             />
             {/* Save and cancel buttons */}
-            <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-              <button 
-                onClick={handleEditSubmit} 
-                style={{ padding: '4px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>
+            <div style={{ display: "flex", gap: "8px", marginTop: "6px" }}>
+              <button
+                onClick={handleEditSubmit}
+                style={{
+                  padding: "4px 12px",
+                  background: "#3b82f6",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  fontWeight: "bold",
+                }}
+              >
                 Save
               </button>
-              <button 
-                onClick={() => { setIsEditing(false); setEditedText(displayContent); }} 
-                style={{ padding: '4px 12px', background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>
+              <button
+                onClick={() => {
+                  setIsEditing(false);
+                  setEditedText(displayContent);
+                }}
+                style={{
+                  padding: "4px 12px",
+                  background: "#e2e8f0",
+                  color: "#475569",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  fontWeight: "bold",
+                }}
+              >
                 Cancel
               </button>
             </div>
