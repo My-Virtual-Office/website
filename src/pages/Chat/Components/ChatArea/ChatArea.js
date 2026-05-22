@@ -2,12 +2,12 @@ import "./ChatArea.css";
 import ChatHeader from "./ChatHeader/ChatHeader";
 import MessageInput from "./MessageInput/MessageInput";
 import MessagesList from "./MessagesList/MessagesList";
-export default function ChatArea({ activeChannel }) {
+export default function ChatArea({ activeChannel, stompClient }) {
   return (
     <div className="chatArea">
       <ChatHeader activeChannel={activeChannel}></ChatHeader>
-      <MessagesList activeChannel={activeChannel} />
-      <MessageInput activeChannel={activeChannel}></MessageInput>
+      <MessagesList activeChannel={activeChannel} stompClient={stompClient} />
+      <MessageInput activeChannel={activeChannel} stompClient={stompClient}></MessageInput>
     </div>
   );
 }

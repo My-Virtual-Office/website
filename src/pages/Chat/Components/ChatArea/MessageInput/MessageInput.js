@@ -4,7 +4,7 @@ import SentimentSatisfiedAltOutlinedIcon from "@mui/icons-material/SentimentSati
 import SendOutlinedIcon from "@mui/icons-material/SendOutlined";
 import EmojiPicker from "emoji-picker-react";
 import { useState } from "react";
-export default function MessageInput({ activeChannel }) {
+export default function MessageInput({ activeChannel, stompClient }) {
   const [message, setMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
@@ -13,36 +13,38 @@ export default function MessageInput({ activeChannel }) {
     setShowEmojiPicker(false);
   };
 
-  const handleSendMessage = async () => {
-    // Do nothing if input is empty
-    if (!message.trim() || !activeChannel || !activeChannel.id) return;
-    try {
-      // Send POST request to create message
-      const response = await fetch(
-        `/api/chat/channels/${activeChannel.id}/messages`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-User-Id": "1", // Temporary hardcoded user ID
-            "X-User-Role": "USER",
-          },
-          body: JSON.stringify({
-            content: message,
-            // threadId and clientMessageId are optional, omitting for now
-          }),
-        },
-      );
-      // Clear input field on success
-      if (response.ok) {
-        setMessage("");
-      } else {
-        console.error("Failed to send message");
-      }
-    } catch (error) {
-      console.error("Connection error:", error);
+ const handleSendMessage = () => {
+  if (!message.trim() || !activeChannel?.id) return;
+  
+  if (stompClient && stompClient.connected) {
+    // Fix: Wrap custom fields inside a JSON-stringified body property
+    stompClient.publish({
+      destination: "/app/chat/send",
+      body: JSON.stringify({
+        channelId: activeChannel.id,
+        content: message,
+        threadId: null,
+        replyToId: null,
+        mentions: [],
+        clientMessageId: crypto.randomUUID(),
+      })
+    });
+    setMessage("");
+  } else {
+    console.warn("WebSocket not connected — message not sent");
+    alert("can't send message right now");
+  }
+};
+  // typing indicator:
+  const handleTyping = () => {
+    if (stompClient && stompClient.connected && activeChannel?.id) {
+      stompClient.publish({
+        destination: "/app/chat/typing",
+        body: JSON.stringify({ channelId: activeChannel.id, typing: true }),
+      });
     }
   };
+
   // Send message on Enter key
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -65,7 +67,7 @@ export default function MessageInput({ activeChannel }) {
           placeholder={placeholderText}
           className="message-input-field"
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={(e) => {setMessage(e.target.value); handleTyping();}}
           onKeyDown={handleKeyDown}
         />
 

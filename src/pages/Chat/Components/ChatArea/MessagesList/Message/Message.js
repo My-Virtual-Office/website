@@ -5,28 +5,29 @@ import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
 // Import edit and delete icons
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-export default function Message({ message }) {
+export default function Message({ message, stompClient }) {
   // --- Message State ---
 
   const [isEditing, setIsEditing] = useState(false); // Editing mode state
   const [editedText, setEditedText] = useState(
     message.content || message.text || "",
   ); // Edited text state
-  const [displayContent, setDisplayContent] = useState(
-    message.content || message.text || "",
-  ); // Display content state
-  const [isDeleted, setIsDeleted] = useState(false); // Deleted state
 
+  useEffect(() => {
+    setEditedText(message.content || message.text || "");
+  }, [message])
+  const currentContent = message.content || message.text || "";
   // Handle editing message
   const handleEditSubmit = async () => {
-    if (!editedText.trim() || editedText === displayContent) {
+    if (!editedText.trim() || editedText === currentContent) {
       setIsEditing(false);
       return;
     }
 
     try {
+      // Use HTTP PUT to edit the message
       const response = await fetch(`/api/chat/messages/${message.id}`, {
         method: "PUT",
         headers: {
@@ -38,8 +39,8 @@ export default function Message({ message }) {
       });
 
       if (response.ok) {
-        setDisplayContent(editedText); // Update UI immediately
-        setIsEditing(false); // Close edit box
+        setIsEditing(false); // Close edit box on success
+        // UI will update automatically when the EDIT_MESSAGE WebSocket event arrives!
       } else {
         alert("Edit failed");
       }
@@ -56,6 +57,7 @@ export default function Message({ message }) {
     if (!confirmDelete) return;
 
     try {
+      // Use HTTP DELETE to delete the message
       const response = await fetch(`/api/chat/messages/${message.id}`, {
         method: "DELETE",
         headers: {
@@ -64,20 +66,17 @@ export default function Message({ message }) {
         },
       });
 
-      if (response.ok) {
-        setIsDeleted(true); // Hide message locally without refresh
-      } else {
+      if (!response.ok) {
         alert("Failed to delete the message!");
       }
+      // UI will update automatically when the DELETE_MESSAGE WebSocket event arrives!
     } catch (error) {
       console.error("Error:", error);
     }
   };
 
-  // --- Render ---
 
-  // Don't render if message is deleted
-  if (isDeleted) return null;
+  // --- Render ---
 
   // System messages
   if (message.type === "system") {
@@ -94,7 +93,7 @@ export default function Message({ message }) {
     );
   }
 
-  if (!displayContent || displayContent.trim() === "") return null;
+  if (!currentContent || currentContent.trim() === "") return null;
   // Show actions only for current user's messages
   const isMyMessage = message.senderId === 1;
 
@@ -117,9 +116,9 @@ export default function Message({ message }) {
             {message.time ||
               (message.createdAt
                 ? new Date(message.createdAt).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
                 : "")}
           </span>
 
@@ -196,7 +195,7 @@ export default function Message({ message }) {
               <button
                 onClick={() => {
                   setIsEditing(false);
-                  setEditedText(displayContent);
+                  setEditedText(currentContent);
                 }}
                 style={{
                   padding: "4px 12px",
@@ -214,7 +213,7 @@ export default function Message({ message }) {
             </div>
           </div>
         ) : (
-          <div className="message-text">{displayContent}</div>
+          <div className="message-text">{currentContent}</div>
         )}
 
         {/* Attachments */}
