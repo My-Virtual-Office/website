@@ -26,10 +26,13 @@ export default function Login() {
         password: password,
       });
 
+      if (!response.token) {
+        setError("Invalid email or password.");
+        return;
+      }
       localStorage.setItem("token", response.token);
       navigate("/chat");
     } catch (err) {
-      console.log("Response : ", err.response);
       if (err.response) {
         const backendData = err.response.data;
 
