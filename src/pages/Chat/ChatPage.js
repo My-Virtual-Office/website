@@ -6,6 +6,7 @@ import ChatArea from "./Components/ChatArea/ChatArea";
 import { useState, useEffect } from "react";
 import { Client } from "@stomp/stompjs";
 import MembersList from "./Components/MembersList/MembersList";
+import { getCurrentUserId } from "../../utils/auth";
 
 export default function ChatPage() {
   const [activeChannel, setActiveChannel] = useState(null);
@@ -18,7 +19,7 @@ export default function ChatPage() {
       try {
         const ticketRes = await fetch("/api/chat/ws-ticket", {
           method: "POST",
-          headers: { "X-User-Id": "1", "X-User-Role": "USER" }
+          headers: { "X-User-Id": String(getCurrentUserId()), "X-User-Role": "USER" }
         });
         if (!ticketRes.ok) {
           const errorText = await ticketRes.text();
