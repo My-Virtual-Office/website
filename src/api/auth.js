@@ -16,7 +16,7 @@ export const loginUser = async (data) => {
 //   return response.data;
 // };
 
-// export const verifyEmail = async (data) => {
-//   const response = await axiosInstance.post("/api/auth/verify-email", data);
-//   return response.data;
-// };
+export const verifyEmail = async (data) => {
+  const response = await axiosInstance.post("/api/auth/verify-email", data);
+  return response.data;
+};
