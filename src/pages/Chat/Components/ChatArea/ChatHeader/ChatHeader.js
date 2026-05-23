@@ -93,7 +93,7 @@ export default function ChatHeader({ activeChannel }) {
         </h3>
         <span className="margin">|</span>
         <span className="channel-description">
-          Company-wide announcements and office chatter
+          {channelDetails?.description || ""}
         </span>
       </div>
 
