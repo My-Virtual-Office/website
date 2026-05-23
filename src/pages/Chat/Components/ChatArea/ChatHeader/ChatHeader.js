@@ -4,6 +4,7 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import NumbersIcon from "@mui/icons-material/Numbers";
 import { useState } from "react";
+import { getCurrentUserId } from "../../../../../utils/auth";
 export default function ChatHeader({ activeChannel }) {
   let channelNameForDisplay = "Loading...";
   if (activeChannel !== null) {
@@ -33,7 +34,7 @@ export default function ChatHeader({ activeChannel }) {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "X-User-Id": "1",
+            "X-User-Id": String(getCurrentUserId()),
             "X-User-Role": "USER",
           },
         });
@@ -64,7 +65,7 @@ export default function ChatHeader({ activeChannel }) {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "X-User-Id": "1",
+              "X-User-Id": String(getCurrentUserId()),
               "X-User-Role": "USER",
             },
           },

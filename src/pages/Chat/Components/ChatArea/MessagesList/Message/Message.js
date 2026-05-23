@@ -6,6 +6,7 @@ import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import { useState, useEffect } from "react";
+import { getCurrentUserId } from "../../../../../../utils/auth";
 
 export default function Message({ message, stompClient }) {
   // --- Message State ---
@@ -32,7 +33,7 @@ export default function Message({ message, stompClient }) {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "X-User-Id": "1", // Hardcoded user ID
+          "X-User-Id": String(getCurrentUserId()),
           "X-User-Role": "USER",
         },
         body: JSON.stringify({ content: editedText }),
@@ -61,7 +62,7 @@ export default function Message({ message, stompClient }) {
       const response = await fetch(`/api/chat/messages/${message.id}`, {
         method: "DELETE",
         headers: {
-          "X-User-Id": "1",
+          "X-User-Id": String(getCurrentUserId()),
           "X-User-Role": "USER",
         },
       });
@@ -95,7 +96,7 @@ export default function Message({ message, stompClient }) {
 
   if (!currentContent || currentContent.trim() === "") return null;
   // Show actions only for current user's messages
-  const isMyMessage = message.senderId === 1;
+  const isMyMessage = message.senderId === getCurrentUserId();
 
   return (
     <div className="message">

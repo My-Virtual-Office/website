@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { getCurrentUser } from "../../../../api/user";
 import SettingsModal from "../SettingsModal/SettingsModal";
 import { getUserPhoto } from "../../../../api/user";
+import { getCurrentUserId } from "../../../../utils/auth";
 
 export default function Sidebar({ activeChannel, setActiveChannel }) {
   // Channels state
@@ -35,7 +36,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-User-Id": "1",
+          "X-User-Id": String(getCurrentUserId()),
           "X-User-Role": "USER",
         },
         body: JSON.stringify({
@@ -74,7 +75,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-User-Id": "1", // Hardcoded user ID, update dynamically later
+          "X-User-Id": String(getCurrentUserId()), // Hardcoded user ID, update dynamically later
           "X-User-Role": "USER",
         },
         body: JSON.stringify({
@@ -104,7 +105,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              "X-User-Id": "1",
+              "X-User-Id": String(getCurrentUserId()),
               "X-User-Role": "USER",
             },
           },
@@ -142,7 +143,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "X-User-Id": "1",
+            "X-User-Id": String(getCurrentUserId()),
             "X-User-Role": "USER",
           },
         });

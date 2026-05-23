@@ -1,6 +1,7 @@
 import "./MessagesList.css";
 import Message from "./Message/Message";
 import { useState, useEffect } from "react";
+import { getCurrentUserId } from "../../../../../utils/auth";
 
 export default function MessagesList({ activeChannel, stompClient }) {
   const [messages, setMessages] = useState([]);
@@ -18,7 +19,7 @@ export default function MessagesList({ activeChannel, stompClient }) {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              "X-User-Id": "1", // Hardcoded user ID for testing
+              "X-User-Id": String(getCurrentUserId()),
               "X-User-Role": "USER",
             },
           },
