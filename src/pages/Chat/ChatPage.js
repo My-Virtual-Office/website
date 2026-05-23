@@ -33,8 +33,10 @@ export default function ChatPage() {
           return;
         }
 
+        const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const wsHost = window.location.host;
         client = new Client({
-          brokerURL: `ws://localhost:8084/api/chat/connect?ticket=${ticket}`,
+          brokerURL: `${wsProtocol}//${wsHost}/api/chat/connect?ticket=${ticket}`,
           onConnect: () => {
             console.log("Connected to STOMP!");
             setStompClient(client);
