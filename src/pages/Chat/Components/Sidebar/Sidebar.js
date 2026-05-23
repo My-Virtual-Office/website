@@ -158,7 +158,8 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
 
     fetchChannels();
     fetchDMs();
-  }, [activeChannel, setActiveChannel]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchUser = async () => {
     try {
