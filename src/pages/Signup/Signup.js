@@ -31,6 +31,10 @@ export default function Signup() {
         phoneNumber: phoneNumber,
       });
 
+      if (!response.token) {
+        setError(response.errorMessage || "Registration failed. Please try again.");
+        return;
+      }
       localStorage.setItem("token", response.token);
       navigate("/dashboard");
     } catch (err) {
