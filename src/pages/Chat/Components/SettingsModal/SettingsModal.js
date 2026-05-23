@@ -43,7 +43,7 @@ export default function SettingsModal({
     setSuccess("");
     try {
       const result = await updatePassword({ oldPassword, newPassword });
-      if (result.status === "succeeded") {
+      if (result.status === "success") {
         setSuccess("Password updated successfully");
         setOldPassword("");
         setNewPassword("");
@@ -63,7 +63,7 @@ export default function SettingsModal({
 
     try {
       const result = await uploadPhoto(file);
-      if (result.status === "succeeded") {
+      if (result.status === "success") {
         setSuccess("Profile picture updated successfully!");
         if (onUpdate) onUpdate();
       }
