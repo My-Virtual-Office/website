@@ -57,7 +57,7 @@ export default function SettingsModal({
     const file = event.target.files[0];
     if (!file) return;
 
-    // preview uploaded photo
+    const previousPreview = photoPreview;
     const previewUrl = URL.createObjectURL(file);
     setPhotoPreview(previewUrl);
 
@@ -69,7 +69,7 @@ export default function SettingsModal({
       }
     } catch (err) {
       setError(err.response?.data?.Error || "Failed to upload photo");
-      setPhotoPreview(null);
+      setPhotoPreview(previousPreview);
     }
   };
 
