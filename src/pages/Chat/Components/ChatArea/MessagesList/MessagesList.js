@@ -25,7 +25,7 @@ export default function MessagesList({ activeChannel, stompClient }) {
         );
         if (response.ok) {
           const data = await response.json();
-          const orderedMessages = data.content ? data.content.reverse() : [];
+          const orderedMessages = data.content ? [...data.content].reverse() : [];
           setMessages(orderedMessages);
         } else {
           console.error("Failed to fetch messages from server");
