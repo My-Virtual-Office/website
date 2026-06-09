@@ -10,7 +10,7 @@ import { getCurrentUser } from "../../../../api/user";
 import SettingsModal from "../SettingsModal/SettingsModal";
 import { getUserPhoto } from "../../../../api/user";
 import { getCurrentUserId } from "../../../../utils/auth";
-
+import NotificationsMenu from "../../../../components/NotificationsMenu";
 export default function Sidebar({ activeChannel, setActiveChannel }) {
   // Channels state
   const [channels, setChannels] = useState([]);
@@ -328,14 +328,25 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
                 </span>
               </div>
             </div>
-
-            <button
-              className="settings-btn"
-              aria-label="Settings"
-              onClick={() => setIsSettingsOpen(true)}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                paddingRight: "12px",
+                gap: "4px",
+              }}
             >
-              <SettingsOutlinedIcon></SettingsOutlinedIcon>
-            </button>
+              <NotificationsMenu />
+
+              <button
+                className="settings-btn"
+                aria-label="Settings"
+                onClick={() => setIsSettingsOpen(true)}
+                style={{ padding: "4px" }}
+              >
+                <SettingsOutlinedIcon></SettingsOutlinedIcon>
+              </button>
+            </div>
 
             {/* Settings Modal */}
             <SettingsModal
