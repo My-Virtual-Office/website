@@ -49,9 +49,9 @@
   font-size: 24px;
 }
 .sidebar-main {
-  width: 215px;
-  height: 985px;
+  width: 100%;
   display: flex;
+  flex: 1;
   flex-direction: column;
   align-items: center;
 }
@@ -226,17 +226,20 @@
   justify-content: space-between;
   align-items: center;
   border-top: 1px solid #e2e8f0;
+  width: 100%;
 }
 .user-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   flex: 1;
-  padding: 16px;
+  padding: 16px 8px;
+  min-width: 0;
 }
 .user-avatar {
   width: 32px;
   height: 32px;
+  flex-shrink: 0;
 }
 .user-avatar img {
   width: 100%;
@@ -245,22 +248,26 @@
   object-fit: cover;
 }
 .user-details {
-  width: 110.25px;
-  height: 36px;
+  /* width: 110.25px; */
+  /* height: 36px; */
   display: flex;
   flex-direction: column;
   gap: 2px;
+  flex: 1;
+  min-width: 0;
 }
 .user-name {
-  width: 110.25px;
-  height: 20px;
+  /* width: 110.25px; */
+  /* height: 20px; */
   font-weight: 700;
   font-style: Bold;
   font-size: 14px;
   line-height: 20px;
   letter-spacing: 0px;
-  vertical-align: middle;
   color: #0f172a;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 }
 .user-status {
   width: 110.25px;
