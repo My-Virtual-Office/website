@@ -17,7 +17,8 @@ export default function MessageInput({ activeChannel, stompClient }) {
   if (!message.trim() || !activeChannel?.id) return;
   
   if (stompClient && stompClient.connected) {
-    // Fix: Wrap custom fields inside a JSON-stringified body property
+    const storedUserId = localStorage.getItem("userId");
+
     stompClient.publish({
       destination: "/app/chat/send",
       body: JSON.stringify({
@@ -27,6 +28,7 @@ export default function MessageInput({ activeChannel, stompClient }) {
         replyToId: null,
         mentions: [],
         clientMessageId: crypto.randomUUID(),
+        userId: storedUserId ? Number(storedUserId) : null,
       })
     });
     setMessage("");

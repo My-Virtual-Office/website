@@ -43,7 +43,7 @@ export default function SettingsModal({
     setSuccess("");
     try {
       const result = await updatePassword({ oldPassword, newPassword });
-      if (result.status === "succeeded") {
+      if (result.status === "succeeded" || result.data?.message === "succeeded") {
         setSuccess("Password updated successfully");
         setOldPassword("");
         setNewPassword("");
@@ -57,19 +57,19 @@ export default function SettingsModal({
     const file = event.target.files[0];
     if (!file) return;
 
-    // preview uploaded photo
+    const previousPreview = photoPreview;
     const previewUrl = URL.createObjectURL(file);
     setPhotoPreview(previewUrl);
 
     try {
       const result = await uploadPhoto(file);
-      if (result.status === "succeeded") {
+      if (result.status === "succeeded" || result.data?.message === "succeeded") {
         setSuccess("Profile picture updated successfully!");
         if (onUpdate) onUpdate();
       }
     } catch (err) {
       setError(err.response?.data?.Error || "Failed to upload photo");
-      setPhotoPreview(null);
+      setPhotoPreview(previousPreview);
     }
   };
 

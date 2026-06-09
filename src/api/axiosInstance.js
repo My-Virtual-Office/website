@@ -1,5 +1,4 @@
 import axios from "axios";
-
 const axiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
@@ -15,6 +14,18 @@ axiosInstance.interceptors.request.use(
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  },
+);
+
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("userId");
+      window.location.href = "/login";
+    }
     return Promise.reject(error);
   },
 );

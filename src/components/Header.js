@@ -4,12 +4,7 @@ export default function Header() {
   const location = useLocation();
   const path = location.pathname;
 
-  const isActive = (route) => {
-    if (route === "/") {
-      return path === "/" || path === "/signup";
-    }
-    return path === route;
-  };
+  const isActive = (route) => path === route;
 
   return (
     <header className="flex gap-12 items-center px-20 py-6 border-b border-[#eee] bg-[#e9f6ff]">
