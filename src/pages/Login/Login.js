@@ -16,7 +16,7 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    if(loading) return
     setLoading(true);
     setError("");
 
@@ -26,10 +26,14 @@ export default function Login() {
         password: password,
       });
 
+      if (!response.token || !response) {
+        setError("Invalid email or password.");
+        setLoading(false);
+        return;
+      }
       localStorage.setItem("token", response.token);
       navigate("/chat");
     } catch (err) {
-      console.log("Response : ", err.response);
       if (err.response) {
         const backendData = err.response.data;
 

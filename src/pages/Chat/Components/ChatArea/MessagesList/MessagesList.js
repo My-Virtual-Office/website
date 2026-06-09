@@ -1,6 +1,7 @@
 import "./MessagesList.css";
 import Message from "./Message/Message";
 import { useState, useEffect } from "react";
+import { getCurrentUserId } from "../../../../../utils/auth";
 
 export default function MessagesList({ activeChannel, stompClient }) {
   const [messages, setMessages] = useState([]);
@@ -18,14 +19,14 @@ export default function MessagesList({ activeChannel, stompClient }) {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              "X-User-Id": "1", // Hardcoded user ID for testing
+              "X-User-Id": String(getCurrentUserId()),
               "X-User-Role": "USER",
             },
           },
         );
         if (response.ok) {
           const data = await response.json();
-          const orderedMessages = data.content ? data.content.reverse() : [];
+          const orderedMessages = data.content ? [...data.content].reverse() : [];
           setMessages(orderedMessages);
         } else {
           console.error("Failed to fetch messages from server");

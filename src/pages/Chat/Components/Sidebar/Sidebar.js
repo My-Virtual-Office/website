@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { getCurrentUser } from "../../../../api/user";
 import SettingsModal from "../SettingsModal/SettingsModal";
 import { getUserPhoto } from "../../../../api/user";
+import { getCurrentUserId } from "../../../../utils/auth";
 
 export default function Sidebar({ activeChannel, setActiveChannel }) {
   // Channels state
@@ -35,7 +36,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-User-Id": "1",
+          "X-User-Id": String(getCurrentUserId()),
           "X-User-Role": "USER",
         },
         body: JSON.stringify({
@@ -74,7 +75,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-User-Id": "1", // Hardcoded user ID, update dynamically later
+          "X-User-Id": String(getCurrentUserId()), // Hardcoded user ID, update dynamically later
           "X-User-Role": "USER",
         },
         body: JSON.stringify({
@@ -104,7 +105,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              "X-User-Id": "1",
+              "X-User-Id": String(getCurrentUserId()),
               "X-User-Role": "USER",
             },
           },
@@ -142,7 +143,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "X-User-Id": "1",
+            "X-User-Id": String(getCurrentUserId()),
             "X-User-Role": "USER",
           },
         });
@@ -158,7 +159,8 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
 
     fetchChannels();
     fetchDMs();
-  }, [activeChannel, setActiveChannel]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchUser = async () => {
     try {
@@ -186,7 +188,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
   //   avatar: "/user.jpg",
   //   status: "Set Status",
   // };
-
+  console.log("Current User ID extracted from token:", getCurrentUserId());
   return (
     <div className="sidebar-container">
       <div className="sidebar">
@@ -253,7 +255,8 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
             <div className="direct-messages-list">
               {dms.map((dm) => {
                 // Find the other user's ID to use as DM name
-                const otherUserId = dm.members?.find((m) => m !== 1);
+                const currentId = getCurrentUserId();
+                const otherUserId = dm.members?.find((m) => m !== currentId);
                 const dmDisplayName = dm.name
                   ? dm.name
                   : `User ${otherUserId || "X"}`;
