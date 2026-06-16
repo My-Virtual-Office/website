@@ -5,10 +5,11 @@ import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
 // Import edit and delete icons
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined"
 import { useState, useEffect } from "react";
 import { getCurrentUserId } from "../../../../../../utils/auth";
 
-export default function Message({ message, stompClient }) {
+export default function Message({ message, stompClient, onOpenThread }) {
   // --- Message State ---
 
   const [isEditing, setIsEditing] = useState(false); // Editing mode state
@@ -123,12 +124,31 @@ export default function Message({ message, stompClient }) {
                 : "")}
           </span>
 
+          
           {/* Show actions if it's my message and not in edit mode */}
           {isMyMessage && !isEditing && (
             <div
               className="message-actions"
-              style={{ marginLeft: "12px", display: "flex", gap: "8px" }}
+              style={{ marginLeft: "12px", display: "flex", gap: "8px" , alignItems: "center"}}
             >
+              {!message.threadId && onOpenThread && !isEditing && (
+                <button onClick={() => onOpenThread(message)}
+                 title="Reply in thread"
+                 style={
+                  {
+                    background: "none",
+                    border: "none",
+                    cursor:"pointer",
+                    color: "#94a3b8",
+                    padding: 0,
+                    display:"flex",
+                    alignItems: "center"
+                  }
+                 }
+                 >
+                  <ChatBubbleOutlineOutlinedIcon fontSize="small" />
+                 </button>
+              )}
               <button
                 onClick={() => setIsEditing(true)}
                 title="Edit Message"
