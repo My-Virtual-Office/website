@@ -3,7 +3,7 @@ import Message from "./Message/Message";
 import { useState, useEffect } from "react";
 import { getCurrentUserId } from "../../../../../utils/auth";
 
-export default function MessagesList({ activeChannel, stompClient }) {
+export default function MessagesList({ activeChannel, stompClient, onOpenThread}) {
   const [messages, setMessages] = useState([]);
 
   useEffect(() => {
@@ -81,7 +81,7 @@ export default function MessagesList({ activeChannel, stompClient }) {
         <span className="horizontal-divider"></span>
       </div>
       {messages.map((message) => (
-        <Message key={message.id} message={message} stompClient={stompClient} />
+        <Message key={message.id} message={message} stompClient={stompClient} onOpenThread={onOpenThread}/>
       ))}
     </div>
   );

@@ -3,22 +3,24 @@ import "./ChatPage.css";
 import WorkspaceSidebar from "./Components/WorkspaceSidebar/WorkspaceSidebar";
 import Sidebar from "./Components/Sidebar/Sidebar";
 import ChatArea from "./Components/ChatArea/ChatArea";
+import ThreadArea from "./Components/ChatArea/Threads/ThreadArea"; // 🌟 Import your new side drawer component
 import { useState, useEffect } from "react";
 import { Client } from "@stomp/stompjs";
 import MembersList from "./Components/MembersList/MembersList";
 import { getCurrentUserId } from "../../utils/auth";
 import { getCurrentUser } from "../../api/user";
-import { useNavigate } from "react-router-dom"; // 🌟 Import useNavigate
+import { useNavigate } from "react-router-dom";
 
 export default function ChatPage() {
-  const navigate = useNavigate(); // 🌟 Define navigate hook
+  const navigate = useNavigate();
   const [activeChannel, setActiveChannel] = useState(null);
   const [stompClient, setStompClient] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
+  const [activeThread, setActiveThread] = useState(null);
+  const [isThreadOpen, setIsThreadOpen] = useState(false);
 
   useEffect(() => {
     const initUser = async () => {
-      // 🌟 PROACTIVE CHECK 1: If there is no token right at the start, don't even try to fetch a profile
       const token = localStorage.getItem("token");
       if (!token) {
         navigate("/login", { replace: true });
@@ -32,7 +34,6 @@ export default function ChatPage() {
         }
       } catch (err) {
         console.error("Failed to fetch current user profile:", err);
-        // If the user profile request fails (e.g. 401 token invalid/expired), throw them out
         navigate("/login", { replace: true });
       } finally {
         setLoadingUser(false);
@@ -48,7 +49,6 @@ export default function ChatPage() {
 
     const connectWebSocket = async () => {
       try {
-        // 🌟 PROACTIVE CHECK 2: Double check token existence right before starting the WebSocket ticket pipeline
         if (!localStorage.getItem("token")) {
           navigate("/login", { replace: true });
           return;
@@ -64,11 +64,7 @@ export default function ChatPage() {
 
         if (!ticketRes.ok) {
           const errorText = await ticketRes.text();
-          console.error(
-            "Failed to fetch websocket ticket. Server returned:",
-            errorText,
-          );
-          // If the handshake fails because of an authentication error, clean up
+          console.error("Failed to fetch websocket ticket. Server returned:", errorText);
           if (ticketRes.status === 401 || ticketRes.status === 400) {
             localStorage.removeItem("token");
             localStorage.removeItem("userId");
@@ -85,8 +81,7 @@ export default function ChatPage() {
           return;
         }
 
-        const wsProtocol =
-          window.location.protocol === "https:" ? "wss:" : "ws:";
+        const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
         const wsHost = window.location.host;
         client = new Client({
           brokerURL: `${wsProtocol}//${wsHost}/api/chat/connect?ticket=${ticket}`,
@@ -116,6 +111,58 @@ export default function ChatPage() {
     };
   }, [loadingUser, navigate]);
 
+  // 🌟 THE LAUNCHER LOGIC
+  const handleOpenThread = async (clickedMessage) => {
+    // Scenario A: If message has a thread ID, look up its metadata immediately
+    if (clickedMessage.threadId) {
+      try {
+        const res = await fetch(`/api/chat/threads/${clickedMessage.threadId}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "X-User-Id": String(getCurrentUserId()),
+            "X-User-Role": "USER",
+          },
+        });
+        if (res.ok) {
+          const threadData = await res.json();
+          setActiveThread(threadData);
+          setIsThreadOpen(true);
+          return; // Exit out safely
+        }
+      } catch (err) {
+        console.error("Error fetching existing thread metadata:", err);
+        return;
+      }
+    }
+
+    // Scenario B: No thread ID? Call the initializer creation path
+    try {
+      const res = await fetch(`/api/chat/channels/${clickedMessage.channelId}/threads`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Id": String(getCurrentUserId()),
+          "X-User-Role": "USER",
+        },
+        body: JSON.stringify({
+          rootMessageId: clickedMessage.id,
+          name: `Thread Discussion`,
+        }),
+      });
+
+      if (res.status === 201 || res.status === 409) {
+        const threadData = await res.json();
+        setActiveThread(threadData);
+        setIsThreadOpen(true);
+      } else {
+        console.warn("Failed to initialize thread container endpoint context");
+      }
+    } catch (err) {
+      console.error("Error creating/initializing thread database tracking object:", err);
+    }
+  };
+
   if (loadingUser) {
     return (
       <div
@@ -134,15 +181,30 @@ export default function ChatPage() {
     );
   }
 
+  // 🌟 THE ACCURATE STRUCTURED LAYOUT RETURN BLOCK
   return (
-    <div className="chatPage">
-      <WorkspaceSidebar></WorkspaceSidebar>
-      <Sidebar
-        activeChannel={activeChannel}
-        setActiveChannel={setActiveChannel}
+    <div className="chatPage" style={{ display: "flex", width: "100vw", overflow: "hidden" }}>
+      <WorkspaceSidebar />
+      <Sidebar activeChannel={activeChannel} setActiveChannel={setActiveChannel} />
+      
+      {/* 🌟 Pass your handleOpenThread tool down to ChatArea */}
+      <ChatArea 
+        activeChannel={activeChannel} 
+        stompClient={stompClient} 
+        onOpenThread={handleOpenThread}
       />
-      <ChatArea activeChannel={activeChannel} stompClient={stompClient} />
-      <MembersList></MembersList>
+      
+      {/* 🌟 CONDITIONAL OVERLAY DRAWER RENDERING */}
+      {isThreadOpen && activeThread && (
+        <ThreadArea 
+          activeChannel={activeChannel}
+          activeThread={activeThread}
+          stompClient={stompClient}
+          onClose={() => { setIsThreadOpen(false); setActiveThread(null); }}
+        />
+      )}
+      
+      <MembersList />
     </div>
   );
 }
