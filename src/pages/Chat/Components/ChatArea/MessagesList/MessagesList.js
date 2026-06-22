@@ -3,7 +3,7 @@ import Message from "./Message/Message";
 import { useState, useEffect } from "react";
 import { getCurrentUserId } from "../../../../../utils/auth";
 
-export default function MessagesList({ activeChannel, stompClient, onOpenThread}) {
+export default function MessagesList({ activeChannel, stompClient, onOpenThread, activeThread}) {
   const [messages, setMessages] = useState([]);
 
   useEffect(() => {
@@ -47,10 +47,14 @@ export default function MessagesList({ activeChannel, stompClient, onOpenThread}
         (messageOutput) => {
           // Parse the raw text body into a JS object
           const event = JSON.parse(messageOutput.body);
-
+          console.log("WebSocket Event received on main channel:", event);
           if (event.action === "NEW_MESSAGE") {
             // Safely append new message without mutating state
+          if(event.payload.threadId)
+                return;
+            
             setMessages((prev) => [...prev, event.payload]);
+            
           } else if (event.action === "EDIT_MESSAGE") {
             // Update a specific message's text dynamically
             setMessages((prev) =>
