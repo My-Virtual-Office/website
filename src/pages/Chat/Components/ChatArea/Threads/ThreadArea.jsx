@@ -4,7 +4,7 @@ import Message from "../MessagesList/Message/Message";
 import { getCurrentUserId } from "../../../../../utils/auth"
 import "./ThreadArea.css";
 
-export default function ThreadArea({ activeChannel, activeThread, stompClient, onClose }) {
+export default function ThreadArea({ activeChannel, activeThread, stompClient, onClose, usersMap }) {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [replyText, setReplyText] = useState("");
@@ -131,9 +131,12 @@ export default function ThreadArea({ activeChannel, activeThread, stompClient, o
         ) : messages.length === 0 ? (
           <div className="thread-empty">No replies yet. Start the conversation!</div>
         ) : (
-          messages.map((msg) => (
-            <Message key={msg.id} message={msg} stompClient={stompClient} />
-          ))
+          messages.map((msg) => {
+            const displayName = (usersMap && usersMap[msg.senderId]) || `User ${msg.senderId}`;
+            return (
+              <Message key={msg.id} message={{ ...msg, senderName: displayName }} stompClient={stompClient} />
+            );
+          })
         )}
         <div ref={messagesEndRef} />
       </div>

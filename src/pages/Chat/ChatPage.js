@@ -18,6 +18,15 @@ export default function ChatPage() {
   const [loadingUser, setLoadingUser] = useState(true);
   const [activeThread, setActiveThread] = useState(null);
   const [isThreadOpen, setIsThreadOpen] = useState(false);
+  const [usersMap, setUsersMap] = useState({
+    1: "Ahmed Aly",
+    2: "Roqaia Ebrahim",
+    3: "Sara Mostafa",
+    4: "Co-founder Admin",
+    5: "Youssef Mohamed",
+    6: "Nour Hassan",
+    7: "Mariam Ali",
+  });
 
   useEffect(() => {
     const initUser = async () => {
@@ -31,6 +40,10 @@ export default function ChatPage() {
         const user = await getCurrentUser();
         if (user && user.id) {
           localStorage.setItem("userId", String(user.id));
+          setUsersMap((prev) => ({
+            ...prev,
+            [user.id]: `${user.firstName} ${user.lastName}`,
+          }));
         }
       } catch (err) {
         console.error("Failed to fetch current user profile:", err);
@@ -239,6 +252,7 @@ export default function ChatPage() {
         stompClient={stompClient}
         onOpenThread={handleOpenThread}
         activeThread={activeThread}
+        usersMap={usersMap}
       />
 
       {/* 🌟 CONDITIONAL OVERLAY DRAWER RENDERING */}
@@ -251,6 +265,7 @@ export default function ChatPage() {
             setIsThreadOpen(false);
             setActiveThread(null);
           }}
+          usersMap={usersMap}
         />
       )}
 
