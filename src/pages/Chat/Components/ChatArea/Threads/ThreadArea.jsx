@@ -93,6 +93,7 @@ export default function ThreadArea({ activeChannel, activeThread, stompClient, o
   // --- 2. Send Reply Action ---
   const handleSendReply = (e) => {
     e.preventDefault();
+    console.log("Current activeThread state inside handleSendReply:", activeThread);
     if (!replyText.trim() || !stompClient || !stompClient.connected) return;
 
     stompClient.publish({

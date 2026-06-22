@@ -3,7 +3,7 @@ import "./ChatPage.css";
 import WorkspaceSidebar from "./Components/WorkspaceSidebar/WorkspaceSidebar";
 import Sidebar from "./Components/Sidebar/Sidebar";
 import ChatArea from "./Components/ChatArea/ChatArea";
-import ThreadArea from "./Components/ChatArea/Threads/ThreadArea"; // 🌟 Import your new side drawer component
+import ThreadArea from "./Components/ChatArea/Threads/ThreadArea";
 import { useState, useEffect } from "react";
 import { Client } from "@stomp/stompjs";
 import MembersList from "./Components/MembersList/MembersList";
@@ -64,7 +64,10 @@ export default function ChatPage() {
 
         if (!ticketRes.ok) {
           const errorText = await ticketRes.text();
-          console.error("Failed to fetch websocket ticket. Server returned:", errorText);
+          console.error(
+            "Failed to fetch websocket ticket. Server returned:",
+            errorText,
+          );
           if (ticketRes.status === 401 || ticketRes.status === 400) {
             localStorage.removeItem("token");
             localStorage.removeItem("userId");
@@ -81,7 +84,8 @@ export default function ChatPage() {
           return;
         }
 
-        const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const wsProtocol =
+          window.location.protocol === "https:" ? "wss:" : "ws:";
         const wsHost = window.location.host;
         client = new Client({
           brokerURL: `${wsProtocol}//${wsHost}/api/chat/connect?ticket=${ticket}`,
@@ -111,19 +115,24 @@ export default function ChatPage() {
     };
   }, [loadingUser, navigate]);
 
-  // 🌟 THE LAUNCHER LOGIC
+  useEffect(() => {
+    console.log("🔄 activeThread state just changed to:", activeThread);
+  }, [activeThread]);
   const handleOpenThread = async (clickedMessage) => {
     // Scenario A: If message has a thread ID, look up its metadata immediately
     if (clickedMessage.threadId) {
       try {
-        const res = await fetch(`/api/chat/threads/${clickedMessage.threadId}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "X-User-Id": String(getCurrentUserId()),
-            "X-User-Role": "USER",
+        const res = await fetch(
+          `/api/chat/threads/${clickedMessage.threadId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "X-User-Id": String(getCurrentUserId()),
+              "X-User-Role": "USER",
+            },
           },
-        });
+        );
         if (res.ok) {
           const threadData = await res.json();
           setActiveThread(threadData);
@@ -134,33 +143,64 @@ export default function ChatPage() {
         console.error("Error fetching existing thread metadata:", err);
         return;
       }
-    }
+    } else {
+      try {
+        const res = await fetch(
+          `/api/chat/channels/${clickedMessage.channelId}/threads`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-User-Id": String(getCurrentUserId()),
+              "X-User-Role": "USER",
+            },
+            body: JSON.stringify({
+              rootMessageId: clickedMessage.id,
+              name: `Thread Discussion`,
+            }),
+          },
+        );
 
-    // Scenario B: No thread ID? Call the initializer creation path
-    try {
-      const res = await fetch(`/api/chat/channels/${clickedMessage.channelId}/threads`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-User-Id": String(getCurrentUserId()),
-          "X-User-Role": "USER",
-        },
-        body: JSON.stringify({
-          rootMessageId: clickedMessage.id,
-          name: `Thread Discussion`,
-        }),
-      });
-
-      if (res.status === 201 || res.status === 409) {
-        const threadData = await res.json();
-        setActiveThread(threadData);
-        setIsThreadOpen(true);
-      } else {
-        console.warn("Failed to initialize thread container endpoint context");
+        if (res.status === 201) {
+          const threadData = await res.json();
+          setActiveThread(threadData);
+          setIsThreadOpen(true);
+        }
+        else if(res.status === 409) { // thread already exists
+          const listRes = await fetch (`/api/chat/channels/${clickedMessage.channelId}/threads?page=1&limit=50`, {
+            method: "GET",
+            headers : {
+              "Content-Type" : "application/json",
+              "X-User-Id" : String(getCurrentUserId()),
+              "X-User-Role" : "USER",
+            },
+          });
+          if(listRes.ok){
+            const data = await listRes.json();
+            const threadList = data.content || data;
+            const existingThread = threadList.find(t => t.rootMessageId === clickedMessage.id);
+            if(existingThread){
+              setActiveThread(existingThread)
+              setIsThreadOpen(true)
+            }
+            else {
+              console.error("Conflict reported, but could not locate matching rootMessageId in thread logs.");
+            }
+          }
+        }
+        else {
+          console.warn(
+            "Failed to initialize thread container endpoint context",
+          );
+        }
+      } catch (err) {
+        console.error(
+          "Error creating/initializing thread database tracking object:",
+          err,
+        );
       }
-    } catch (err) {
-      console.error("Error creating/initializing thread database tracking object:", err);
     }
+    
   };
 
   if (loadingUser) {
@@ -183,27 +223,37 @@ export default function ChatPage() {
 
   // 🌟 THE ACCURATE STRUCTURED LAYOUT RETURN BLOCK
   return (
-    <div className="chatPage" style={{ display: "flex", width: "100vw", overflow: "hidden" }}>
+    <div
+      className="chatPage"
+      style={{ display: "flex", width: "100vw", overflow: "hidden" }}
+    >
       <WorkspaceSidebar />
-      <Sidebar activeChannel={activeChannel} setActiveChannel={setActiveChannel} />
-      
-      {/* 🌟 Pass your handleOpenThread tool down to ChatArea */}
-      <ChatArea 
-        activeChannel={activeChannel} 
-        stompClient={stompClient} 
-        onOpenThread={handleOpenThread}
+      <Sidebar
+        activeChannel={activeChannel}
+        setActiveChannel={setActiveChannel}
       />
-      
+
+      {/* 🌟 Pass your handleOpenThread tool down to ChatArea */}
+      <ChatArea
+        activeChannel={activeChannel}
+        stompClient={stompClient}
+        onOpenThread={handleOpenThread}
+        activeThread={activeThread}
+      />
+
       {/* 🌟 CONDITIONAL OVERLAY DRAWER RENDERING */}
       {isThreadOpen && activeThread && (
-        <ThreadArea 
+        <ThreadArea
           activeChannel={activeChannel}
           activeThread={activeThread}
           stompClient={stompClient}
-          onClose={() => { setIsThreadOpen(false); setActiveThread(null); }}
+          onClose={() => {
+            setIsThreadOpen(false);
+            setActiveThread(null);
+          }}
         />
       )}
-      
+
       <MembersList />
     </div>
   );
