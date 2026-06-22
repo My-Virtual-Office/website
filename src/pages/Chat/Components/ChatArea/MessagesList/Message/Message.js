@@ -112,7 +112,7 @@ export default function Message({ message, stompClient, onOpenThread }) {
           style={{ display: "flex", alignItems: "center" }}
         >
           <span className="message-user">
-            {message.user || `User ${message.senderId || "1"}`}
+            {message.senderName || message.user || `User ${message.senderId || "1"}`}
           </span>
           <span className="message-time">
             {message.time ||
