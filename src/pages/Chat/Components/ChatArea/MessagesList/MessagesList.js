@@ -136,26 +136,61 @@ export default function MessagesList({
     });
   }, [messages, userCache]);
 
+  // Build a human-friendly divider label from a message's actual timestamp.
+  // Returns "Today", "Yesterday", or a full calendar date (e.g. "June 15, 2026").
+  const getDateLabel = (timestamp) => {
+    if (!timestamp) return "";
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return "";
+
+    const startOfDay = (d) =>
+      new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+    const today = startOfDay(new Date());
+    const messageDay = startOfDay(date);
+    const dayMs = 24 * 60 * 60 * 1000;
+    const diffDays = Math.round((today - messageDay) / dayMs);
+
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
+
+    return date.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
   // 🏁 CORRECT LOCATION: Return the UI at the root function scope level!
   return (
     <div className="messages-list">
-      <div className="date-divider">
-        <span className="horizontal-divider"></span>
-        <span className="date">TODAY</span>
-        <span className="horizontal-divider"></span>
-      </div>
-      {messages.map((message) => {
+      {messages.map((message, index) => {
         // 🚀 Extract the username mapping from usersMap, state cache or give a fallback name
         const displayName = (usersMap && usersMap[message.senderId]) || userCache[message.senderId]?.username || `User ${message.senderId}`;
 
+        // Render a date divider whenever the calendar day changes between messages,
+        // using the message's own timestamp instead of the current system date.
+        const currentLabel = getDateLabel(message.createdAt);
+        const previousLabel =
+          index > 0 ? getDateLabel(messages[index - 1].createdAt) : null;
+        const showDivider = currentLabel && currentLabel !== previousLabel;
+
         return (
-          <Message
-            key={message.id}
-            // Pass the username downstream inside the message prop object directly
-            message={{ ...message, senderName: displayName }}
-            stompClient={stompClient}
-            onOpenThread={onOpenThread}
-          />
+          <div key={message.id}>
+            {showDivider && (
+              <div className="date-divider">
+                <span className="horizontal-divider"></span>
+                <span className="date">{currentLabel}</span>
+                <span className="horizontal-divider"></span>
+              </div>
+            )}
+            <Message
+              // Pass the username downstream inside the message prop object directly
+              message={{ ...message, senderName: displayName }}
+              stompClient={stompClient}
+              onOpenThread={onOpenThread}
+            />
+          </div>
         );
       })}
     </div>
