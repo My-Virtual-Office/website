@@ -1,11 +1,11 @@
 import "./ChatHeader.css";
-import LocalPhoneOutlinedIcon from "@mui/icons-material/LocalPhoneOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import NumbersIcon from "@mui/icons-material/Numbers";
+import MenuIcon from "@mui/icons-material/Menu";
 import { useState } from "react";
 import { getCurrentUserId } from "../../../../../utils/auth";
-export default function ChatHeader({ activeChannel }) {
+export default function ChatHeader({ activeChannel, onToggleSidebar }) {
   let channelNameForDisplay = "Loading...";
   if (activeChannel !== null) {
     if (activeChannel.name !== undefined) {
@@ -88,6 +88,14 @@ export default function ChatHeader({ activeChannel }) {
     <div className="chat-header">
       {/* Left Side */}
       <div className="channel-info">
+        <button
+          className="header-btn md:hidden"
+          aria-label="Open channels"
+          onClick={onToggleSidebar}
+          style={{ display: "flex", alignItems: "center" }}
+        >
+          <MenuIcon />
+        </button>
         <h3>
           <NumbersIcon></NumbersIcon>
           <span>{channelNameForDisplay}</span>
@@ -100,10 +108,6 @@ export default function ChatHeader({ activeChannel }) {
 
       {/* Right Side */}
       <div className="header-actions">
-        <button className="header-btn" aria-label="Call">
-          <LocalPhoneOutlinedIcon />
-        </button>
-
         <div
           className="info-dropdown-container"
           style={{ position: "relative" }}
