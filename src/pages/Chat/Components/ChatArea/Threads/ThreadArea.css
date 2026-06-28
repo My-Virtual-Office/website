@@ -1,22 +1,20 @@
-/* 📦 The Sidebar Container */
 .threadArea {
   display: flex;
   flex-direction: column;
-  width: 400px; /* 📍 Fixed width so it doesn't shrink */
-  min-width: 400px;
+  /* Width is now owned by the responsive Tailwind wrapper in ChatPage:
+     full-bleed overlay on mobile, docked 400px column on lg+. */
+  width: 100%;
   height: 100%;
   background-color: #1e1e2e; /* Base background */
-  border-left: 1px solid #45475a; /* 🟢 HIGHER CONTRAST: Upgraded from #313244 for a crisp separation */
-  box-sizing: border-box;
+  border-left: 1px solid #45475a; 
 }
 
-/* 🏷️ Thread Header Block */
 .thread-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  border-bottom: 1px solid #45475a; /* 🟢 HIGHER CONTRAST */
+  border-bottom: 1px solid #45475a; 
 }
 
 .thread-header-title h3 {
@@ -31,7 +29,7 @@
 .thread-close-btn {
   background: none;
   border: none;
-  color: #cdd6f4; /* 🟢 HIGHER CONTRAST */
+  color: #cdd6f4; 
   cursor: pointer;
   padding: 4px;
   display: flex;
@@ -40,34 +38,31 @@
 }
 
 .thread-close-btn:hover {
-  background-color: #45475a; /* 🟢 HIGHER CONTRAST container */
+  background-color: #45475a; 
   color: #f38ba8; /* Vibrant pastel red pops perfectly here */
 }
 
 /* 📜 Messages Scroll Feed Zone */
 .thread-messages-scroll-zone {
-  flex-grow: 1; /* 🌟 Core Rule: Absorbs all vertical space pushing the input form down */
-  overflow-y: auto;
+  flex-grow: 1; 
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-/* 📥 Thread Input Sticky Bottom Form */
 .thread-input-form {
   padding: 16px;
-  border-top: 1px solid #45475a; /* 🟢 HIGHER CONTRAST border */
-  display: flex;
+  border-top: 1px solid #45475a; 
   gap: 8px;
-  background-color: #11111b; /* 🟢 HIGHER CONTRAST: Dropped from #181825 to deepest black-hole blue to contrast better with input field */
+  background-color: #11111b; 
 }
 
 .thread-input-form input {
   flex-grow: 1;
   padding: 10px 14px;
   border-radius: 6px;
-  border: 1px solid #585b70; /* 🟢 HIGHER CONTRAST border for input field */
+  border: 1px solid #585b70; 
   background-color: #1e1e2e;
   color: #cdd6f4;
   font-size: 14px;
@@ -91,6 +86,6 @@
 
 .thread-input-form button:disabled {
   background-color: #313244;
-  color: #9399b2; /* 🟢 HIGHER CONTRAST text for disabled state */
+  color: #9399b2; 
   cursor: not-allowed;
 }
