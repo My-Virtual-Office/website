@@ -1,7 +1,77 @@
 import "./MembersList.css";
+import { useEffect, useState } from "react";
 import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
-export default function MembersList() {
-  const totalMembers = 12;
+import { getCurrentUserId } from "../../../../utils/auth";
+
+export default function MembersList({ activeChannel, usersMap = {} }) {
+  // Real membership (member user IDs + the admin/creator) for the active
+  // channel, fetched from the backend whenever the selected channel changes.
+  const [channelDetails, setChannelDetails] = useState(null);
+  const currentUserId = getCurrentUserId();
+
+  useEffect(() => {
+    if (!activeChannel?.id) {
+      setChannelDetails(null);
+      return;
+    }
+
+    let cancelled = false;
+    const fetchChannelMembers = async () => {
+      try {
+        const res = await fetch(`/api/chat/channels/${activeChannel.id}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "X-User-Id": String(getCurrentUserId()),
+            "X-User-Role": "USER",
+          },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled) setChannelDetails(data);
+        } else if (!cancelled) {
+          setChannelDetails(null);
+        }
+      } catch (err) {
+        console.error("Failed to load channel members:", err);
+        if (!cancelled) setChannelDetails(null);
+      }
+    };
+
+    fetchChannelMembers();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeChannel?.id]);
+
+  const memberIds = channelDetails?.members || [];
+  const adminId = channelDetails?.createdBy ?? null;
+
+  // The admin/creator is shown in its own section; everyone else is a member.
+  const adminIds =
+    adminId != null && memberIds.includes(adminId) ? [adminId] : [];
+  const regularMemberIds = memberIds.filter((id) => id !== adminId);
+  const totalMembers = memberIds.length;
+
+  const resolveName = (id) => usersMap[id] || `User ${id}`;
+
+  const renderMember = (id) => {
+    const isCurrentUser = String(id) === String(currentUserId);
+    return (
+      <div className="member-item" key={id}>
+        <div className="member-avatar">
+          <img src="/user.jpg" alt="user-avatar" />
+          {/* No presence backend yet — only the logged-in user is known online */}
+          {isCurrentUser && <span className="status-dot"></span>}
+        </div>
+        <div className="member-info">
+          <span className="member-name">{resolveName(id)}</span>
+          {isCurrentUser && <span className="member-status">You</span>}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="members-list-container">
@@ -11,89 +81,39 @@ export default function MembersList() {
           <h3>Members</h3>
           <span className="members-count">{totalMembers}</span>
         </div>
-        {/*  */}
+
         <div className="members-content">
-          {/* ADMINISTRATORS Section */}
-          <div className="admin">
+          {!activeChannel ? (
             <div className="section-title">
-              <span>ADMINISTRATORS — 1</span>
+              <span>SELECT A CHANNEL</span>
             </div>
+          ) : (
+            <>
+              {/* ADMINISTRATORS Section */}
+              {adminIds.length > 0 && (
+                <div className="admin">
+                  <div className="section-title">
+                    <span>ADMINISTRATORS — {adminIds.length}</span>
+                  </div>
+                  {adminIds.map(renderMember)}
+                </div>
+              )}
 
-            {/* User-4 */}
-            <div className="member-item">
-              <div className="member-avatar">
-                <img src="/user.jpg" alt="user-avatar" />
-                <span className="status-dot"></span>
+              {/* MEMBERS Section */}
+              <div className="members">
+                <div className="section-title">
+                  <span>MEMBERS — {regularMemberIds.length}</span>
+                </div>
+                {regularMemberIds.length > 0 ? (
+                  regularMemberIds.map(renderMember)
+                ) : (
+                  <span className="member-status">No other members yet</span>
+                )}
               </div>
-              <div className="member-info">
-                <span className="member-name">User-4</span>
-                <span className="member-status">Co-founder</span>
-              </div>
-            </div>
-          </div>
-          {/*  */}
-          {/* MEMBERS Section */}
-          <div className="members">
-            <div className="section-title">
-              <span>MEMBERS — 11</span>
-            </div>
-
-            {/* User-2 */}
-            <div className="member-item">
-              <div className="member-avatar">
-                <img src="/user.jpg" alt="user-avatar" />
-              </div>
-              <div className="member-info">
-                <span className="member-name">User-2</span>
-              </div>
-            </div>
-
-            {/* User-1 - Online */}
-            <div className="member-item">
-              <div className="member-avatar">
-                <img src="/user.jpg" alt="user-avatar" />
-                <span className="status-dot"></span>
-              </div>
-              <div className="member-info">
-                <span className="member-name">User-1</span>
-              </div>
-            </div>
-
-            {/* User-5 - In a meeting */}
-            <div className="member-item">
-              <div className="member-avatar">
-                <img src="/user.jpg" alt="user-avatar" />
-                <span className="status-dot"></span>
-              </div>
-              <div className="member-info">
-                <span className="member-name">User-5</span>
-                <span className="member-status">in a meeting</span>
-              </div>
-            </div>
-
-            {/* User-6 - Offline */}
-            <div className="member-item offline-member">
-              <div className="member-avatar">
-                <img src="/user.jpg" alt="user-avatar" />
-              </div>
-              <div className="member-info">
-                <span className="member-name">User-6</span>
-              </div>
-            </div>
-
-            {/* User-7 - Offline */}
-            <div className="member-item offline-member">
-              <div className="member-avatar">
-                <img src="/user.jpg" alt="user-avatar" />
-                <span className="status-dot"></span>
-              </div>
-              <div className="member-info">
-                <span className="member-name">User-7</span>
-              </div>
-            </div>
-          </div>
+            </>
+          )}
         </div>
-        {/*  */}
+
         {/* Invite Button */}
         <div className="invite-section">
           <button className="invite-btn">
