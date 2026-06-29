@@ -264,6 +264,7 @@ export default function ChatPage() {
     );
   }
 
+  
   return (
     <div className="chatPage relative flex w-screen h-screen overflow-hidden">
       {/* Workspace icon rail — tablet and up */}
@@ -271,6 +272,7 @@ export default function ChatPage() {
         <WorkspaceSidebar />
       </div>
 
+     
       {/* Backdrop for the mobile channels drawer */}
       {isSidebarOpen && (
         <div
@@ -306,6 +308,7 @@ export default function ChatPage() {
         onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
       />
 
+      
       {/* Thread panel — full-screen overlay on mobile/tablet, docked column on lg+ */}
       {isThreadOpen && activeThread && (
         <div className="fixed inset-0 z-50 w-full shrink-0 lg:static lg:inset-auto lg:z-auto lg:w-[400px]">
