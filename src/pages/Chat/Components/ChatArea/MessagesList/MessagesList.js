@@ -189,11 +189,9 @@ export default function MessagesList({
     });
   };
 
-  // 🏁 CORRECT LOCATION: Return the UI at the root function scope level!
   return (
     <div className="messages-list">
       {messages.map((message, index) => {
-        // 🚀 Extract the username mapping from usersMap, state cache or give a fallback name
         const displayName = (usersMap && usersMap[message.senderId]) || userCache[message.senderId]?.username || `User ${message.senderId}`;
 
         // Render a date divider whenever the calendar day changes between messages,

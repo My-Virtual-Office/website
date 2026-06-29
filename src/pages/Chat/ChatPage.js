@@ -18,6 +18,8 @@ export default function ChatPage() {
   const [loadingUser, setLoadingUser] = useState(true);
   const [activeThread, setActiveThread] = useState(null);
   const [isThreadOpen, setIsThreadOpen] = useState(false);
+  // Controls the channels drawer on mobile (below the `md` breakpoint).
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [usersMap, setUsersMap] = useState({
     1: "Ahmed Aly",
     2: "Roqaia Ebrahim",
@@ -79,6 +81,7 @@ export default function ChatPage() {
     if (loadingUser) return;
 
     let client;
+    let isCancelled = false;
 
     const connectWebSocket = async () => {
       try {
@@ -135,6 +138,12 @@ export default function ChatPage() {
             console.error("Additional details: " + frame.body);
           },
         });
+
+        // The effect may have been cleaned up while we were awaiting the
+        // ticket fetch. If so, don't activate an orphaned client that would
+        // reconnect forever.
+        if (isCancelled) return;
+
         client.activate();
       } catch (err) {
         console.error("Failed to connect to websocket", err);
@@ -144,12 +153,13 @@ export default function ChatPage() {
     connectWebSocket();
 
     return () => {
+      isCancelled = true;
       if (client) client.deactivate();
     };
   }, [loadingUser, navigate]);
 
   useEffect(() => {
-    console.log("🔄 activeThread state just changed to:", activeThread);
+    console.log("activeThread state just changed to:", activeThread);
   }, [activeThread]);
   const handleOpenThread = async (clickedMessage) => {
     // Scenario A: If message has a thread ID, look up its metadata immediately
@@ -256,40 +266,69 @@ export default function ChatPage() {
 
   
   return (
-    <div
-      className="chatPage"
-      style={{ display: "flex", width: "100vw", overflow: "hidden" }}
-    >
-      <WorkspaceSidebar />
-      <Sidebar
-        activeChannel={activeChannel}
-        setActiveChannel={setActiveChannel}
-      />
+    <div className="chatPage relative flex w-screen h-screen overflow-hidden">
+      {/* Workspace icon rail — tablet and up */}
+      <div className="hidden md:flex shrink-0">
+        <WorkspaceSidebar />
+      </div>
 
      
+      {/* Backdrop for the mobile channels drawer */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/30 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Channels sidebar — slide-in drawer on mobile, static column on md+ */}
+      <div
+        className={`fixed top-0 left-0 z-40 h-full shrink-0 transform transition-transform duration-300 ease-in-out md:static md:z-auto md:translate-x-0 ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <Sidebar
+          activeChannel={activeChannel}
+          setActiveChannel={(channel) => {
+            setActiveChannel(channel);
+            // Auto-dismiss the drawer once a channel is picked on mobile.
+            setIsSidebarOpen(false);
+          }}
+        />
+      </div>
+
+      {/* Main chat space — always absorbs the remaining width */}
       <ChatArea
         activeChannel={activeChannel}
         stompClient={stompClient}
         onOpenThread={handleOpenThread}
         activeThread={activeThread}
         usersMap={usersMap}
+        onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
       />
 
       
+      {/* Thread panel — full-screen overlay on mobile/tablet, docked column on lg+ */}
       {isThreadOpen && activeThread && (
-        <ThreadArea
-          activeChannel={activeChannel}
-          activeThread={activeThread}
-          stompClient={stompClient}
-          onClose={() => {
-            setIsThreadOpen(false);
-            setActiveThread(null);
-          }}
-          usersMap={usersMap}
-        />
+        <div className="fixed inset-0 z-50 w-full shrink-0 lg:static lg:inset-auto lg:z-auto lg:w-[400px]">
+          <ThreadArea
+            activeChannel={activeChannel}
+            activeThread={activeThread}
+            stompClient={stompClient}
+            onClose={() => {
+              setIsThreadOpen(false);
+              setActiveThread(null);
+            }}
+            usersMap={usersMap}
+          />
+        </div>
       )}
 
-      <MembersList activeChannel={activeChannel} usersMap={usersMap} />
+      {/* Members list — ultra-wide screens only */}
+      <div className="hidden xl:flex shrink-0">
+        <MembersList />
+      </div>
     </div>
   );
 }
