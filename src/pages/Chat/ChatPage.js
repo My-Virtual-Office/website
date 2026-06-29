@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function ChatPage() {
   const navigate = useNavigate();
-  const [activeChannel, setActiveChannel] = useState(null);
+  const [activeChannel, setActiveChannel] =  useState(null);
   const [stompClient, setStompClient] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [activeThread, setActiveThread] = useState(null);
