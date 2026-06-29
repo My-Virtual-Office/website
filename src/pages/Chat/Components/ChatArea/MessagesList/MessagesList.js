@@ -16,55 +16,50 @@ export default function MessagesList({
   const [userCache, setUserCache] = useState({});
 
   // Effect 1 : Core message loading
+  //
+  // Ordering matters here. To avoid a race condition we MUST subscribe to the
+  // live WebSocket stream BEFORE requesting history. If we fetched first, any
+  // message produced between the history response and the subscription becoming
+  // active would be received by neither source and stay invisible until reload.
   useEffect(() => {
     // Do nothing if no active channel
     if (!activeChannel?.id) return;
 
-    // 1. Fetch historical messages from backend
-    const fetchMessages = async () => {
-      try {
-        const response = await fetch(
-          `/api/chat/channels/${activeChannel.id}/messages?page=1&limit=50`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              "X-User-Id": String(getCurrentUserId()),
-              "X-User-Role": "USER",
-            },
-          },
-        );
-        if (response.ok) {
-          const data = await response.json();
-          const orderedMessages = data.content
-            ? [...data.content].reverse()
-            : [];
-          setMessages(orderedMessages);
-        } else {
-          console.error("Failed to fetch messages from server");
-        }
-      } catch (error) {
-        console.error("Error fetching messages:", error);
-      }
+    const channelId = activeChannel.id;
+    let subscription = null;
+    let isCancelled = false;
+
+    // Merge two message lists into a single continuous timeline, deduplicating
+    // by `id` so a message that appears in both the history API response and the
+    // live WebSocket stream is only rendered once. Ordering is derived from the
+    // message timestamp so history and live updates interleave correctly.
+    const mergeMessages = (existing, incoming) => {
+      const byId = new Map();
+      [...existing, ...incoming].forEach((msg) => {
+        if (msg && msg.id != null) byId.set(msg.id, msg);
+      });
+      return Array.from(byId.values()).sort(
+        (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+      );
     };
 
-    fetchMessages();
+    // Switching channels: drop the previous channel's messages so the merge
+    // below never mixes timelines from two different channels.
+    setMessages([]);
 
-    // 2. Subscribe to real-time events for this channel
-    let subscription = null;
-
+    // 1. Subscribe to real-time events FIRST, before any history is requested.
     if (stompClient && stompClient.connected) {
       subscription = stompClient.subscribe(
-        `/topic/channel/${activeChannel.id}`,
+        `/topic/channel/${channelId}`,
         (messageOutput) => {
           // Parse the raw text body into a JS object
           const event = JSON.parse(messageOutput.body);
           console.log("WebSocket Event received on main channel:", event);
           if (event.action === "NEW_MESSAGE") {
-            // Safely append new message without mutating state
+            // Append new message, deduping in case history overlaps with it.
             if (event.payload.threadId) return;
 
-            setMessages((prev) => [...prev, event.payload]);
+            setMessages((prev) => mergeMessages(prev, [event.payload]));
           } else if (event.action === "EDIT_MESSAGE") {
             // Update a specific message's text dynamically
             setMessages((prev) =>
@@ -81,8 +76,41 @@ export default function MessagesList({
       );
     }
 
+    // 2. Fetch history AFTER the subscription is active, then merge it into
+    //    whatever live messages may have already arrived (deduped by id).
+    const fetchMessages = async () => {
+      try {
+        const response = await fetch(
+          `/api/chat/channels/${channelId}/messages?page=1&limit=50`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "X-User-Id": String(getCurrentUserId()),
+              "X-User-Role": "USER",
+            },
+          },
+        );
+        if (response.ok) {
+          const data = await response.json();
+          const history = data.content ? [...data.content].reverse() : [];
+          // Guard against a late response from a channel we've already left.
+          if (!isCancelled) {
+            setMessages((prev) => mergeMessages(prev, history));
+          }
+        } else {
+          console.error("Failed to fetch messages from server");
+        }
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+      }
+    };
+
+    fetchMessages();
+
     // 3. Cleanup: Unsubscribe when changing channels or unmounting
     return () => {
+      isCancelled = true;
       if (subscription) {
         subscription.unsubscribe();
       }
