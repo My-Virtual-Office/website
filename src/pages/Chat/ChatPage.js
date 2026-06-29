@@ -254,7 +254,7 @@ export default function ChatPage() {
     );
   }
 
-  // 🌟 THE ACCURATE STRUCTURED LAYOUT RETURN BLOCK
+  
   return (
     <div
       className="chatPage"
@@ -266,7 +266,7 @@ export default function ChatPage() {
         setActiveChannel={setActiveChannel}
       />
 
-      {/* 🌟 Pass your handleOpenThread tool down to ChatArea */}
+     
       <ChatArea
         activeChannel={activeChannel}
         stompClient={stompClient}
@@ -275,7 +275,7 @@ export default function ChatPage() {
         usersMap={usersMap}
       />
 
-      {/* 🌟 CONDITIONAL OVERLAY DRAWER RENDERING */}
+      
       {isThreadOpen && activeThread && (
         <ThreadArea
           activeChannel={activeChannel}
