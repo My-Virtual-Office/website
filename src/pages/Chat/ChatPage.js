@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import { Client } from "@stomp/stompjs";
 import MembersList from "./Components/MembersList/MembersList";
 import { getCurrentUserId } from "../../utils/auth";
-import { getCurrentUser } from "../../api/user";
+import { getCurrentUser, getAllUsers } from "../../api/user";
 import { useNavigate } from "react-router-dom";
 
 export default function ChatPage() {
@@ -46,6 +46,26 @@ export default function ChatPage() {
             ...prev,
             [user.id]: `${user.firstName} ${user.lastName}`,
           }));
+        }
+
+        // Populate the shared user map with the real workspace users so that
+        // member names (and message authors) reflect actual profiles and stay
+        // in sync with backend changes instead of the static mock seed.
+        try {
+          const allUsers = await getAllUsers();
+          if (Array.isArray(allUsers)) {
+            setUsersMap((prev) => {
+              const next = { ...prev };
+              allUsers.forEach((u) => {
+                if (u && u.id != null) {
+                  next[u.id] = `${u.firstName} ${u.lastName}`.trim();
+                }
+              });
+              return next;
+            });
+          }
+        } catch (usersErr) {
+          console.error("Failed to fetch workspace users:", usersErr);
         }
       } catch (err) {
         console.error("Failed to fetch current user profile:", err);
@@ -244,6 +264,7 @@ export default function ChatPage() {
     );
   }
 
+  
   return (
     <div className="chatPage relative flex w-screen h-screen overflow-hidden">
       {/* Workspace icon rail — tablet and up */}
@@ -251,6 +272,7 @@ export default function ChatPage() {
         <WorkspaceSidebar />
       </div>
 
+     
       {/* Backdrop for the mobile channels drawer */}
       {isSidebarOpen && (
         <div
@@ -286,6 +308,7 @@ export default function ChatPage() {
         onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
       />
 
+      
       {/* Thread panel — full-screen overlay on mobile/tablet, docked column on lg+ */}
       {isThreadOpen && activeThread && (
         <div className="fixed inset-0 z-50 w-full shrink-0 lg:static lg:inset-auto lg:z-auto lg:w-[400px]">
