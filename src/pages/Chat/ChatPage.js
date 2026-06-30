@@ -4,7 +4,7 @@ import WorkspaceSidebar from "./Components/WorkspaceSidebar/WorkspaceSidebar";
 import Sidebar from "./Components/Sidebar/Sidebar";
 import ChatArea from "./Components/ChatArea/ChatArea";
 import ThreadArea from "./Components/ChatArea/Threads/ThreadArea";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Client } from "@stomp/stompjs";
 import MembersList from "./Components/MembersList/MembersList";
 import { getCurrentUserId } from "../../utils/auth";
@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function ChatPage() {
   const navigate = useNavigate();
-  const [activeChannel, setActiveChannel] =  useState(null);
+  const [activeChannel, setActiveChannel] = useState(null);
   const [stompClient, setStompClient] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [activeThread, setActiveThread] = useState(null);
@@ -30,6 +30,10 @@ export default function ChatPage() {
     7: "Mariam Ali",
   });
 
+  // A persistent reference tracking the active STOMP client structure across renders
+  const stompClientRef = useRef(null);
+
+  // Hook 1: Authenticate the current workspace user and sync the team directory map
   useEffect(() => {
     const initUser = async () => {
       const token = localStorage.getItem("token");
@@ -77,11 +81,36 @@ export default function ChatPage() {
     initUser();
   }, [navigate]);
 
+  // Hook 2: Handles single-use ticket fetching, WebSocket connection, and
+  // automatic reconnection. The ws-ticket is single-use, so STOMP's built-in
+  // reconnect (reconnectDelay) is disabled — it would replay the now-stale
+  // ticket. Instead we re-run the full ticket + activate flow ourselves with
+  // capped exponential backoff so a dropped socket recovers without a reload.
   useEffect(() => {
     if (loadingUser) return;
 
-    let client;
     let isCancelled = false;
+    let reconnectAttempts = 0;
+    let reconnectTimer = null;
+
+    const MAX_RECONNECT_DELAY = 30000;
+
+    // Back off 1s, 2s, 4s, 8s … capped, plus jitter to avoid a reconnect storm
+    // if many clients drop at once. Each attempt re-runs connectWebSocket, which
+    // fetches a brand-new ticket.
+    const scheduleReconnect = () => {
+      if (isCancelled || reconnectTimer) return;
+      const base = Math.min(1000 * 2 ** reconnectAttempts, MAX_RECONNECT_DELAY);
+      const delay = base + Math.floor(Math.random() * 1000);
+      reconnectAttempts += 1;
+      console.warn(
+        `Reconnecting WebSocket in ${delay}ms (attempt ${reconnectAttempts})...`,
+      );
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        if (!isCancelled) connectWebSocket();
+      }, delay);
+    };
 
     const connectWebSocket = async () => {
       try {
@@ -90,6 +119,18 @@ export default function ChatPage() {
           return;
         }
 
+        // Step A: Terminate any existing connection references before requesting a clean ticket.
+        // Detach the close handler first so this intentional teardown doesn't
+        // trigger another reconnect through onWebSocketClose.
+        if (stompClientRef.current) {
+          console.log("Disconnecting existing stale WebSocket connection instance...");
+          const stale = stompClientRef.current;
+          stompClientRef.current = null;
+          stale.onWebSocketClose = () => {};
+          stale.deactivate();
+        }
+
+        // Step B: Fetch a fresh, valid handshake ticket from the backend api
         const ticketRes = await fetch("/api/chat/ws-ticket", {
           method: "POST",
           headers: {
@@ -105,10 +146,14 @@ export default function ChatPage() {
             errorText,
           );
           if (ticketRes.status === 401 || ticketRes.status === 400) {
+            // Auth is unrecoverable — bounce to login, don't retry.
             localStorage.removeItem("token");
             localStorage.removeItem("userId");
             navigate("/login", { replace: true });
+            return;
           }
+          // Transient failure (5xx / network) — back off and try again.
+          scheduleReconnect();
           return;
         }
 
@@ -117,19 +162,34 @@ export default function ChatPage() {
         console.log("Fetched ticket:", ticket);
         if (!ticket) {
           console.error("Failed to fetch websocket ticket.");
+          scheduleReconnect();
           return;
         }
 
-        const wsProtocol =
-          window.location.protocol === "https:" ? "wss:" : "ws:";
+        // Safety verification check: Drop operations if the component unmounted during the HTTP ticket request
+        if (isCancelled) return;
+
+        const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
         const wsHost = window.location.host;
-        client = new Client({
+
+        // Step C: Initialize the Client directly to the mutable ref object
+        stompClientRef.current = new Client({
           brokerURL: `${wsProtocol}//${wsHost}/api/chat/connect?ticket=${ticket}`,
+
+          // Disable STOMP auto-reconnection loop since it recycles expired tickets;
+          // scheduleReconnect() drives reconnects with a fresh ticket instead.
+          reconnectDelay: 0,
+
           onConnect: () => {
             console.log("Connected to STOMP!");
-            setStompClient(client);
 
-            client.subscribe("/user/queue/errors", (msg) => {
+            // A healthy connection resets the backoff window.
+            reconnectAttempts = 0;
+
+            // Mirror current pointer context back to React state hook for downstream components
+            setStompClient(stompClientRef.current);
+
+            stompClientRef.current.subscribe("/user/queue/errors", (msg) => {
               console.error("STOMP Error:", JSON.parse(msg.body));
             });
           },
@@ -137,30 +197,43 @@ export default function ChatPage() {
             console.error("Broker reported error: " + frame.headers["message"]);
             console.error("Additional details: " + frame.body);
           },
+          onWebSocketClose: () => {
+            console.warn("WebSocket stream closed down. Clearing application state...");
+            setStompClient(null);
+            // Unexpected drop (not an intentional teardown) — attempt recovery.
+            if (!isCancelled) scheduleReconnect();
+          }
         });
 
-        // The effect may have been cleaned up while we were awaiting the
-        // ticket fetch. If so, don't activate an orphaned client that would
-        // reconnect forever.
-        if (isCancelled) return;
-
-        client.activate();
+        stompClientRef.current.activate();
       } catch (err) {
         console.error("Failed to connect to websocket", err);
+        scheduleReconnect();
       }
     };
 
     connectWebSocket();
 
+    // Cleanup phase: Teardown logic when layout dependencies switch
     return () => {
       isCancelled = true;
-      if (client) client.deactivate();
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+      if (stompClientRef.current) {
+        console.log("Deactivating active WebSocket connection reference inside cleanup.");
+        stompClientRef.current.deactivate();
+        stompClientRef.current = null;
+      }
     };
   }, [loadingUser, navigate]);
 
+  // Hook 3: Debug logging for active thread contexts
   useEffect(() => {
     console.log("activeThread state just changed to:", activeThread);
   }, [activeThread]);
+
   const handleOpenThread = async (clickedMessage) => {
     // Scenario A: If message has a thread ID, look up its metadata immediately
     if (clickedMessage.threadId) {
@@ -209,22 +282,22 @@ export default function ChatPage() {
           setActiveThread(threadData);
           setIsThreadOpen(true);
         }
-        else if(res.status === 409) { // thread already exists
-          const listRes = await fetch (`/api/chat/channels/${clickedMessage.channelId}/threads?page=1&limit=50`, {
+        else if (res.status === 409) { // thread already exists
+          const listRes = await fetch(`/api/chat/channels/${clickedMessage.channelId}/threads?page=1&limit=50`, {
             method: "GET",
-            headers : {
-              "Content-Type" : "application/json",
-              "X-User-Id" : String(getCurrentUserId()),
-              "X-User-Role" : "USER",
+            headers: {
+              "Content-Type": "application/json",
+              "X-User-Id": String(getCurrentUserId()),
+              "X-User-Role": "USER",
             },
           });
-          if(listRes.ok){
+          if (listRes.ok) {
             const data = await listRes.json();
             const threadList = data.content || data;
             const existingThread = threadList.find(t => t.rootMessageId === clickedMessage.id);
-            if(existingThread){
-              setActiveThread(existingThread)
-              setIsThreadOpen(true)
+            if (existingThread) {
+              setActiveThread(existingThread);
+              setIsThreadOpen(true);
             }
             else {
               console.error("Conflict reported, but could not locate matching rootMessageId in thread logs.");
@@ -243,7 +316,6 @@ export default function ChatPage() {
         );
       }
     }
-    
   };
 
   if (loadingUser) {
@@ -264,7 +336,6 @@ export default function ChatPage() {
     );
   }
 
-  
   return (
     <div className="chatPage relative flex w-screen h-screen overflow-hidden">
       {/* Workspace icon rail — tablet and up */}
@@ -272,7 +343,6 @@ export default function ChatPage() {
         <WorkspaceSidebar />
       </div>
 
-     
       {/* Backdrop for the mobile channels drawer */}
       {isSidebarOpen && (
         <div
@@ -308,7 +378,6 @@ export default function ChatPage() {
         onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
       />
 
-      
       {/* Thread panel — full-screen overlay on mobile/tablet, docked column on lg+ */}
       {isThreadOpen && activeThread && (
         <div className="fixed inset-0 z-50 w-full shrink-0 lg:static lg:inset-auto lg:z-auto lg:w-[400px]">
