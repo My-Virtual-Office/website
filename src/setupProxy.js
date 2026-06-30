@@ -31,6 +31,13 @@ module.exports = function (app) {
     }),
   );
   app.use(
+    "/api/tasks",
+    createProxyMiddleware({
+      target: "http://localhost:8085",
+      changeOrigin: true,
+    }),
+  );
+  app.use(
     "/ws/notifications",
     createProxyMiddleware({
       target: "http://localhost:8082",
