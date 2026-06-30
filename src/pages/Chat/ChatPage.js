@@ -81,11 +81,36 @@ export default function ChatPage() {
     initUser();
   }, [navigate]);
 
-  // Hook 2: Handles clean, single-use ticket fetching and WebSocket connections
+  // Hook 2: Handles single-use ticket fetching, WebSocket connection, and
+  // automatic reconnection. The ws-ticket is single-use, so STOMP's built-in
+  // reconnect (reconnectDelay) is disabled — it would replay the now-stale
+  // ticket. Instead we re-run the full ticket + activate flow ourselves with
+  // capped exponential backoff so a dropped socket recovers without a reload.
   useEffect(() => {
     if (loadingUser) return;
 
     let isCancelled = false;
+    let reconnectAttempts = 0;
+    let reconnectTimer = null;
+
+    const MAX_RECONNECT_DELAY = 30000;
+
+    // Back off 1s, 2s, 4s, 8s … capped, plus jitter to avoid a reconnect storm
+    // if many clients drop at once. Each attempt re-runs connectWebSocket, which
+    // fetches a brand-new ticket.
+    const scheduleReconnect = () => {
+      if (isCancelled || reconnectTimer) return;
+      const base = Math.min(1000 * 2 ** reconnectAttempts, MAX_RECONNECT_DELAY);
+      const delay = base + Math.floor(Math.random() * 1000);
+      reconnectAttempts += 1;
+      console.warn(
+        `Reconnecting WebSocket in ${delay}ms (attempt ${reconnectAttempts})...`,
+      );
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        if (!isCancelled) connectWebSocket();
+      }, delay);
+    };
 
     const connectWebSocket = async () => {
       try {
@@ -94,11 +119,15 @@ export default function ChatPage() {
           return;
         }
 
-        // Step A: Terminate any existing connection references before requesting a clean ticket
+        // Step A: Terminate any existing connection references before requesting a clean ticket.
+        // Detach the close handler first so this intentional teardown doesn't
+        // trigger another reconnect through onWebSocketClose.
         if (stompClientRef.current) {
           console.log("Disconnecting existing stale WebSocket connection instance...");
-          stompClientRef.current.deactivate();
+          const stale = stompClientRef.current;
           stompClientRef.current = null;
+          stale.onWebSocketClose = () => {};
+          stale.deactivate();
         }
 
         // Step B: Fetch a fresh, valid handshake ticket from the backend api
@@ -117,10 +146,14 @@ export default function ChatPage() {
             errorText,
           );
           if (ticketRes.status === 401 || ticketRes.status === 400) {
+            // Auth is unrecoverable — bounce to login, don't retry.
             localStorage.removeItem("token");
             localStorage.removeItem("userId");
             navigate("/login", { replace: true });
+            return;
           }
+          // Transient failure (5xx / network) — back off and try again.
+          scheduleReconnect();
           return;
         }
 
@@ -129,6 +162,7 @@ export default function ChatPage() {
         console.log("Fetched ticket:", ticket);
         if (!ticket) {
           console.error("Failed to fetch websocket ticket.");
+          scheduleReconnect();
           return;
         }
 
@@ -141,13 +175,17 @@ export default function ChatPage() {
         // Step C: Initialize the Client directly to the mutable ref object
         stompClientRef.current = new Client({
           brokerURL: `${wsProtocol}//${wsHost}/api/chat/connect?ticket=${ticket}`,
-          
-          // Disable STOMP auto-reconnection loop since it recycles expired tickets
+
+          // Disable STOMP auto-reconnection loop since it recycles expired tickets;
+          // scheduleReconnect() drives reconnects with a fresh ticket instead.
           reconnectDelay: 0,
 
           onConnect: () => {
             console.log("Connected to STOMP!");
-            
+
+            // A healthy connection resets the backoff window.
+            reconnectAttempts = 0;
+
             // Mirror current pointer context back to React state hook for downstream components
             setStompClient(stompClientRef.current);
 
@@ -162,12 +200,15 @@ export default function ChatPage() {
           onWebSocketClose: () => {
             console.warn("WebSocket stream closed down. Clearing application state...");
             setStompClient(null);
+            // Unexpected drop (not an intentional teardown) — attempt recovery.
+            if (!isCancelled) scheduleReconnect();
           }
         });
 
         stompClientRef.current.activate();
       } catch (err) {
         console.error("Failed to connect to websocket", err);
+        scheduleReconnect();
       }
     };
 
@@ -176,6 +217,10 @@ export default function ChatPage() {
     // Cleanup phase: Teardown logic when layout dependencies switch
     return () => {
       isCancelled = true;
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
       if (stompClientRef.current) {
         console.log("Deactivating active WebSocket connection reference inside cleanup.");
         stompClientRef.current.deactivate();

@@ -12,9 +12,6 @@ export default function MessagesList({
 }) {
   const [messages, setMessages] = useState([]);
 
-  // cache object to map raw user ids to real names.
-  const [userCache, setUserCache] = useState({});
-
   // Effect 1 : Core message loading
   //
   // Ordering matters here. To avoid a race condition we MUST subscribe to the
@@ -117,53 +114,6 @@ export default function MessagesList({
     };
   }, [activeChannel, stompClient]);
 
-  // Effect 2 : Watch messages to dynamically fetch missing usernames
-  useEffect(() => {
-    if (messages.length === 0) return;
-    const senderIds = messages.map((m) => m.senderId).filter(Boolean);
-    const uniqueMissingIds = [...new Set(senderIds)].filter(
-      (id) => !userCache[id],
-    );
-    if (uniqueMissingIds.length === 0) return;
-
-    uniqueMissingIds.forEach(async (id) => {
-      try {
-        // 1. Make the live network request to your user service backend
-        const res = await fetch(`/api/users/${id}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "X-User-Id": String(getCurrentUserId()),
-            "X-User-Role": "USER",
-          },
-        });
-
-        let resolvedName = `User #${id}`;
-
-        if (res.ok) {
-          const userData = await res.json();
-          resolvedName = userData.username || userData.name || `User #${id}`;
-        } else {
-          console.warn(`Profile route returned status ${res.status} for User ID ${id}. Using fallback.`);
-          
-        }
-
-        // 3. Hydrate the local cache state with the real data
-        setUserCache((prev) => ({
-          ...prev,
-          [id]: { username: resolvedName }
-        }));
-
-      } catch (err) {
-        console.error(`Network error resolving profile data for User ID ${id}:`, err);
-        setUserCache((prev) => ({
-          ...prev,
-          [id]: { username: Number(id) === getCurrentUserId() ? "You" : `User #${id}` }
-        }));
-      }
-    });
-  }, [messages, userCache]);
-
   // Build a human-friendly divider label from a message's actual timestamp.
   // Returns "Today", "Yesterday", or a full calendar date (e.g. "June 15, 2026").
   const getDateLabel = (timestamp) => {
@@ -192,7 +142,7 @@ export default function MessagesList({
   return (
     <div className="messages-list">
       {messages.map((message, index) => {
-        const displayName = (usersMap && usersMap[message.senderId]) || userCache[message.senderId]?.username || `User ${message.senderId}`;
+        const displayName = (usersMap && usersMap[message.senderId]) || `User ${message.senderId}`;
 
         // Render a date divider whenever the calendar day changes between messages,
         // using the message's own timestamp instead of the current system date.
