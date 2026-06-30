@@ -1,13 +1,23 @@
 import "./MembersList.css";
 import { useEffect, useState } from "react";
 import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
+import AssignmentIndOutlinedIcon from "@mui/icons-material/AssignmentIndOutlined";
 import { getCurrentUserId } from "../../../../utils/auth";
+import AssignTaskModal from "../../../../components/AssignTaskModal/AssignTaskModal";
 
 export default function MembersList({ activeChannel, usersMap = {} }) {
   // Real membership (member user IDs + the admin/creator) for the active
   // channel, fetched from the backend whenever the selected channel changes.
   const [channelDetails, setChannelDetails] = useState(null);
+  // Task-assignment modal: which member it opens preselected, and whether it's open.
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assignTargetId, setAssignTargetId] = useState(null);
   const currentUserId = getCurrentUserId();
+
+  const openAssign = (id) => {
+    setAssignTargetId(id);
+    setAssignOpen(true);
+  };
 
   useEffect(() => {
     if (!activeChannel?.id) {
@@ -69,6 +79,17 @@ export default function MembersList({ activeChannel, usersMap = {} }) {
           <span className="member-name">{resolveName(id)}</span>
           {isCurrentUser && <span className="member-status">You</span>}
         </div>
+        {!isCurrentUser && (
+          <button
+            type="button"
+            className="member-assign-btn"
+            title={`Assign a task to ${resolveName(id)}`}
+            aria-label={`Assign a task to ${resolveName(id)}`}
+            onClick={() => openAssign(id)}
+          >
+            <AssignmentIndOutlinedIcon fontSize="small" />
+          </button>
+        )}
       </div>
     );
   };
@@ -122,6 +143,16 @@ export default function MembersList({ activeChannel, usersMap = {} }) {
           </button>
         </div>
       </div>
+
+      <AssignTaskModal
+        open={assignOpen}
+        onClose={() => setAssignOpen(false)}
+        members={memberIds}
+        usersMap={usersMap}
+        currentUserId={currentUserId}
+        defaultAssigneeId={assignTargetId}
+        workspaceId={activeChannel?.workspaceId}
+      />
     </div>
   );
 }
