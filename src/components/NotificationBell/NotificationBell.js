@@ -62,6 +62,12 @@ export default function NotificationBell() {
 
   const containerRef = useRef(null);
   const stompRef = useRef(null);
+  // Mirrors `open` so the once-mounted WebSocket effect can read the current
+  // value without re-subscribing whenever the dropdown toggles.
+  const openRef = useRef(open);
+  useEffect(() => {
+    openRef.current = open;
+  }, [open]);
 
   const recomputeUnread = useCallback((list) => {
     setUnread(list.filter((n) => !n.read).length);
@@ -85,6 +91,22 @@ export default function NotificationBell() {
     }
   }, []);
 
+  // After the live stream drops and recovers there may be a gap during which
+  // pushed events were missed. Re-sync from REST: reload the whole list if the
+  // dropdown is open, otherwise just keep the unread badge accurate.
+  const refreshAfterReconnect = useCallback(async () => {
+    if (openRef.current) {
+      loadInbox();
+      return;
+    }
+    try {
+      const data = await getUnreadCount();
+      setUnread(data.unread || 0);
+    } catch (err) {
+      console.error("Failed to refresh unread count after reconnect:", err);
+    }
+  }, [loadInbox]);
+
   // Initial unread count so the badge is accurate before the dropdown is opened.
   useEffect(() => {
     let cancelled = false;
@@ -101,41 +123,100 @@ export default function NotificationBell() {
     };
   }, []);
 
-  // Real-time stream: subscribe to /user/queue/notifications and prepend any
-  // pushed notification, bumping the badge live. Best-effort — the polled
-  // count and on-open fetch keep things correct if the socket never connects.
+  // Real-time stream: keep a live STOMP subscription to /user/queue/notifications
+  // so pushed notifications appear instantly and bump the badge. The ws-ticket is
+  // single-use (consumed atomically server-side), so we never reuse one — every
+  // (re)connect fetches a fresh ticket. STOMP's own reconnect is disabled for the
+  // same reason; we drive reconnection here with capped exponential backoff and
+  // re-sync from REST on each successful reconnect so no event is missed.
   useEffect(() => {
     let cancelled = false;
+    let reconnectAttempts = 0;
+    let reconnectTimer = null;
+    let hasConnected = false;
+
+    const MAX_RECONNECT_DELAY = 30000;
+
+    // Back off 1s, 2s, 4s, 8s … capped at 30s, plus jitter to avoid a reconnect
+    // storm. Each attempt re-runs connect(), which fetches a brand-new ticket.
+    const scheduleReconnect = () => {
+      if (cancelled || reconnectTimer) return;
+      const base = Math.min(1000 * 2 ** reconnectAttempts, MAX_RECONNECT_DELAY);
+      const delay = base + Math.floor(Math.random() * 1000);
+      reconnectAttempts += 1;
+      console.warn(
+        `Reconnecting notification stream in ${delay}ms (attempt ${reconnectAttempts})...`,
+      );
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        if (!cancelled) connect();
+      }, delay);
+    };
 
     const connect = async () => {
       try {
+        // Tear down any prior client first. Detach its close handler so this
+        // intentional teardown doesn't itself trigger another reconnect.
+        if (stompRef.current) {
+          const stale = stompRef.current;
+          stompRef.current = null;
+          stale.onWebSocketClose = () => {};
+          stale.deactivate();
+        }
+
         const { ticket } = await getNotificationTicket();
-        if (!ticket || cancelled) return;
+        if (cancelled) return;
+        if (!ticket) {
+          console.error("Notification ticket missing — will retry.");
+          scheduleReconnect();
+          return;
+        }
 
         const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
         const wsHost = window.location.host;
 
         const client = new Client({
           brokerURL: `${wsProtocol}//${wsHost}/ws/notifications?ticket=${ticket}`,
+          // Disabled on purpose: the built-in loop would replay the now-consumed
+          // ticket. scheduleReconnect() reconnects with a fresh ticket instead.
           reconnectDelay: 0,
           onConnect: () => {
-            client.subscribe("/user/queue/notifications", (msg) => {
-              try {
-                const event = JSON.parse(msg.body);
-                if (event.action === "NEW_NOTIFICATION" && event.payload) {
-                  setItems((prev) => {
-                    if (prev.some((n) => n.id === event.payload.id)) return prev;
-                    return [event.payload, ...prev];
-                  });
-                  if (!event.payload.read) setUnread((c) => c + 1);
+            const wasReconnect = hasConnected;
+            hasConnected = true;
+            reconnectAttempts = 0; // a healthy connection resets the backoff
+
+            try {
+              client.subscribe("/user/queue/notifications", (msg) => {
+                try {
+                  const event = JSON.parse(msg.body);
+                  if (event.action === "NEW_NOTIFICATION" && event.payload) {
+                    setItems((prev) => {
+                      if (prev.some((n) => n.id === event.payload.id)) return prev;
+                      return [event.payload, ...prev];
+                    });
+                    if (!event.payload.read) setUnread((c) => c + 1);
+                  }
+                } catch (e) {
+                  console.error("Bad notification frame:", e);
                 }
-              } catch (e) {
-                console.error("Bad notification frame:", e);
-              }
-            });
+              });
+            } catch (e) {
+              console.error("Failed to subscribe to notification queue:", e);
+            }
+
+            // Only after a *re*connect: re-sync from REST to backfill anything
+            // pushed while the socket was down.
+            if (wasReconnect) refreshAfterReconnect();
           },
           onStompError: (frame) => {
             console.error("Notification broker error:", frame.headers["message"]);
+          },
+          onWebSocketError: (evt) => {
+            console.error("Notification websocket error:", evt?.message || evt);
+          },
+          onWebSocketClose: () => {
+            // Unexpected drop (not an intentional teardown) — recover with backoff.
+            if (!cancelled) scheduleReconnect();
           },
         });
 
@@ -143,6 +224,7 @@ export default function NotificationBell() {
         client.activate();
       } catch (err) {
         console.error("Notification websocket setup failed:", err);
+        scheduleReconnect();
       }
     };
 
@@ -150,12 +232,16 @@ export default function NotificationBell() {
 
     return () => {
       cancelled = true;
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
       if (stompRef.current) {
         stompRef.current.deactivate();
         stompRef.current = null;
       }
     };
-  }, []);
+  }, [refreshAfterReconnect]);
 
   // Close the dropdown when clicking outside it.
   useEffect(() => {
