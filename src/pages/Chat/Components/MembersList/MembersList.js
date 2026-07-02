@@ -1,6 +1,5 @@
 import "./MembersList.css";
 import { useEffect, useState } from "react";
-import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
 import { getCurrentUserId } from "../../../../utils/auth";
 
 export default function MembersList({ activeChannel, usersMap = {} }) {
@@ -8,6 +7,8 @@ export default function MembersList({ activeChannel, usersMap = {} }) {
   // channel, fetched from the backend whenever the selected channel changes.
   const [channelDetails, setChannelDetails] = useState(null);
   const currentUserId = getCurrentUserId();
+
+ 
 
   useEffect(() => {
     if (!activeChannel?.id) {
@@ -69,6 +70,7 @@ export default function MembersList({ activeChannel, usersMap = {} }) {
           <span className="member-name">{resolveName(id)}</span>
           {isCurrentUser && <span className="member-status">You</span>}
         </div>
+       
       </div>
     );
   };
@@ -115,13 +117,14 @@ export default function MembersList({ activeChannel, usersMap = {} }) {
         </div>
 
         {/* Invite Button */}
-        <div className="invite-section">
+        {/* <div className="invite-section">
           <button className="invite-btn">
             <PersonAddAltOutlinedIcon></PersonAddAltOutlinedIcon>
             <span>Invite Member</span>
           </button>
-        </div>
+        </div> */}
       </div>
+
     </div>
   );
 }
