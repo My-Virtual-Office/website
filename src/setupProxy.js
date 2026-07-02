@@ -17,13 +17,12 @@ module.exports = function (app) {
   );
   app.use(
     "/api/chat",
-    createProxyMiddleware("/api/chat", {
+    createProxyMiddleware({
       target: "http://localhost:8084",
       changeOrigin: true,
-      ws: true,
+      ws: true, // Required for WebSockets to upgrade correctly
     }),
   );
-
   app.use(
     "/api/tasks",
     createProxyMiddleware({
