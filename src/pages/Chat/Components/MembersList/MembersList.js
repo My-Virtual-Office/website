@@ -1,6 +1,5 @@
 import "./MembersList.css";
 import { useEffect, useState } from "react";
-import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
 import AssignmentIndOutlinedIcon from "@mui/icons-material/AssignmentIndOutlined";
 import { getCurrentUserId } from "../../../../utils/auth";
 import AssignTaskModal from "../../../../components/AssignTaskModal/AssignTaskModal";
@@ -136,12 +135,12 @@ export default function MembersList({ activeChannel, usersMap = {} }) {
         </div>
 
         {/* Invite Button */}
-        <div className="invite-section">
+        {/* <div className="invite-section">
           <button className="invite-btn">
             <PersonAddAltOutlinedIcon></PersonAddAltOutlinedIcon>
             <span>Invite Member</span>
           </button>
-        </div>
+        </div> */}
       </div>
 
       <AssignTaskModal

@@ -5,7 +5,7 @@ import NumbersIcon from "@mui/icons-material/Numbers";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useState } from "react";
 import { getCurrentUserId } from "../../../../../utils/auth";
-import NotificationBell from "../../../../../components/NotificationBell/NotificationBell";
+
 export default function ChatHeader({ activeChannel, onToggleSidebar }) {
   let channelNameForDisplay = "Loading...";
   if (activeChannel !== null) {
@@ -109,7 +109,7 @@ export default function ChatHeader({ activeChannel, onToggleSidebar }) {
 
       {/* Right Side */}
       <div className="header-actions">
-        <NotificationBell />
+
 
         <div
           className="info-dropdown-container"
