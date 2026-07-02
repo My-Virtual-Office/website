@@ -396,7 +396,7 @@ export default function ChatPage() {
 
       {/* Members list — ultra-wide screens only */}
       <div className="hidden xl:flex shrink-0">
-        <MembersList />
+        <MembersList activeChannel={activeChannel} usersMap={usersMap} />
       </div>
     </div>
   );

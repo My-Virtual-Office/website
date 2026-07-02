@@ -114,7 +114,6 @@ export default function AssignTaskModal({
           <div className="assign-task-success">
             <CheckCircleOutlineIcon />
             <p>Task assigned to {resolveName(Number(assigneeId))}</p>
-            <span>They&apos;ll get a notification right away.</span>
           </div>
         ) : (
           <form className="assign-task-body" onSubmit={handleSubmit}>
