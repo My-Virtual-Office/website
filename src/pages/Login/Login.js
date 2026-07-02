@@ -26,7 +26,7 @@ export default function Login() {
         password: password,
       });
 
-      if (!response.token || !response) {
+      if (!response || !response.token) {
         setError("Invalid email or password.");
         setLoading(false);
         return;
