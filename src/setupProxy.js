@@ -1,6 +1,28 @@
 const { createProxyMiddleware } = require("http-proxy-middleware");
 
+let wsProxySubscribed = false;
+
 module.exports = function (app) {
+  const chatProxy = createProxyMiddleware({
+    target: "http://localhost:8084",
+    changeOrigin: true,
+  });
+
+  app.use("/api/chat", (req, res, next) => {
+    if (!wsProxySubscribed) {
+      const server = req.socket?.server;
+      if (server) {
+        server.on("upgrade", (upgradeReq, socket, head) => {
+          if (upgradeReq.url.startsWith("/api/chat")) {
+            chatProxy.upgrade(upgradeReq, socket, head);
+          }
+        });
+        wsProxySubscribed = true;
+      }
+    }
+    return chatProxy(req, res, next);
+  });
+
   app.use(
     "/api/auth",
     createProxyMiddleware({
@@ -16,19 +38,10 @@ module.exports = function (app) {
     }),
   );
   app.use(
-    "/api/chat",
-    createProxyMiddleware({
-      target: "http://localhost:8084",
-      changeOrigin: true,
-      ws: true, // Required for WebSockets to upgrade correctly
-    }),
-  );
-  app.use(
     "/api/tasks",
     createProxyMiddleware({
       target: "http://localhost:8085",
       changeOrigin: true,
     }),
   );
-
 };
