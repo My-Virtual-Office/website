@@ -5,8 +5,8 @@ import Sidebar from "./Components/Sidebar/Sidebar";
 import ChatArea from "./Components/ChatArea/ChatArea";
 import { useState, useEffect } from "react";
 import { Client } from "@stomp/stompjs";
+import { fetchChatTicket, wsChatUrl } from "../../ws/chatStompClient";
 import MembersList from "./Components/MembersList/MembersList";
-import { getCurrentUserId } from "../../utils/auth";
 import { getCurrentUser } from "../../api/user";
 import { useNavigate } from "react-router-dom"; // 🌟 Import useNavigate
 
@@ -54,42 +54,16 @@ export default function ChatPage() {
           return;
         }
 
-        const ticketRes = await fetch("/api/chat/ws-ticket", {
-          method: "POST",
-          headers: {
-            "X-User-Id": String(getCurrentUserId()),
-            "X-User-Role": "USER",
-          },
-        });
-
-        if (!ticketRes.ok) {
-          const errorText = await ticketRes.text();
-          console.error(
-            "Failed to fetch websocket ticket. Server returned:",
-            errorText,
-          );
-          // If the handshake fails because of an authentication error, clean up
-          if (ticketRes.status === 401 || ticketRes.status === 400) {
-            localStorage.removeItem("token");
-            localStorage.removeItem("userId");
-            navigate("/login", { replace: true });
-          }
-          return;
-        }
-
-        const data = await ticketRes.json();
-        const ticket = data.ticket;
+        const ticket = await fetchChatTicket();
         console.log("Fetched ticket:", ticket);
-        if (!ticket) {
-          console.error("Failed to fetch websocket ticket.");
-          return;
-        }
 
-        const wsProtocol =
-          window.location.protocol === "https:" ? "wss:" : "ws:";
-        const wsHost = window.location.host;
         client = new Client({
-          brokerURL: `${wsProtocol}//${wsHost}/api/chat/connect?ticket=${ticket}`,
+          brokerURL: wsChatUrl(ticket),
+          reconnectDelay: 5000,
+          beforeConnect: async () => {
+            const freshTicket = await fetchChatTicket();
+            client.brokerURL = wsChatUrl(freshTicket);
+          },
           onConnect: () => {
             console.log("Connected to STOMP!");
             setStompClient(client);
@@ -102,10 +76,18 @@ export default function ChatPage() {
             console.error("Broker reported error: " + frame.headers["message"]);
             console.error("Additional details: " + frame.body);
           },
+          onWebSocketError: (event) => {
+            console.error("Chat WebSocket error:", event);
+          },
         });
         client.activate();
       } catch (err) {
         console.error("Failed to connect to websocket", err);
+        if (err.status === 401 || err.status === 400) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("userId");
+          navigate("/login", { replace: true });
+        }
       }
     };
 

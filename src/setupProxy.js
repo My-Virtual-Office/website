@@ -4,14 +4,14 @@ module.exports = function (app) {
   app.use(
     "/api/auth",
     createProxyMiddleware({
-      target: "http://localhost:8081",
+      target: "http://localhost:8091",
       changeOrigin: true,
     }),
   );
   app.use(
     "/api/users",
     createProxyMiddleware({
-      target: "http://localhost:8081",
+      target: "http://localhost:8091",
       changeOrigin: true,
     }),
   );
@@ -20,7 +20,13 @@ module.exports = function (app) {
     createProxyMiddleware({
       target: "http://localhost:8084",
       changeOrigin: true,
-      ws: true,
+    }),
+  );
+  app.use(
+    "/api/notifications",
+    createProxyMiddleware({
+      target: "http://localhost:8082",
+      changeOrigin: true,
     }),
   );
 };
