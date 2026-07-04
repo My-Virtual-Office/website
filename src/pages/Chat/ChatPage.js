@@ -3,22 +3,37 @@ import "./ChatPage.css";
 import WorkspaceSidebar from "./Components/WorkspaceSidebar/WorkspaceSidebar";
 import Sidebar from "./Components/Sidebar/Sidebar";
 import ChatArea from "./Components/ChatArea/ChatArea";
-import { useState, useEffect } from "react";
+import ThreadArea from "./Components/ChatArea/Threads/ThreadArea";
+import { useState, useEffect, useRef } from "react";
 import { Client } from "@stomp/stompjs";
 import { fetchChatTicket, wsChatUrl } from "../../ws/chatStompClient";
 import MembersList from "./Components/MembersList/MembersList";
-import { getCurrentUser } from "../../api/user";
-import { useNavigate } from "react-router-dom"; // 🌟 Import useNavigate
+import { getCurrentUserId } from "../../utils/auth";
+import { getCurrentUser, getAllUsers } from "../../api/user";
+import { useNavigate } from "react-router-dom";
 
 export default function ChatPage() {
-  const navigate = useNavigate(); // 🌟 Define navigate hook
+  const navigate = useNavigate();
   const [activeChannel, setActiveChannel] = useState(null);
   const [stompClient, setStompClient] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
+  const [activeThread, setActiveThread] = useState(null);
+  const [isThreadOpen, setIsThreadOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [usersMap, setUsersMap] = useState({
+    1: "Ahmed Aly",
+    2: "Roqaia Ebrahim",
+    3: "Sara Mostafa",
+    4: "Co-founder Admin",
+    5: "Youssef Mohamed",
+    6: "Nour Hassan",
+    7: "Mariam Ali",
+  });
+
+  const stompClientRef = useRef(null);
 
   useEffect(() => {
     const initUser = async () => {
-      // 🌟 PROACTIVE CHECK 1: If there is no token right at the start, don't even try to fetch a profile
       const token = localStorage.getItem("token");
       if (!token) {
         navigate("/login", { replace: true });
@@ -29,10 +44,30 @@ export default function ChatPage() {
         const user = await getCurrentUser();
         if (user && user.id) {
           localStorage.setItem("userId", String(user.id));
+          setUsersMap((prev) => ({
+            ...prev,
+            [user.id]: `${user.firstName} ${user.lastName}`,
+          }));
+        }
+
+        try {
+          const allUsers = await getAllUsers();
+          if (Array.isArray(allUsers)) {
+            setUsersMap((prev) => {
+              const next = { ...prev };
+              allUsers.forEach((u) => {
+                if (u && u.id != null) {
+                  next[u.id] = `${u.firstName} ${u.lastName}`.trim();
+                }
+              });
+              return next;
+            });
+          }
+        } catch (usersErr) {
+          console.error("Failed to fetch workspace users:", usersErr);
         }
       } catch (err) {
         console.error("Failed to fetch current user profile:", err);
-        // If the user profile request fails (e.g. 401 token invalid/expired), throw them out
         navigate("/login", { replace: true });
       } finally {
         setLoadingUser(false);
@@ -48,10 +83,16 @@ export default function ChatPage() {
 
     const connectWebSocket = async () => {
       try {
-        // 🌟 PROACTIVE CHECK 2: Double check token existence right before starting the WebSocket ticket pipeline
         if (!localStorage.getItem("token")) {
           navigate("/login", { replace: true });
           return;
+        }
+
+        if (stompClientRef.current) {
+          const stale = stompClientRef.current;
+          stompClientRef.current = null;
+          stale.onWebSocketClose = () => {};
+          stale.deactivate();
         }
 
         const ticket = await fetchChatTicket();
@@ -67,6 +108,7 @@ export default function ChatPage() {
           onConnect: () => {
             console.log("Connected to STOMP!");
             setStompClient(client);
+            stompClientRef.current = client;
 
             client.subscribe("/user/queue/errors", (msg) => {
               console.error("STOMP Error:", JSON.parse(msg.body));
@@ -79,7 +121,13 @@ export default function ChatPage() {
           onWebSocketError: (event) => {
             console.error("Chat WebSocket error:", event);
           },
+          onWebSocketClose: () => {
+            console.warn("WebSocket stream closed down. Clearing application state...");
+            setStompClient(null);
+            stompClientRef.current = null;
+          },
         });
+
         client.activate();
       } catch (err) {
         console.error("Failed to connect to websocket", err);
@@ -94,9 +142,99 @@ export default function ChatPage() {
     connectWebSocket();
 
     return () => {
-      if (client) client.deactivate();
+      if (client) {
+        client.deactivate();
+        stompClientRef.current = null;
+      }
     };
   }, [loadingUser, navigate]);
+
+  useEffect(() => {
+    console.log("activeThread state just changed to:", activeThread);
+  }, [activeThread]);
+
+  const handleOpenThread = async (clickedMessage) => {
+    if (clickedMessage.threadId) {
+      try {
+        const res = await fetch(
+          `/api/chat/threads/${clickedMessage.threadId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "X-User-Id": String(getCurrentUserId()),
+              "X-User-Role": "USER",
+            },
+          },
+        );
+        if (res.ok) {
+          const threadData = await res.json();
+          setActiveThread(threadData);
+          setIsThreadOpen(true);
+          return;
+        }
+      } catch (err) {
+        console.error("Error fetching existing thread metadata:", err);
+        return;
+      }
+    } else {
+      try {
+        const res = await fetch(
+          `/api/chat/channels/${clickedMessage.channelId}/threads`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-User-Id": String(getCurrentUserId()),
+              "X-User-Role": "USER",
+            },
+            body: JSON.stringify({
+              rootMessageId: clickedMessage.id,
+              name: `Thread Discussion`,
+            }),
+          },
+        );
+
+        if (res.status === 201) {
+          const threadData = await res.json();
+          setActiveThread(threadData);
+          setIsThreadOpen(true);
+        }
+        else if (res.status === 409) {
+          const listRes = await fetch(`/api/chat/channels/${clickedMessage.channelId}/threads?page=1&limit=50`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "X-User-Id": String(getCurrentUserId()),
+              "X-User-Role": "USER",
+            },
+          });
+          if (listRes.ok) {
+            const data = await listRes.json();
+            const threadList = data.content || data;
+            const existingThread = threadList.find(t => t.rootMessageId === clickedMessage.id);
+            if (existingThread) {
+              setActiveThread(existingThread);
+              setIsThreadOpen(true);
+            }
+            else {
+              console.error("Conflict reported, but could not locate matching rootMessageId in thread logs.");
+            }
+          }
+        }
+        else {
+          console.warn(
+            "Failed to initialize thread container endpoint context",
+          );
+        }
+      } catch (err) {
+        console.error(
+          "Error creating/initializing thread database tracking object:",
+          err,
+        );
+      }
+    }
+  };
 
   if (loadingUser) {
     return (
@@ -117,14 +255,60 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="chatPage">
-      <WorkspaceSidebar></WorkspaceSidebar>
-      <Sidebar
+    <div className="chatPage relative flex w-screen h-screen overflow-hidden">
+      <div className="hidden md:flex shrink-0">
+        <WorkspaceSidebar />
+      </div>
+
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/30 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <div
+        className={`fixed top-0 left-0 z-40 h-full shrink-0 transform transition-transform duration-300 ease-in-out md:static md:z-auto md:translate-x-0 ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <Sidebar
+          activeChannel={activeChannel}
+          setActiveChannel={(channel) => {
+            setActiveChannel(channel);
+            setIsSidebarOpen(false);
+          }}
+        />
+      </div>
+
+      <ChatArea
         activeChannel={activeChannel}
-        setActiveChannel={setActiveChannel}
+        stompClient={stompClient}
+        onOpenThread={handleOpenThread}
+        activeThread={activeThread}
+        usersMap={usersMap}
+        onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
       />
-      <ChatArea activeChannel={activeChannel} stompClient={stompClient} />
-      <MembersList></MembersList>
+
+      {isThreadOpen && activeThread && (
+        <div className="fixed inset-0 z-50 w-full shrink-0 lg:static lg:inset-auto lg:z-auto lg:w-[400px]">
+          <ThreadArea
+            activeChannel={activeChannel}
+            activeThread={activeThread}
+            stompClient={stompClient}
+            onClose={() => {
+              setIsThreadOpen(false);
+              setActiveThread(null);
+            }}
+            usersMap={usersMap}
+          />
+        </div>
+      )}
+
+      <div className="hidden xl:flex shrink-0">
+        <MembersList activeChannel={activeChannel} usersMap={usersMap} />
+      </div>
     </div>
   );
 }

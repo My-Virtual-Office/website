@@ -11,6 +11,17 @@ import SettingsModal from "../SettingsModal/SettingsModal";
 import { getUserPhoto } from "../../../../api/user";
 import { getCurrentUserId } from "../../../../utils/auth";
 import NotificationsMenu from "../../../../components/NotificationsMenu";
+
+const MOCK_USERS = {
+  1: "Ahmed Aly",
+  2: "Roqaia Ebrahim",
+  3: "Sara Mostafa",
+  4: "Co-founder Admin",
+  5: "Youssef Mohamed",
+  6: "Nour Hassan",
+  7: "Mariam Ali",
+};
+
 export default function Sidebar({ activeChannel, setActiveChannel }) {
   // Channels state
   const [channels, setChannels] = useState([]);
@@ -259,7 +270,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
                 const otherUserId = dm.members?.find((m) => m !== currentId);
                 const dmDisplayName = dm.name
                   ? dm.name
-                  : `User ${otherUserId || "X"}`;
+                  : (MOCK_USERS[otherUserId] || `User ${otherUserId || "X"}`);
 
                 return (
                   <div
