@@ -62,11 +62,11 @@ height: 24px; */
 }
 /* Right-side */
 .header-actions {
-  width: 326px;
   height: 28px;
   display: flex;
   flex-direction: row;
-  justify-content: center;
+  align-items: center;
+  justify-content: flex-end;
   gap: 8px;
 }
 .header-btn {
