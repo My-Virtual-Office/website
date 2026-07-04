@@ -3,22 +3,40 @@ import "./ChatPage.css";
 import WorkspaceSidebar from "./Components/WorkspaceSidebar/WorkspaceSidebar";
 import Sidebar from "./Components/Sidebar/Sidebar";
 import ChatArea from "./Components/ChatArea/ChatArea";
-import { useState, useEffect } from "react";
+import ThreadArea from "./Components/ChatArea/Threads/ThreadArea";
+import { useState, useEffect, useRef } from "react";
 import { Client } from "@stomp/stompjs";
 import { fetchChatTicket, wsChatUrl } from "../../ws/chatStompClient";
 import MembersList from "./Components/MembersList/MembersList";
-import { getCurrentUser } from "../../api/user";
-import { useNavigate } from "react-router-dom"; // 🌟 Import useNavigate
+import { getCurrentUserId } from "../../utils/auth";
+import { getCurrentUser, getAllUsers } from "../../api/user";
+import { useNavigate } from "react-router-dom";
 
 export default function ChatPage() {
-  const navigate = useNavigate(); // 🌟 Define navigate hook
+  const navigate = useNavigate();
   const [activeChannel, setActiveChannel] = useState(null);
   const [stompClient, setStompClient] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
+  const [activeThread, setActiveThread] = useState(null);
+  const [isThreadOpen, setIsThreadOpen] = useState(false);
+  // Controls the channels drawer on mobile (below the `md` breakpoint).
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [usersMap, setUsersMap] = useState({
+    1: "Ahmed Aly",
+    2: "Roqaia Ebrahim",
+    3: "Sara Mostafa",
+    4: "Co-founder Admin",
+    5: "Youssef Mohamed",
+    6: "Nour Hassan",
+    7: "Mariam Ali",
+  });
 
+  // A persistent reference tracking the active STOMP client structure across renders
+  const stompClientRef = useRef(null);
+
+  // Hook 1: Authenticate the current workspace user and sync the team directory map
   useEffect(() => {
     const initUser = async () => {
-      // 🌟 PROACTIVE CHECK 1: If there is no token right at the start, don't even try to fetch a profile
       const token = localStorage.getItem("token");
       if (!token) {
         navigate("/login", { replace: true });
@@ -29,10 +47,33 @@ export default function ChatPage() {
         const user = await getCurrentUser();
         if (user && user.id) {
           localStorage.setItem("userId", String(user.id));
+          setUsersMap((prev) => ({
+            ...prev,
+            [user.id]: `${user.firstName} ${user.lastName}`,
+          }));
+        }
+
+        // Populate the shared user map with the real workspace users so that
+        // member names (and message authors) reflect actual profiles and stay
+        // in sync with backend changes instead of the static mock seed.
+        try {
+          const allUsers = await getAllUsers();
+          if (Array.isArray(allUsers)) {
+            setUsersMap((prev) => {
+              const next = { ...prev };
+              allUsers.forEach((u) => {
+                if (u && u.id != null) {
+                  next[u.id] = `${u.firstName} ${u.lastName}`.trim();
+                }
+              });
+              return next;
+            });
+          }
+        } catch (usersErr) {
+          console.error("Failed to fetch workspace users:", usersErr);
         }
       } catch (err) {
         console.error("Failed to fetch current user profile:", err);
-        // If the user profile request fails (e.g. 401 token invalid/expired), throw them out
         navigate("/login", { replace: true });
       } finally {
         setLoadingUser(false);
@@ -41,34 +82,92 @@ export default function ChatPage() {
     initUser();
   }, [navigate]);
 
+  // Hook 2: Handles single-use ticket fetching, WebSocket connection, and
+  // automatic reconnection. The ws-ticket is single-use, so STOMP's built-in
+  // reconnect (reconnectDelay) is disabled — it would replay the now-stale
+  // ticket. Instead we re-run the full ticket + activate flow ourselves with
+  // capped exponential backoff so a dropped socket recovers without a reload.
   useEffect(() => {
     if (loadingUser) return;
 
-    let client;
+    let isCancelled = false;
+    let reconnectAttempts = 0;
+    let reconnectTimer = null;
+
+    const MAX_RECONNECT_DELAY = 30000;
+
+    // Back off 1s, 2s, 4s, 8s … capped, plus jitter to avoid a reconnect storm
+    // if many clients drop at once. Each attempt re-runs connectWebSocket, which
+    // fetches a brand-new ticket.
+    const scheduleReconnect = () => {
+      if (isCancelled || reconnectTimer) return;
+      const base = Math.min(1000 * 2 ** reconnectAttempts, MAX_RECONNECT_DELAY);
+      const delay = base + Math.floor(Math.random() * 1000);
+      reconnectAttempts += 1;
+      console.warn(
+        `Reconnecting WebSocket in ${delay}ms (attempt ${reconnectAttempts})...`,
+      );
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        if (!isCancelled) connectWebSocket();
+      }, delay);
+    };
 
     const connectWebSocket = async () => {
       try {
-        // 🌟 PROACTIVE CHECK 2: Double check token existence right before starting the WebSocket ticket pipeline
         if (!localStorage.getItem("token")) {
           navigate("/login", { replace: true });
           return;
         }
 
-        const ticket = await fetchChatTicket();
-        console.log("Fetched ticket:", ticket);
+        // Step A: Terminate any existing connection references before requesting a clean ticket.
+        // Detach the close handler first so this intentional teardown doesn't
+        // trigger another reconnect through onWebSocketClose.
+        if (stompClientRef.current) {
+          console.log("Disconnecting existing stale WebSocket connection instance...");
+          const stale = stompClientRef.current;
+          stompClientRef.current = null;
+          stale.onWebSocketClose = () => {};
+          stale.deactivate();
+        }
 
-        client = new Client({
+        let ticket;
+        try {
+          ticket = await fetchChatTicket();
+        } catch (err) {
+          console.error("Failed to fetch websocket ticket:", err);
+          if (err.status === 401 || err.status === 400) {
+            // Auth is unrecoverable — bounce to login, don't retry.
+            localStorage.removeItem("token");
+            localStorage.removeItem("userId");
+            navigate("/login", { replace: true });
+            return;
+          }
+          // Transient failure (5xx / network) — back off and try again.
+          scheduleReconnect();
+          return;
+        }
+
+        // Safety verification check: Drop operations if the component unmounted during the HTTP ticket request
+        if (isCancelled) return;
+
+        // Step C: Initialize the Client directly to the mutable ref object
+        stompClientRef.current = new Client({
           brokerURL: wsChatUrl(ticket),
-          reconnectDelay: 5000,
-          beforeConnect: async () => {
-            const freshTicket = await fetchChatTicket();
-            client.brokerURL = wsChatUrl(freshTicket);
-          },
+
+          // Disable STOMP auto-reconnection loop since it recycles expired tickets;
+          // scheduleReconnect() drives reconnects with a fresh ticket instead.
+          reconnectDelay: 0,
           onConnect: () => {
             console.log("Connected to STOMP!");
-            setStompClient(client);
 
-            client.subscribe("/user/queue/errors", (msg) => {
+            // A healthy connection resets the backoff window.
+            reconnectAttempts = 0;
+
+            // Mirror current pointer context back to React state hook for downstream components
+            setStompClient(stompClientRef.current);
+
+            stompClientRef.current.subscribe("/user/queue/errors", (msg) => {
               console.error("STOMP Error:", JSON.parse(msg.body));
             });
           },
@@ -79,24 +178,126 @@ export default function ChatPage() {
           onWebSocketError: (event) => {
             console.error("Chat WebSocket error:", event);
           },
+          onWebSocketClose: () => {
+            console.warn("WebSocket stream closed down. Clearing application state...");
+            setStompClient(null);
+            // Unexpected drop (not an intentional teardown) — attempt recovery.
+            if (!isCancelled) scheduleReconnect();
+          }
         });
-        client.activate();
+
+        stompClientRef.current.activate();
       } catch (err) {
         console.error("Failed to connect to websocket", err);
-        if (err.status === 401 || err.status === 400) {
-          localStorage.removeItem("token");
-          localStorage.removeItem("userId");
-          navigate("/login", { replace: true });
-        }
+        scheduleReconnect();
       }
     };
 
     connectWebSocket();
 
+    // Cleanup phase: Teardown logic when layout dependencies switch
     return () => {
-      if (client) client.deactivate();
+      isCancelled = true;
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+      if (stompClientRef.current) {
+        console.log("Deactivating active WebSocket connection reference inside cleanup.");
+        stompClientRef.current.deactivate();
+        stompClientRef.current = null;
+      }
     };
   }, [loadingUser, navigate]);
+
+  // Hook 3: Debug logging for active thread contexts
+  useEffect(() => {
+    console.log("activeThread state just changed to:", activeThread);
+  }, [activeThread]);
+
+  const handleOpenThread = async (clickedMessage) => {
+    // Scenario A: If message has a thread ID, look up its metadata immediately
+    if (clickedMessage.threadId) {
+      try {
+        const res = await fetch(
+          `/api/chat/threads/${clickedMessage.threadId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "X-User-Id": String(getCurrentUserId()),
+              "X-User-Role": "USER",
+            },
+          },
+        );
+        if (res.ok) {
+          const threadData = await res.json();
+          setActiveThread(threadData);
+          setIsThreadOpen(true);
+          return; // Exit out safely
+        }
+      } catch (err) {
+        console.error("Error fetching existing thread metadata:", err);
+        return;
+      }
+    } else {
+      try {
+        const res = await fetch(
+          `/api/chat/channels/${clickedMessage.channelId}/threads`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-User-Id": String(getCurrentUserId()),
+              "X-User-Role": "USER",
+            },
+            body: JSON.stringify({
+              rootMessageId: clickedMessage.id,
+              name: `Thread Discussion`,
+            }),
+          },
+        );
+
+        if (res.status === 201) {
+          const threadData = await res.json();
+          setActiveThread(threadData);
+          setIsThreadOpen(true);
+        }
+        else if (res.status === 409) { // thread already exists
+          const listRes = await fetch(`/api/chat/channels/${clickedMessage.channelId}/threads?page=1&limit=50`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "X-User-Id": String(getCurrentUserId()),
+              "X-User-Role": "USER",
+            },
+          });
+          if (listRes.ok) {
+            const data = await listRes.json();
+            const threadList = data.content || data;
+            const existingThread = threadList.find(t => t.rootMessageId === clickedMessage.id);
+            if (existingThread) {
+              setActiveThread(existingThread);
+              setIsThreadOpen(true);
+            }
+            else {
+              console.error("Conflict reported, but could not locate matching rootMessageId in thread logs.");
+            }
+          }
+        }
+        else {
+          console.warn(
+            "Failed to initialize thread container endpoint context",
+          );
+        }
+      } catch (err) {
+        console.error(
+          "Error creating/initializing thread database tracking object:",
+          err,
+        );
+      }
+    }
+  };
 
   if (loadingUser) {
     return (
@@ -117,14 +318,67 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="chatPage">
-      <WorkspaceSidebar></WorkspaceSidebar>
-      <Sidebar
+    <div className="chatPage relative flex w-screen h-screen overflow-hidden">
+      {/* Workspace icon rail — tablet and up */}
+      <div className="hidden md:flex shrink-0">
+        <WorkspaceSidebar />
+      </div>
+
+      {/* Backdrop for the mobile channels drawer */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/30 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Channels sidebar — slide-in drawer on mobile, static column on md+ */}
+      <div
+        className={`fixed top-0 left-0 z-40 h-full shrink-0 transform transition-transform duration-300 ease-in-out md:static md:z-auto md:translate-x-0 ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <Sidebar
+          activeChannel={activeChannel}
+          setActiveChannel={(channel) => {
+            setActiveChannel(channel);
+            // Auto-dismiss the drawer once a channel is picked on mobile.
+            setIsSidebarOpen(false);
+          }}
+        />
+      </div>
+
+      {/* Main chat space — always absorbs the remaining width */}
+      <ChatArea
         activeChannel={activeChannel}
-        setActiveChannel={setActiveChannel}
+        stompClient={stompClient}
+        onOpenThread={handleOpenThread}
+        activeThread={activeThread}
+        usersMap={usersMap}
+        onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
       />
-      <ChatArea activeChannel={activeChannel} stompClient={stompClient} />
-      <MembersList></MembersList>
+
+      {/* Thread panel — full-screen overlay on mobile/tablet, docked column on lg+ */}
+      {isThreadOpen && activeThread && (
+        <div className="fixed inset-0 z-50 w-full shrink-0 lg:static lg:inset-auto lg:z-auto lg:w-[400px]">
+          <ThreadArea
+            activeChannel={activeChannel}
+            activeThread={activeThread}
+            stompClient={stompClient}
+            onClose={() => {
+              setIsThreadOpen(false);
+              setActiveThread(null);
+            }}
+            usersMap={usersMap}
+          />
+        </div>
+      )}
+
+      {/* Members list — ultra-wide screens only */}
+      <div className="hidden xl:flex shrink-0">
+        <MembersList activeChannel={activeChannel} usersMap={usersMap} />
+      </div>
     </div>
   );
 }
