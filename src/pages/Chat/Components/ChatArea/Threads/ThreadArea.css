@@ -1,0 +1,91 @@
+.threadArea {
+  display: flex;
+  flex-direction: column;
+  /* Width is now owned by the responsive Tailwind wrapper in ChatPage:
+     full-bleed overlay on mobile, docked 400px column on lg+. */
+  width: 100%;
+  height: 100%;
+  background-color: #1e1e2e; /* Base background */
+  border-left: 1px solid #45475a; 
+}
+
+.thread-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #45475a; 
+}
+
+.thread-header-title h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #dcc6c2; 
+
+.thread-header-title span {
+  font-size: 12px;
+  color: #cdd6f4; }
+}
+.thread-close-btn {
+  background: none;
+  border: none;
+  color: #cdd6f4; 
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+}
+
+.thread-close-btn:hover {
+  background-color: #45475a; 
+  color: #f38ba8; /* Vibrant pastel red pops perfectly here */
+}
+
+/* 📜 Messages Scroll Feed Zone */
+.thread-messages-scroll-zone {
+  flex-grow: 1; 
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.thread-input-form {
+  padding: 16px;
+  border-top: 1px solid #45475a; 
+  gap: 8px;
+  background-color: #11111b; 
+}
+
+.thread-input-form input {
+  flex-grow: 1;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid #585b70; 
+  background-color: #1e1e2e;
+  color: #cdd6f4;
+  font-size: 14px;
+  outline: none;
+}
+
+.thread-input-form input:focus {
+  border-color: #cba6f7; /* Lavender accent glow */
+  box-shadow: 0 0 0 2px rgba(203, 166, 247, 0.2); /* Added soft focus ring for accessibility accessibility */
+}
+
+.thread-input-form button {
+  padding: 0 16px;
+  background-color: #cba6f7; /* High contrast pastel purple */
+  color: #11111b; /* Dark text on light button text hits clear AAA readability */
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.thread-input-form button:disabled {
+  background-color: #313244;
+  color: #9399b2; 
+  cursor: not-allowed;
+}
