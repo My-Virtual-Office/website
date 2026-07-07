@@ -7,25 +7,18 @@ import AddIcon from "@mui/icons-material/Add";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import MeetingRoomIcon from "@mui/icons-material/MeetingRoom";
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { getCurrentUser } from "../../../../api/user";
 import SettingsModal from "../SettingsModal/SettingsModal";
 import { getUserPhoto } from "../../../../api/user";
 import { getCurrentUserId } from "../../../../utils/auth";
 import NotificationsMenu from "../../../../components/NotificationsMenu";
 import CloseIcon from "@mui/icons-material/Close";
-import { fetchRooms, createRoom } from "../../../../api/chat";
-
-const MOCK_USERS = {
-  1: "Ahmed Aly",
-  2: "Roqaia Ebrahim",
-  3: "Sara Mostafa",
-  4: "Co-founder Admin",
-  5: "Youssef Mohamed",
-  6: "Nour Hassan",
-  7: "Mariam Ali",
-};
+import { fetchRooms, createRoom, createChannel, fetchChannels as fetchChannelsApi } from "../../../../api/chat";
+import InviteDialog from "./InviteDialog";
 
 export default function Sidebar({ activeChannel, setActiveChannel, workspaceId }) {
+  const location = useLocation();
   // Channels state
   const [channels, setChannels] = useState([]);
   // Rooms state
@@ -38,6 +31,10 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId }
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   // user photo state
   const [userPhoto, setUserPhoto] = useState(null);
+  // invite dialog state
+  const [inviteDialogChannel, setInviteDialogChannel] = useState(null);
+
+  const isInviteOpen = Boolean(inviteDialogChannel);
 
   const handleCreateChannel = async () => {
     const channelName = prompt(
@@ -47,26 +44,10 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId }
     if (!channelName) return;
 
     try {
-      // Send request to create a new channel
-      const response = await fetch("/api/chat/channels", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-User-Id": String(getCurrentUserId()),
-          "X-User-Role": "USER",
-        },
-        body: JSON.stringify({
-          name: channelName,
-          workspaceId: workspaceId,
-          members: [1, 2, 3], // Hardcoded members
-        }),
-      });
-
-      if (response.ok) {
-        const newChannel = await response.json();
-
-        // Add the new channel to the local state
+      const newChannel = await createChannel(channelName, workspaceId);
+      if (newChannel) {
         setChannels([...channels, newChannel]);
+        setInviteDialogChannel({ id: newChannel.id, name: newChannel.name });
       } else {
         alert("Failed to create the channel!");
       }
@@ -127,39 +108,44 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId }
   useEffect(() => {
     const fetchChannels = async () => {
       try {
-        // Fetch channels for workspaceId=100
-        const response = await fetch(
-          `/api/chat/channels?workspaceId=${workspaceId}&page=1&limit=20`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              "X-User-Id": String(getCurrentUserId()),
-              "X-User-Role": "USER",
-            },
-          },
-        );
+        if (!workspaceId) return;
+        let channelList = await fetchChannelsApi(workspaceId);
+        setChannels(channelList);
 
-        if (response.ok) {
-          const data = await response.json();
-          setChannels(data.content || []);
+        const joinChannelId = location.state?.joinChannelId;
 
-          // Set active channel to the first channel if none is selected
-          if (data.content !== undefined) {
-            if (data.content.length > 0) {
-              if (activeChannel === null) {
-                let firstChannelId = data.content[0].id;
-                let firstChannelName = data.content[0].name;
-
-                setActiveChannel({
-                  id: firstChannelId,
-                  name: firstChannelName,
-                });
-              }
+        if (channelList.length === 0) {
+          const defaultNames = ["general", "random", "announcements"];
+          for (const name of defaultNames) {
+            try {
+              await createChannel(name, workspaceId);
+            } catch (err) {
+              console.error(`Failed to create default channel "${name}":`, err);
             }
           }
-        } else {
-          console.error("Failed to fetch channels");
+          channelList = await fetchChannelsApi(workspaceId);
+          setChannels(channelList);
+        }
+
+        if (joinChannelId) {
+          const joined = channelList.find((ch) => ch.id === joinChannelId);
+          if (joined) {
+            setActiveChannel({
+              id: joined.id,
+              name: joined.name,
+              type: joined.type || "GROUP",
+            });
+            window.history.replaceState(null, "");
+            return;
+          }
+        }
+
+        if (activeChannel === null && channelList.length > 0) {
+          setActiveChannel({
+            id: channelList[0].id,
+            name: channelList[0].name,
+            type: channelList[0].type || "GROUP",
+          });
         }
       } catch (error) {
         console.error("Error fetching channels:", error);
@@ -332,7 +318,7 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId }
                 const otherUserId = dm.members?.find((m) => m !== currentId);
                 const dmDisplayName = dm.name
                   ? dm.name
-                  : (MOCK_USERS[otherUserId] || `User ${otherUserId || "X"}`);
+                  : (`User ${otherUserId || "X"}`);
 
                 return (
                   <div
@@ -436,6 +422,14 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId }
               user={user}
               onUpdate={fetchUser}
               userPhoto={userPhoto}
+            />
+
+            {/* Invite Dialog */}
+            <InviteDialog
+              open={isInviteOpen}
+              onClose={() => setInviteDialogChannel(null)}
+              channelId={inviteDialogChannel?.id}
+              channelName={inviteDialogChannel?.name}
             />
           </div>
         </div>

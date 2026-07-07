@@ -4,8 +4,10 @@ import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import NumbersIcon from "@mui/icons-material/Numbers";
 import MenuIcon from "@mui/icons-material/Menu";
 import MeetingRoomIcon from "@mui/icons-material/MeetingRoom";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useState } from "react";
 import { getCurrentUserId } from "../../../../../utils/auth";
+import { Snackbar, Alert } from "@mui/material";
 
 export default function ChatHeader({ activeChannel, onToggleSidebar }) {
   let channelNameForDisplay = "Loading...";
@@ -21,6 +23,24 @@ export default function ChatHeader({ activeChannel, onToggleSidebar }) {
   const [channelDetails, setChannelDetails] = useState(null);
   // Loading state
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  // Copy invite link state
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyInviteLink = async () => {
+    if (!activeChannel?.id) return;
+    const inviteUrl = `${window.location.origin}/chat/join/${activeChannel.id}`;
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+    } catch {
+      const el = document.createElement("textarea");
+      el.value = inviteUrl;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+    }
+    setCopied(true);
+  };
 
   // Toggle info menu
   const toggleMenu = async () => {
@@ -124,6 +144,12 @@ export default function ChatHeader({ activeChannel, onToggleSidebar }) {
             <InfoOutlinedIcon />
           </button>
 
+          {activeChannel?.type !== "ROOM" && (
+            <button className="header-btn" aria-label="Copy invite link" onClick={handleCopyInviteLink}>
+              <ContentCopyIcon />
+            </button>
+          )}
+
           {isMenuOpen && (
             <div className="dropdown-menu expanded-menu">
               <div className="dropdown-info-section">
@@ -174,6 +200,17 @@ export default function ChatHeader({ activeChannel, onToggleSidebar }) {
           <input type="text" placeholder="Search" />
         </div>
       </div>
+
+      <Snackbar
+        open={copied}
+        autoHideDuration={2000}
+        onClose={() => setCopied(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert severity="success" variant="filled" sx={{ fontWeight: 600 }}>
+          Invite link copied!
+        </Alert>
+      </Snackbar>
     </div>
   );
 }
