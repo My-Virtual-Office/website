@@ -5,12 +5,14 @@ import DraftsOutlinedIcon from "@mui/icons-material/DraftsOutlined";
 import NumbersIcon from "@mui/icons-material/Numbers";
 import AddIcon from "@mui/icons-material/Add";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import MeetingRoomIcon from "@mui/icons-material/MeetingRoom";
 import { useState, useEffect } from "react";
 import { getCurrentUser } from "../../../../api/user";
 import SettingsModal from "../SettingsModal/SettingsModal";
 import { getUserPhoto } from "../../../../api/user";
 import { getCurrentUserId } from "../../../../utils/auth";
 import NotificationsMenu from "../../../../components/NotificationsMenu";
+import { fetchRooms, createRoom } from "../../../../api/chat";
 
 const MOCK_USERS = {
   1: "Ahmed Aly",
@@ -25,6 +27,8 @@ const MOCK_USERS = {
 export default function Sidebar({ activeChannel, setActiveChannel }) {
   // Channels state
   const [channels, setChannels] = useState([]);
+  // Rooms state
+  const [rooms, setRooms] = useState([]);
   // DMs state
   const [dms, setDms] = useState([]);
   // user state
@@ -52,7 +56,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
         },
         body: JSON.stringify({
           name: channelName,
-          workspaceId: 100, // Hardcoded workspaceId
+          workspaceId: 1, // Hardcoded workspaceId
           members: [1, 2, 3], // Hardcoded members
         }),
       });
@@ -105,13 +109,26 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
     }
   };
 
+  const handleCreateRoom = async () => {
+    const roomName = prompt("Enter the new room name (e.g. Standup):");
+    if (!roomName) return;
+
+    try {
+      const newRoom = await createRoom(roomName, 1);
+      setRooms([...rooms, newRoom]);
+    } catch (error) {
+      console.error("Error creating room:", error);
+      alert("Failed to create the room!");
+    }
+  };
+
   // Fetch channels and DMs on component mount
   useEffect(() => {
     const fetchChannels = async () => {
       try {
         // Fetch channels for workspaceId=100
         const response = await fetch(
-          "/api/chat/channels?workspaceId=100&page=1&limit=20",
+          "/api/chat/channels?workspaceId=1&page=1&limit=20",
           {
             method: "GET",
             headers: {
@@ -168,8 +185,18 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
       }
     };
 
+    const fetchRoomsList = async () => {
+      try {
+        const roomsData = await fetchRooms(1);
+        setRooms(roomsData);
+      } catch (error) {
+        console.error("Error fetching rooms:", error);
+      }
+    };
+
     fetchChannels();
     fetchDMs();
+    fetchRoomsList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -239,6 +266,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
                     setActiveChannel({
                       id: channel.id,
                       name: channel.name,
+                      type: channel.type || "GROUP",
                     });
                   }}
                 >
@@ -246,6 +274,35 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
                     <NumbersIcon></NumbersIcon>
                   </span>
                   <span className="channel-name">{channel.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rooms-section">
+            <div className="rooms-header">
+              <span>ROOMS</span>
+              <button onClick={handleCreateRoom}>
+                <AddIcon />
+              </button>
+            </div>
+            <div className="rooms-list">
+              {rooms.map((room) => (
+                <div
+                  key={room.id}
+                  className={`room-item ${activeChannel !== null && activeChannel.id === room.id ? "active" : ""}`}
+                  onClick={() => {
+                    setActiveChannel({
+                      id: room.id,
+                      name: room.name,
+                      type: "ROOM",
+                    });
+                  }}
+                >
+                  <span>
+                    <MeetingRoomIcon />
+                  </span>
+                  <span className="room-name">{room.name}</span>
                 </div>
               ))}
             </div>
@@ -280,6 +337,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
                       setActiveChannel({
                         id: dm.id,
                         name: dmDisplayName,
+                        type: dm.type || "DIRECT",
                       });
                     }}
                   >

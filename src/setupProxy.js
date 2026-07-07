@@ -51,4 +51,11 @@ module.exports = function (app) {
       changeOrigin: true,
     }),
   );
+  app.use(
+    "/api/rooms",
+    createProxyMiddleware({
+      target: "http://localhost:8086",
+      changeOrigin: true,
+    }),
+  );
 };
