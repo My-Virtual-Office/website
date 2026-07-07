@@ -2,7 +2,7 @@ import "./WorkspaceSidebar.css";
 import PolylineIcon from "@mui/icons-material/Polyline";
 import AddIcon from "@mui/icons-material/Add";
 import { useState, useEffect } from "react";
-import { fetchMyWorkspaces } from "../../../../api/workspace";
+import { fetchMyWorkspaces, createWorkspace } from "../../../../api/workspace";
 import CreateWorkspaceModal from "./CreateWorkspaceModal";
 
 export default function WorkspaceSidebar({ activeWorkspace, setActiveWorkspace }) {
@@ -12,8 +12,14 @@ export default function WorkspaceSidebar({ activeWorkspace, setActiveWorkspace }
   useEffect(() => {
     const loadWorkspaces = async () => {
       try {
-        const data = await fetchMyWorkspaces();
-        setWorkspaces(data);
+        let data = await fetchMyWorkspaces();
+        if (data.length === 0) {
+          const newWs = await createWorkspace({ name: "Virtual Office", slug: "virtual-office" });
+          data = [newWs];
+          setWorkspaces(data);
+        } else {
+          setWorkspaces(data);
+        }
         if (data.length > 0 && !activeWorkspace) {
           setActiveWorkspace(data[0]);
         }

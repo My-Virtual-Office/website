@@ -51,6 +51,33 @@ export async function createRoom(name, workspaceId) {
   return response.json();
 }
 
+export async function createChannel(name, workspaceId) {
+  const response = await fetch("/api/chat/channels", {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({
+      name,
+      workspaceId,
+      members: [getCurrentUserId()],
+    }),
+  });
+  if (response.status === 409) return null;
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "Failed to create channel");
+  }
+  return response.json();
+}
+
+export async function joinChannel(channelId) {
+  const response = await fetch(`/api/chat/channels/${channelId}/join`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  if (response.status === 400) throw new Error("Cannot join this channel");
+  if (!response.ok) throw new Error("Failed to join channel");
+}
+
 export async function fetchDMs() {
   const response = await fetch("/api/chat/dm?page=1&limit=20", {
     method: "GET",
