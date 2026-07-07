@@ -12,6 +12,7 @@ import SettingsModal from "../SettingsModal/SettingsModal";
 import { getUserPhoto } from "../../../../api/user";
 import { getCurrentUserId } from "../../../../utils/auth";
 import NotificationsMenu from "../../../../components/NotificationsMenu";
+import CloseIcon from "@mui/icons-material/Close";
 import { fetchRooms, createRoom } from "../../../../api/chat";
 
 const MOCK_USERS = {
@@ -24,7 +25,7 @@ const MOCK_USERS = {
   7: "Mariam Ali",
 };
 
-export default function Sidebar({ activeChannel, setActiveChannel }) {
+export default function Sidebar({ activeChannel, setActiveChannel, workspaceId }) {
   // Channels state
   const [channels, setChannels] = useState([]);
   // Rooms state
@@ -56,7 +57,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
         },
         body: JSON.stringify({
           name: channelName,
-          workspaceId: 1, // Hardcoded workspaceId
+          workspaceId: workspaceId,
           members: [1, 2, 3], // Hardcoded members
         }),
       });
@@ -114,7 +115,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
     if (!roomName) return;
 
     try {
-      const newRoom = await createRoom(roomName, 1);
+      const newRoom = await createRoom(roomName, workspaceId);
       setRooms([...rooms, newRoom]);
     } catch (error) {
       console.error("Error creating room:", error);
@@ -128,7 +129,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
       try {
         // Fetch channels for workspaceId=100
         const response = await fetch(
-          "/api/chat/channels?workspaceId=1&page=1&limit=20",
+          `/api/chat/channels?workspaceId=${workspaceId}&page=1&limit=20`,
           {
             method: "GET",
             headers: {
@@ -187,7 +188,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
 
     const fetchRoomsList = async () => {
       try {
-        const roomsData = await fetchRooms(1);
+        const roomsData = await fetchRooms(workspaceId);
         setRooms(roomsData);
       } catch (error) {
         console.error("Error fetching rooms:", error);
@@ -197,8 +198,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
     fetchChannels();
     fetchDMs();
     fetchRoomsList();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [workspaceId]);
 
   const fetchUser = async () => {
     try {
@@ -226,6 +226,11 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
   //   avatar: "/user.jpg",
   //   status: "Set Status",
   // };
+  const handleCloseDm = (e, dmId) => {
+    e.stopPropagation();
+    setDms((prev) => prev.filter((dm) => dm.id !== dmId));
+  };
+
   console.log("Current User ID extracted from token:", getCurrentUserId());
   return (
     <div className="sidebar-container">
@@ -347,6 +352,13 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
                       <span className="status-dot online"></span>
                     </div>
                     <span className="dm-name">{dmDisplayName}</span>
+                    <button
+                      className="dm-close-btn"
+                      onClick={(e) => handleCloseDm(e, dm.id)}
+                      title="Remove from sidebar"
+                    >
+                      <CloseIcon fontSize="small" />
+                    </button>
                   </div>
                 );
               })}

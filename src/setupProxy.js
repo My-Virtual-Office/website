@@ -1,25 +1,34 @@
 const { createProxyMiddleware } = require("http-proxy-middleware");
 
-let wsProxySubscribed = false;
+let wsUpgradeInitialized = false;
 
 module.exports = function (app) {
+  const wsRoutes = [];
+
+  function ensureWsUpgrade(server) {
+    if (!wsUpgradeInitialized) {
+      wsUpgradeInitialized = true;
+      server.on("upgrade", (upgradeReq, socket, head) => {
+        for (const route of wsRoutes) {
+          if (upgradeReq.url.startsWith(route.path)) {
+            route.proxy.upgrade(upgradeReq, socket, head);
+            break;
+          }
+        }
+      });
+    }
+  }
+
   const chatProxy = createProxyMiddleware({
     target: "http://localhost:8084",
     changeOrigin: true,
   });
 
+  wsRoutes.push({ path: "/api/chat", proxy: chatProxy });
+
   app.use("/api/chat", (req, res, next) => {
-    if (!wsProxySubscribed) {
-      const server = req.socket?.server;
-      if (server) {
-        server.on("upgrade", (upgradeReq, socket, head) => {
-          if (upgradeReq.url.startsWith("/api/chat")) {
-            chatProxy.upgrade(upgradeReq, socket, head);
-          }
-        });
-        wsProxySubscribed = true;
-      }
-    }
+    const server = req.socket?.server;
+    if (server) ensureWsUpgrade(server);
     return chatProxy(req, res, next);
   });
 
@@ -51,11 +60,29 @@ module.exports = function (app) {
       changeOrigin: true,
     }),
   );
+
   app.use(
-    "/api/rooms",
+    "/api/workspace",
     createProxyMiddleware({
-      target: "http://localhost:8086",
+      target: "http://localhost:8087",
       changeOrigin: true,
     }),
   );
+
+  const roomsProxy = createProxyMiddleware({
+    target: "http://localhost:8086",
+    changeOrigin: true,
+  });
+
+  wsRoutes.push({ path: "/ws/rooms", proxy: roomsProxy });
+
+  app.use("/api/rooms", (req, res, next) => {
+    return roomsProxy(req, res, next);
+  });
+
+  app.use("/ws/rooms", (req, res, next) => {
+    const server = req.socket?.server;
+    if (server) ensureWsUpgrade(server);
+    return roomsProxy(req, res, next);
+  });
 };

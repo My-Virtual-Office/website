@@ -1,0 +1,87 @@
+.room-call-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  margin: 0 12px 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-family: Inter, sans-serif;
+}
+
+.participant-count {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  margin-right: auto;
+}
+
+.call-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.call-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #475569;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.call-btn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.join-btn {
+  background: #5048e5;
+  color: #ffffff;
+  border-color: #5048e5;
+}
+
+.join-btn:hover {
+  background: #4338ca;
+  border-color: #4338ca;
+}
+
+.call-btn.muted {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #ef4444;
+}
+
+.call-btn.muted:hover {
+  background: #fee2e2;
+}
+
+.call-btn.cam-off {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #ef4444;
+}
+
+.call-btn.cam-off:hover {
+  background: #fee2e2;
+}
+
+.end-call-btn {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+}
+
+.end-call-btn:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+}
