@@ -3,6 +3,7 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import NumbersIcon from "@mui/icons-material/Numbers";
 import MenuIcon from "@mui/icons-material/Menu";
+import MeetingRoomIcon from "@mui/icons-material/MeetingRoom";
 import { useState } from "react";
 import { getCurrentUserId } from "../../../../../utils/auth";
 
@@ -98,7 +99,11 @@ export default function ChatHeader({ activeChannel, onToggleSidebar }) {
           <MenuIcon />
         </button>
         <h3>
-          <NumbersIcon></NumbersIcon>
+          {activeChannel?.type === "ROOM" ? (
+            <MeetingRoomIcon />
+          ) : (
+            <NumbersIcon />
+          )}
           <span>{channelNameForDisplay}</span>
         </h3>
         <span className="margin">|</span>
