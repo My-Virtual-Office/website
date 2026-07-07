@@ -7,6 +7,7 @@ import ThreadArea from "./Components/ChatArea/Threads/ThreadArea";
 import { useState, useEffect, useRef } from "react";
 import { Client } from "@stomp/stompjs";
 import { fetchChatTicket, wsChatUrl } from "../../ws/chatStompClient";
+import { fetchRoomTicket, wsRoomUrl } from "../../ws/roomStompClient";
 import MembersList from "./Components/MembersList/MembersList";
 import { getCurrentUserId } from "../../utils/auth";
 import { getCurrentUser, getAllUsers } from "../../api/user";
@@ -15,7 +16,9 @@ import { useNavigate } from "react-router-dom";
 export default function ChatPage() {
   const navigate = useNavigate();
   const [activeChannel, setActiveChannel] = useState(null);
+  const [activeWorkspace, setActiveWorkspace] = useState(null);
   const [stompClient, setStompClient] = useState(null);
+  const [roomStompClient, setRoomStompClient] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [activeThread, setActiveThread] = useState(null);
   const [isThreadOpen, setIsThreadOpen] = useState(false);
@@ -30,7 +33,11 @@ export default function ChatPage() {
     7: "Mariam Ali",
   });
 
+  const [roomParticipants, setRoomParticipants] = useState([]);
+
   const stompClientRef = useRef(null);
+  const roomStompClientRef = useRef(null);
+  const roomSubRef = useRef(null);
 
   useEffect(() => {
     const initUser = async () => {
@@ -150,6 +157,109 @@ export default function ChatPage() {
   }, [loadingUser, navigate]);
 
   useEffect(() => {
+    if (loadingUser) return;
+
+    let roomClient;
+
+    const connectRoomWebSocket = async () => {
+      try {
+        if (roomStompClientRef.current) {
+          const stale = roomStompClientRef.current;
+          roomStompClientRef.current = null;
+          stale.onWebSocketClose = () => {};
+          stale.deactivate();
+        }
+
+        const ticket = await fetchRoomTicket();
+
+        roomClient = new Client({
+          brokerURL: wsRoomUrl(ticket),
+          reconnectDelay: 5000,
+          beforeConnect: async () => {
+            const freshTicket = await fetchRoomTicket();
+            roomClient.brokerURL = wsRoomUrl(freshTicket);
+          },
+          onConnect: () => {
+            console.log("Connected to room STOMP!");
+            setRoomStompClient(roomClient);
+            roomStompClientRef.current = roomClient;
+          },
+          onStompError: (frame) => {
+            console.error("Room STOMP error: " + frame.headers["message"]);
+          },
+          onWebSocketError: (event) => {
+            console.error("Room WebSocket error:", event);
+          },
+          onWebSocketClose: () => {
+            console.warn("Room WebSocket closed");
+            setRoomStompClient(null);
+            roomStompClientRef.current = null;
+          },
+        });
+
+        roomClient.activate();
+      } catch (err) {
+        console.error("Failed to connect to room websocket", err);
+      }
+    };
+
+    connectRoomWebSocket();
+
+    return () => {
+      if (roomClient) {
+        roomClient.deactivate();
+        roomStompClientRef.current = null;
+      }
+    };
+  }, [loadingUser]);
+
+  useEffect(() => {
+    if (!roomStompClient?.connected || activeChannel?.type !== "ROOM") {
+      if (roomSubRef.current) {
+        roomSubRef.current.unsubscribe();
+        roomSubRef.current = null;
+      }
+      setRoomParticipants([]);
+      return;
+    }
+
+    const roomId = activeChannel.id;
+
+    if (roomSubRef.current) {
+      roomSubRef.current.unsubscribe();
+    }
+
+    roomSubRef.current = roomStompClient.subscribe(`/topic/room/${roomId}`, (message) => {
+      try {
+        const event = JSON.parse(message.body);
+        const { action, payload } = event;
+
+        if (action === "PARTICIPANT_JOINED") {
+          setRoomParticipants((prev) => {
+            if (!prev.find((p) => p.userId === payload.userId)) {
+              return [...prev, { userId: payload.userId, joinedAt: new Date() }];
+            }
+            return prev;
+          });
+        } else if (action === "PARTICIPANT_LEFT") {
+          setRoomParticipants((prev) => prev.filter((p) => p.userId !== payload.userId));
+        } else if (action === "STATE_CHANGED") {
+          setRoomParticipants(payload.participants || []);
+        }
+      } catch (err) {
+        console.error("Failed to parse room event:", err);
+      }
+    });
+
+    return () => {
+      if (roomSubRef.current) {
+        roomSubRef.current.unsubscribe();
+        roomSubRef.current = null;
+      }
+    };
+  }, [roomStompClient, activeChannel]);
+
+  useEffect(() => {
     console.log("activeThread state just changed to:", activeThread);
   }, [activeThread]);
 
@@ -257,7 +367,10 @@ export default function ChatPage() {
   return (
     <div className="chatPage relative flex w-screen h-screen overflow-hidden">
       <div className="hidden md:flex shrink-0">
-        <WorkspaceSidebar />
+        <WorkspaceSidebar
+          activeWorkspace={activeWorkspace}
+          setActiveWorkspace={setActiveWorkspace}
+        />
       </div>
 
       {isSidebarOpen && (
@@ -279,16 +392,20 @@ export default function ChatPage() {
             setActiveChannel(channel);
             setIsSidebarOpen(false);
           }}
+          workspaceId={activeWorkspace?.id}
         />
       </div>
 
       <ChatArea
         activeChannel={activeChannel}
         stompClient={stompClient}
+        roomStompClient={roomStompClient}
+        roomParticipants={roomParticipants}
         onOpenThread={handleOpenThread}
         activeThread={activeThread}
         usersMap={usersMap}
         onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
+        workspaceId={activeWorkspace?.id}
       />
 
       {isThreadOpen && activeThread && (
