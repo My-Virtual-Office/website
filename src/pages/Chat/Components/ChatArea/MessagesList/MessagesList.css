@@ -26,3 +26,13 @@
   white-space: nowrap;
   flex-shrink: 0;
 }
+
+@keyframes highlightFlash {
+  0% { background-color: #fef08a; }
+  100% { background-color: transparent; }
+}
+
+.highlight-flash {
+  animation: highlightFlash 2s ease-out;
+  border-radius: 6px;
+}
