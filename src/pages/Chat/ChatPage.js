@@ -395,6 +395,7 @@ export default function ChatPage() {
             setIsSidebarOpen(false);
           }}
           workspaceId={activeWorkspace?.id}
+          activeWorkspace={activeWorkspace}
           joinChannelId={joinChannelId}
         />
       </div>

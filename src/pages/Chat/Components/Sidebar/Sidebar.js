@@ -16,7 +16,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import { fetchRooms, createRoom, createChannel, fetchChannels as fetchChannelsApi } from "../../../../api/chat";
 import InviteDialog from "./InviteDialog";
 
-export default function Sidebar({ activeChannel, setActiveChannel, workspaceId, joinChannelId }) {
+export default function Sidebar({ activeChannel, setActiveChannel, workspaceId, activeWorkspace, joinChannelId }) {
   // Channels state
   const [channels, setChannels] = useState([]);
   // Rooms state
@@ -246,7 +246,7 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId, 
     <div className="sidebar-container">
       <div className="sidebar">
         <div className="sidebar-header">
-          <span>Virtual-Office</span>
+          <span>{activeWorkspace?.name || "Virtual-Office"}</span>
           <button>
             <KeyboardArrowDownIcon></KeyboardArrowDownIcon>
           </button>

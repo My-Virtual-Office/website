@@ -18,11 +18,17 @@ export async function fetchMyWorkspaces() {
   return data.content || data || [];
 }
 
-export async function createWorkspace({ name, slug }) {
+export async function createWorkspace({ name, slug, description, logoUrl, defaultTimezone }) {
   const response = await fetch("/api/workspace", {
     method: "POST",
     headers: authHeaders(),
-    body: JSON.stringify({ name, slug }),
+    body: JSON.stringify({
+      name,
+      slug,
+      description: description || null,
+      logoUrl: logoUrl || null,
+      defaultTimezone: defaultTimezone || "Africa/Cairo",
+    }),
   });
   if (!response.ok) {
     const errorText = await response.text();
