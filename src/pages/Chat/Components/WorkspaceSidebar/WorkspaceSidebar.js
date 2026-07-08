@@ -14,7 +14,7 @@ export default function WorkspaceSidebar({ activeWorkspace, setActiveWorkspace }
       try {
         let data = await fetchMyWorkspaces();
         if (data.length === 0) {
-          const newWs = await createWorkspace({ name: "Virtual Office", slug: "virtual-office" });
+          const newWs = await createWorkspace({ name: "Virtual Office", slug: "virtual-office", defaultTimezone: "Africa/Cairo" });
           data = [newWs];
           setWorkspaces(data);
         } else {
