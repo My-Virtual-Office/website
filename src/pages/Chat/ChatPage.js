@@ -11,10 +11,12 @@ import { fetchRoomTicket, wsRoomUrl } from "../../ws/roomStompClient";
 import MembersList from "./Components/MembersList/MembersList";
 import { getCurrentUserId } from "../../utils/auth";
 import { getCurrentUser, getAllUsers } from "../../api/user";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function ChatPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const joinChannelId = location.state?.joinChannelId || null;
   const [activeChannel, setActiveChannel] = useState(null);
   const [activeWorkspace, setActiveWorkspace] = useState(null);
   const [stompClient, setStompClient] = useState(null);
@@ -393,6 +395,7 @@ export default function ChatPage() {
             setIsSidebarOpen(false);
           }}
           workspaceId={activeWorkspace?.id}
+          joinChannelId={joinChannelId}
         />
       </div>
 

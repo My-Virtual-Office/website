@@ -10,10 +10,10 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 
-export default function InviteDialog({ open, onClose, channelId, channelName }) {
+export default function InviteDialog({ open, onClose, channelId, channelName, workspaceId }) {
   const [copied, setCopied] = useState(false);
 
-  const inviteUrl = `${window.location.origin}/chat/join/${channelId}`;
+  const inviteUrl = `${window.location.origin}/chat/join/${channelId}?workspaceId=${workspaceId}`;
 
   const handleCopy = async () => {
     try {

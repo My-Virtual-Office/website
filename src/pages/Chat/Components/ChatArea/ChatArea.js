@@ -13,7 +13,7 @@ export default function ChatArea({ activeChannel, activeThread, stompClient, roo
 
   return (
     <div className="chatArea">
-      <ChatHeader activeChannel={activeChannel} onToggleSidebar={onToggleSidebar}></ChatHeader>
+      <ChatHeader activeChannel={activeChannel} onToggleSidebar={onToggleSidebar} workspaceId={workspaceId}></ChatHeader>
       {isRoom && agora.inCall && (
         <VideoGrid
           remoteUsers={agora.remoteUsers}
