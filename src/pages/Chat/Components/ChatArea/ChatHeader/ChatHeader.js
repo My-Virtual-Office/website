@@ -9,7 +9,7 @@ import { useState } from "react";
 import { getCurrentUserId } from "../../../../../utils/auth";
 import { Snackbar, Alert } from "@mui/material";
 
-export default function ChatHeader({ activeChannel, onToggleSidebar }) {
+export default function ChatHeader({ activeChannel, onToggleSidebar, workspaceId }) {
   let channelNameForDisplay = "Loading...";
   if (activeChannel !== null) {
     if (activeChannel.name !== undefined) {
@@ -28,7 +28,7 @@ export default function ChatHeader({ activeChannel, onToggleSidebar }) {
 
   const handleCopyInviteLink = async () => {
     if (!activeChannel?.id) return;
-    const inviteUrl = `${window.location.origin}/chat/join/${activeChannel.id}`;
+    const inviteUrl = `${window.location.origin}/chat/join/${activeChannel.id}?workspaceId=${workspaceId}`;
     try {
       await navigator.clipboard.writeText(inviteUrl);
     } catch {
@@ -134,7 +134,6 @@ export default function ChatHeader({ activeChannel, onToggleSidebar }) {
 
       {/* Right Side */}
       <div className="header-actions">
-
 
         <div
           className="info-dropdown-container"

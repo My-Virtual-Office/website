@@ -7,7 +7,6 @@ import AddIcon from "@mui/icons-material/Add";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import MeetingRoomIcon from "@mui/icons-material/MeetingRoom";
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
 import { getCurrentUser } from "../../../../api/user";
 import SettingsModal from "../SettingsModal/SettingsModal";
 import { getUserPhoto } from "../../../../api/user";
@@ -17,8 +16,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import { fetchRooms, createRoom, createChannel, fetchChannels as fetchChannelsApi } from "../../../../api/chat";
 import InviteDialog from "./InviteDialog";
 
-export default function Sidebar({ activeChannel, setActiveChannel, workspaceId }) {
-  const location = useLocation();
+export default function Sidebar({ activeChannel, setActiveChannel, workspaceId, joinChannelId }) {
   // Channels state
   const [channels, setChannels] = useState([]);
   // Rooms state
@@ -112,8 +110,6 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId }
         let channelList = await fetchChannelsApi(workspaceId);
         setChannels(channelList);
 
-        const joinChannelId = location.state?.joinChannelId;
-
         if (channelList.length === 0) {
           const defaultNames = ["general", "random", "announcements"];
           for (const name of defaultNames) {
@@ -135,8 +131,36 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId }
               name: joined.name,
               type: joined.type || "GROUP",
             });
-            window.history.replaceState(null, "");
             return;
+          }
+
+          try {
+            const directRes = await fetch(
+              `/api/chat/channels/${joinChannelId}`,
+              {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-User-Id": String(getCurrentUserId()),
+                  "X-User-Role": "USER",
+                },
+              },
+            );
+            if (directRes.ok) {
+              const joinedChannel = await directRes.json();
+              setChannels((prev) => {
+                if (prev.some((c) => c.id === joinedChannel.id)) return prev;
+                return [...prev, joinedChannel];
+              });
+              setActiveChannel({
+                id: joinedChannel.id,
+                name: joinedChannel.name,
+                type: joinedChannel.type || "GROUP",
+              });
+              return;
+            }
+          } catch (fetchErr) {
+            console.error("Failed to fetch joined channel directly:", fetchErr);
           }
         }
 
@@ -430,6 +454,7 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId }
               onClose={() => setInviteDialogChannel(null)}
               channelId={inviteDialogChannel?.id}
               channelName={inviteDialogChannel?.name}
+              workspaceId={workspaceId}
             />
           </div>
         </div>

@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { joinChannel } from "../../api/chat";
+import { getCurrentUserId } from "../../utils/auth";
 import { Box, CircularProgress, Typography, Paper } from "@mui/material";
 
 export default function JoinChannel() {
   const { channelId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [status, setStatus] = useState("joining");
   const [error, setError] = useState(null);
 
@@ -14,8 +16,39 @@ export default function JoinChannel() {
     const doJoin = async () => {
       try {
         await joinChannel(channelId);
+
+        let workspaceId = searchParams.get("workspaceId");
+
+        if (!workspaceId) {
+          try {
+            const res = await fetch(`/api/chat/channels/${channelId}`, {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                "X-User-Id": String(getCurrentUserId()),
+                "X-User-Role": "USER",
+              },
+            });
+            if (res.ok) {
+              const ch = await res.json();
+              workspaceId = ch.workspaceId || null;
+            }
+          } catch (e) {
+            console.error("Could not fetch channel details:", e);
+          }
+        }
+
         setStatus("success");
-        setTimeout(() => navigate("/chat", { state: { joinChannelId: channelId } }), 1500);
+        setTimeout(
+          () =>
+            navigate("/chat", {
+              state: {
+                joinChannelId: channelId,
+                joinWorkspaceId: workspaceId,
+              },
+            }),
+          1500,
+        );
       } catch (err) {
         setStatus("error");
         setError(err.message || "Failed to join channel");
