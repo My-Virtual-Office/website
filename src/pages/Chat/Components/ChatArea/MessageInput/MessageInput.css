@@ -8,8 +8,8 @@
   gap: 8px;
   padding: 8px;
   border-radius: 12px;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-input);
+  border: 1px solid var(--border-secondary);
   box-shadow: 0px 1px 2px 0px #0000000d;
   transition: all 0.2s;
 }
@@ -17,12 +17,20 @@
 .message-input:focus-within {
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
+
+/* Dark mode: orange accent border on focus */
+body.dark-mode .message-input:focus-within {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px var(--accent-bg-active);
+}
 .message-input-field {
   padding: 8px 12px;
-  background: #f1f5f9;
+  background: var(--bg-input);
+  color: var(--text-primary);
   border: none;
   resize: none;
-  caret-color: #5048e5;
+  caret-color: var(--accent-color);
+  unicode-bidi: plaintext;
 }
 .message-input-field::placeholder {
   font-family: Inter, sans-serif;
@@ -31,7 +39,7 @@
   line-height: 20px;
   letter-spacing: 0px;
   vertical-align: middle;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 .message-input-field:focus {
   outline: none;
@@ -58,14 +66,14 @@
   width: 32px;
   height: 32px;
   padding: 6px;
-  color: #64748b;
+  color: var(--text-secondary);
   background-color: transparent;
   transition: all 0.3s;
   cursor: pointer;
 }
 
 .input-actions-left button:hover {
-  color: #475569;
+  color: var(--text-primary);
 }
 
 .input-actions-left button svg {
@@ -77,7 +85,7 @@
   gap: 8px;
   padding: 6px 16px;
   border-radius: 8px;
-  background: #5048e5;
+  background: var(--accent-color);
   border: none;
   color: #ffffff;
   box-shadow: 0px 4px 6px -1px #0000001a;
@@ -89,7 +97,7 @@
 }
 
 .send-btn:hover {
-  background: #2d2981;
+  background: var(--accent-hover);
 }
 .send-btn svg {
   font-size: 15px;
@@ -101,4 +109,17 @@
   z-index: 100;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border-radius: 8px;
+}
+
+.emoji-picker-wrapper *::-webkit-scrollbar {
+  width: 6px;
+}
+
+.emoji-picker-wrapper *::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 10px;
+}
+
+.emoji-picker-wrapper *::-webkit-scrollbar-track {
+  background: transparent;
 }

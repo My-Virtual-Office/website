@@ -5,9 +5,11 @@ import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
 // Import edit and delete icons
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
-import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined"
+import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
 import { useState, useEffect } from "react";
 import { getCurrentUserId } from "../../../../../../utils/auth";
+
+import DeleteConfirmationDialog from "./DeleteConfirmationDialog";
 
 export default function Message({ message, stompClient, onOpenThread }) {
   // --- Message State ---
@@ -17,9 +19,11 @@ export default function Message({ message, stompClient, onOpenThread }) {
     message.content || message.text || "",
   ); // Edited text state
 
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+
   useEffect(() => {
     setEditedText(message.content || message.text || "");
-  }, [message])
+  }, [message]);
   const currentContent = message.content || message.text || "";
   // Handle editing message
   const handleEditSubmit = async () => {
@@ -52,14 +56,9 @@ export default function Message({ message, stompClient, onOpenThread }) {
   };
 
   // Handle deleting message
-  const handleDelete = async () => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this message?",
-    );
-    if (!confirmDelete) return;
-
+  const confirmDeleteMessage = async () => {
+    setOpenDeleteDialog(false);
     try {
-      // Use HTTP DELETE to delete the message
       const response = await fetch(`/api/chat/messages/${message.id}`, {
         method: "DELETE",
         headers: {
@@ -71,12 +70,10 @@ export default function Message({ message, stompClient, onOpenThread }) {
       if (!response.ok) {
         alert("Failed to delete the message!");
       }
-      // UI will update automatically when the DELETE_MESSAGE WebSocket event arrives!
     } catch (error) {
       console.error("Error:", error);
     }
   };
-
 
   // --- Render ---
 
@@ -112,67 +109,52 @@ export default function Message({ message, stompClient, onOpenThread }) {
           style={{ display: "flex", alignItems: "center" }}
         >
           <span className="message-user">
-            {message.senderName || message.user || `User ${message.senderId || "1"}`}
+            {message.senderName ||
+              message.user ||
+              `User ${message.senderId || "1"}`}
           </span>
           <span className="message-time">
             {message.time ||
               (message.createdAt
                 ? new Date(message.createdAt).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
                 : "")}
           </span>
 
-          
           {/* Show actions if it's my message and not in edit mode */}
           {isMyMessage && !isEditing && (
             <div
               className="message-actions"
-              style={{ marginLeft: "12px", display: "flex", gap: "8px" , alignItems: "center"}}
+              style={{
+                marginLeft: "12px",
+                display: "flex",
+                gap: "8px",
+                alignItems: "center",
+              }}
             >
               {!message.threadId && onOpenThread && !isEditing && (
-                <button onClick={() => onOpenThread(message)}
-                 title="Reply in thread"
-                 style={
-                  {
-                    background: "none",
-                    border: "none",
-                    cursor:"pointer",
-                    color: "#94a3b8",
-                    padding: 0,
-                    display:"flex",
-                    alignItems: "center"
-                  }
-                 }
-                 >
+                <button
+                  onClick={() => onOpenThread(message)}
+                  title="Reply in thread"
+                  className="msg-action-btn"
+                >
                   <ChatBubbleOutlineOutlinedIcon fontSize="small" />
-                 </button>
+                </button>
               )}
               <button
                 onClick={() => setIsEditing(true)}
                 title="Edit Message"
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "#94a3b8",
-                  padding: 0,
-                }}
+                className="msg-action-btn"
               >
                 <EditOutlinedIcon fontSize="small" />
               </button>
 
               <button
-                onClick={handleDelete}
+                onClick={() => setOpenDeleteDialog(true)}
                 title="Delete Message"
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "#f87171",
-                  padding: 0,
-                }}
+                className="msg-action-btn msg-action-btn--delete"
               >
                 <DeleteOutlineOutlinedIcon fontSize="small" />
               </button>
@@ -254,6 +236,12 @@ export default function Message({ message, stompClient, onOpenThread }) {
             </button>
           </div>
         )}
+
+        <DeleteConfirmationDialog
+          open={openDeleteDialog}
+          onClose={() => setOpenDeleteDialog(false)}
+          onConfirm={confirmDeleteMessage}
+        />
       </div>
     </div>
   );
