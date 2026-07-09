@@ -34,6 +34,7 @@
 }
 .sidebar-header button,
 .channels-section .channels-header button,
+.rooms-section .rooms-header button,
 .direct-messages-header button,
 .settings-btn {
   border: none;
@@ -84,8 +85,7 @@
 
 .channels-section {
   width: 191px;
-  height: 158px;
-  margin-top: 20px;
+  margin-top: 12px;
 }
 .channels-section .channels-header {
   width: 191px;
@@ -164,9 +164,83 @@
   vertical-align: middle;
 }
 
+/* Rooms Section */
+.rooms-section {
+  width: 191px;
+  margin-top: 12px;
+}
+.rooms-header {
+  width: 191px;
+  height: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 8px;
+  border-left: 3px solid var(--accent-color);
+  padding-left: 8px;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 20px;
+  letter-spacing: 0.8px;
+  margin-bottom: 12px;
+}
+
+.rooms-section .rooms-header button {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  transition: color 0.2s ease;
+}
+
+.rooms-section .rooms-header button:hover {
+  color: var(--accent-color);
+}
+
+.rooms-list {
+  width: 191px;
+  max-height: 102px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.room-item {
+  height: 32px;
+  border-radius: 8px;
+  padding: 6px 8px;
+  display: flex;
+  gap: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.room-item:hover {
+  color: var(--accent-color);
+  background-color: var(--border-primary);
+}
+.room-item.active {
+  background: var(--accent-bg-active);
+  color: var(--accent-color);
+  font-weight: 500;
+}
+.room-item svg {
+  font-size: 18px;
+}
+.room-item.active svg {
+  color: var(--accent-color);
+}
+.room-name {
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0px;
+  vertical-align: middle;
+}
+
 /* Direct Messages Section */
 .direct-messages-section {
-  margin-top: 20px;
+  margin-top: 12px;
 }
 
 .direct-messages-header {
@@ -242,6 +316,22 @@
 .offline {
   background: #94a3b8;
 }
+.dm-close-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 2px 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+}
+.dm-close-btn:hover {
+  color: #334155;
+}
+
 .dm-name {
   font-weight: 400;
   font-size: 14px;
@@ -321,18 +411,21 @@
 
 /* //----------------------------- */
 .direct-messages-list::-webkit-scrollbar,
-.channels-list::-webkit-scrollbar {
+.channels-list::-webkit-scrollbar,
+.rooms-list::-webkit-scrollbar {
   width: 4px;
 }
 
 .direct-messages-list::-webkit-scrollbar-thumb,
-.channels-list::-webkit-scrollbar-thumb {
+.channels-list::-webkit-scrollbar-thumb,
+.rooms-list::-webkit-scrollbar-thumb {
   background: var(--border-primary);
   border-radius: 10px;
 }
 
 .direct-messages-list::-webkit-scrollbar-track,
-.channels-list::-webkit-scrollbar-track {
+.channels-list::-webkit-scrollbar-track,
+.rooms-list::-webkit-scrollbar-track {
   background: transparent;
 }
 
@@ -355,6 +448,23 @@ body.dark-mode .direct-messages-header {
   color: var(--text-primary);
 }
 
+body.dark-mode .rooms-section .rooms-header {
+  color: var(--text-primary);
+}
+
 body.dark-mode .sidebar-header button svg {
   color: var(--text-primary);
+}
+
+/* Scrollbar dark mode overrides for sidebar lists */
+body.dark-mode .direct-messages-list::-webkit-scrollbar-thumb,
+body.dark-mode .channels-list::-webkit-scrollbar-thumb,
+body.dark-mode .rooms-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+body.dark-mode .direct-messages-list::-webkit-scrollbar-thumb:hover,
+body.dark-mode .channels-list::-webkit-scrollbar-thumb:hover,
+body.dark-mode .rooms-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
