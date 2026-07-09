@@ -20,7 +20,7 @@ import AssignmentIcon from "@mui/icons-material/Assignment";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CircleIcon from "@mui/icons-material/Circle";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import { Client } from "@stomp/stompjs";
+// import { Client } from "@stomp/stompjs";
 import { subscribeToNotifications } from "../ws/notificationsStompClient";
 import { getCurrentUserId } from "../utils/auth";
 
@@ -37,6 +37,18 @@ export default function NotificationsMenu() {
   const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+  const [isDarkMode, setIsDarkMode] = useState(
+    document.body.classList.contains("dark-mode"),
+  );
+
+  // Keep dark mode in sync when toggled elsewhere
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDarkMode(document.body.classList.contains("dark-mode"));
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
   // State to store the notifications fetched from the server
   const [notifications, setNotifications] = useState([]);
@@ -149,22 +161,19 @@ export default function NotificationsMenu() {
     switch (notification.type) {
       case "TASK_ASSIGNED":
         return {
-          icon: <AssignmentIcon color="primary" />,
-          bgColor: theme.palette.primary.light,
+          icon: <AssignmentIcon sx={{ color: "var(--accent-color)" }} />,
           title: notification.body,
           subtitle: notification.createdAt,
         };
       case "SIGNUP_SUCCESS":
         return {
-          icon: <CheckCircleIcon color="success" />,
-          bgColor: theme.palette.success.light,
+          icon: <CheckCircleIcon sx={{ color: "#22c55e" }} />,
           title: "Welcome to Virtual Office!",
           subtitle: `Hello ${notification.payload.firstName}, your account is ready.`,
         };
       default:
         return {
-          icon: <NotificationsIcon />,
-          bgColor: theme.palette.grey[300],
+          icon: <NotificationsIcon sx={{ color: "var(--text-secondary)" }} />,
           title: notification.body || "Notification",
           subtitle: notification.createdAt,
         };
@@ -177,10 +186,13 @@ export default function NotificationsMenu() {
       <IconButton
         onClick={handleClick}
         sx={{
-          color: "#94a3b8",
+          color: "var(--text-muted)",
           transition: "all 0.2s",
           padding: "4px",
-          "&:hover": { color: "#475569", backgroundColor: "transparent" },
+          "&:hover": {
+            color: "var(--text-secondary)",
+            backgroundColor: "transparent",
+          },
         }}
       >
         <Badge badgeContent={unreadCount} color="error">
@@ -196,11 +208,17 @@ export default function NotificationsMenu() {
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
         PaperProps={{
-          style: {
+          sx: {
             width: 380,
             maxHeight: 500,
             display: "flex",
             flexDirection: "column",
+            backgroundColor: "var(--bg-secondary)",
+            border: "1px solid var(--border-secondary)",
+            color: "var(--text-primary)",
+            boxShadow: isDarkMode
+              ? "0 8px 32px rgba(0,0,0,0.5)"
+              : "0 4px 20px rgba(0,0,0,0.12)",
           },
           elevation: 4,
         }}
@@ -211,12 +229,17 @@ export default function NotificationsMenu() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
+            borderBottom: "1px solid var(--border-secondary)",
           }}
         >
-          <Typography variant="h6" fontWeight="bold">
+          <Typography variant="h6" fontWeight="bold" sx={{ color: "var(--text-primary)" }}>
             Notifications
           </Typography>
-          <Button size="small" color="primary" onClick={handleMarkAllAsRead}>
+          <Button
+            size="small"
+            onClick={handleMarkAllAsRead}
+            sx={{ color: "var(--accent-color)", fontWeight: 600 }}
+          >
             Mark all as read
           </Button>
         </Box>
@@ -253,18 +276,21 @@ export default function NotificationsMenu() {
                   sx={{
                     bgcolor: notif.read
                       ? "transparent"
-                      : "rgba(25, 118, 210, 0.08)",
+                      : isDarkMode
+                        ? "var(--accent-bg-active)"
+                        : "rgba(80, 72, 229, 0.06)",
                     transition: "background-color 0.2s",
-                    "&:hover": { bgcolor: "rgba(0, 0, 0, 0.04)" },
+                    "&:hover": { bgcolor: "var(--bg-input)" },
                     cursor: "pointer",
                     pr: 6,
+                    borderBottom: "1px solid var(--border-secondary)",
                   }}
                 >
                   <ListItemAvatar>
                     <Avatar
                       sx={{
-                        bgcolor: "white",
-                        border: `1px solid ${content.bgColor}`,
+                        bgcolor: "var(--bg-secondary)",
+                        border: "1px solid var(--border-primary)",
                       }}
                     >
                       {content.icon}
@@ -276,6 +302,7 @@ export default function NotificationsMenu() {
                       <Typography
                         variant="subtitle2"
                         fontWeight={notif.read ? "normal" : "bold"}
+                        sx={{ color: "var(--text-primary)" }}
                       >
                         {content.title}
                       </Typography>
@@ -284,16 +311,16 @@ export default function NotificationsMenu() {
                       <>
                         <Typography
                           variant="body2"
-                          color="text.secondary"
                           component="span"
                           display="block"
+                          sx={{ color: "var(--text-secondary)" }}
                         >
                           {content.subtitle}
                         </Typography>
                         <Typography
                           variant="caption"
-                          color="text.disabled"
                           component="span"
+                          sx={{ color: "var(--text-muted)" }}
                         >
                           {notif.occurredAt}
                         </Typography>
@@ -301,10 +328,10 @@ export default function NotificationsMenu() {
                     }
                   />
 
-                  {/* Blue dot for unread notifications */}
+                  {/* Accent dot for unread notifications */}
                   {!notif.read && (
                     <CircleIcon
-                      sx={{ fontSize: 12, color: "primary.main", ml: 1, mr: 1 }}
+                      sx={{ fontSize: 12, color: "var(--accent-color)", ml: 1, mr: 1 }}
                     />
                   )}
 
@@ -317,10 +344,15 @@ export default function NotificationsMenu() {
                         right: 8,
                         top: "50%",
                         transform: "translateY(-50%)",
+                        color: "var(--text-muted)",
+                        "&:hover": {
+                          color: "#ef4444",
+                          backgroundColor: "rgba(239,68,68,0.08)",
+                        },
                       }}
                       onClick={(e) => handleDelete(e, notif.id, notif.read)}
                     >
-                      <DeleteOutlineIcon fontSize="small" color="action" />
+                      <DeleteOutlineIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
                 </ListItem>
@@ -328,11 +360,15 @@ export default function NotificationsMenu() {
             })}
         </List>
 
-        <Divider />
+        <Divider sx={{ borderColor: "var(--border-secondary)" }} />
 
         {/* Load more button */}
-        <Box sx={{ p: 1, textAlign: "center" }}>
-          <Button size="small" color="inherit" fullWidth>
+        <Box sx={{ p: 1, textAlign: "center", backgroundColor: "var(--bg-secondary)" }}>
+          <Button
+            size="small"
+            fullWidth
+            sx={{ color: "var(--text-secondary)", "&:hover": { color: "var(--text-primary)" } }}
+          >
             Load More
           </Button>
         </Box>

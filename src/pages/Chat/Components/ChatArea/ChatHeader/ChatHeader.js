@@ -6,7 +6,19 @@ import MenuIcon from "@mui/icons-material/Menu";
 import { useState } from "react";
 import { getCurrentUserId } from "../../../../../utils/auth";
 
-export default function ChatHeader({ activeChannel, onToggleSidebar }) {
+import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined";
+import NightsStayOutlinedIcon from "@mui/icons-material/NightsStayOutlined";
+
+import Switch from "@mui/material/Switch";
+
+export default function ChatHeader({
+  activeChannel,
+  onToggleSidebar,
+  channelMessages = [],
+  usersMap = {},
+  searchQuery,
+  setSearchQuery,
+}) {
   let channelNameForDisplay = "Loading...";
   if (activeChannel !== null) {
     if (activeChannel.name !== undefined) {
@@ -85,6 +97,43 @@ export default function ChatHeader({ activeChannel, onToggleSidebar }) {
     }
   };
 
+  const filteredMessages =
+    searchQuery.trim() === ""
+      ? []
+      : channelMessages.filter((msg) => {
+          const text = msg.content || msg.text || "";
+          return text.toLowerCase().includes(searchQuery.toLowerCase());
+        });
+
+  const handleResultClick = (msg) => {
+    const element = document.getElementById(`msg-${msg.id}`);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      element.classList.add("highlight-pulse");
+      setTimeout(() => {
+        element.classList.remove("highlight-pulse");
+      }, 2000);
+    }
+    setSearchQuery("");
+  };
+
+  const [isDarkMode, setIsDarkMode] = useState(
+    document.body.classList.contains("dark-mode"),
+  );
+
+  const toggleDarkMode = () => {
+    if (document.body.classList.contains("dark-mode")) {
+      document.body.classList.remove("dark-mode");
+      localStorage.setItem("theme", "light");
+      setIsDarkMode(false);
+    } else {
+      document.body.classList.add("dark-mode");
+      localStorage.setItem("theme", "dark");
+      setIsDarkMode(true);
+    }
+  };
+
   return (
     <div className="chat-header">
       {/* Left Side */}
@@ -109,12 +158,27 @@ export default function ChatHeader({ activeChannel, onToggleSidebar }) {
 
       {/* Right Side */}
       <div className="header-actions">
-
-
         <div
           className="info-dropdown-container"
           style={{ position: "relative" }}
         >
+          <Switch
+            checked={isDarkMode}
+            onChange={toggleDarkMode}
+            className="theme-switch-mui"
+            icon={
+              <span className="mui-switch-icon-wrapper">
+                <WbSunnyOutlinedIcon className="sunny-icon" />
+              </span>
+            }
+            checkedIcon={
+              <span className="mui-switch-icon-wrapper">
+                <NightsStayOutlinedIcon className="moon-icon" />
+              </span>
+            }
+            inputProps={{ "aria-label": "Toggle Theme" }}
+          />
+
           <button className="header-btn" aria-label="Info" onClick={toggleMenu}>
             <InfoOutlinedIcon />
           </button>
@@ -164,9 +228,52 @@ export default function ChatHeader({ activeChannel, onToggleSidebar }) {
           )}
         </div>
 
-        <div className="header-search">
-          <SearchOutlinedIcon />
-          <input type="text" placeholder="Search" />
+        <div
+          className="header-search-container"
+          style={{ position: "relative" }}
+        >
+          <div className="header-search">
+            <SearchOutlinedIcon />
+            <input
+              type="text"
+              placeholder="Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          {searchQuery.trim() !== "" && (
+            <div className="search-results-dropdown">
+              {filteredMessages.length === 0 ? (
+                <div className="search-result-empty">No results found</div>
+              ) : (
+                filteredMessages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className="search-result-item"
+                    onClick={() => handleResultClick(msg)}
+                  >
+                    <div className="search-result-header">
+                      <span className="search-result-user">
+                        {usersMap[msg.senderId] || `User ${msg.senderId}`}
+                      </span>
+                      <span className="search-result-time">
+                        {new Date(msg.createdAt).toLocaleTimeString([], {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                    <div className="search-result-text">
+                      {msg.content || msg.text}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

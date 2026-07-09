@@ -4,39 +4,47 @@ import SentimentSatisfiedAltOutlinedIcon from "@mui/icons-material/SentimentSati
 import SendOutlinedIcon from "@mui/icons-material/SendOutlined";
 import EmojiPicker from "emoji-picker-react";
 import { useState } from "react";
+import { ClickAwayListener } from "@mui/material";
 export default function MessageInput({ activeChannel, stompClient }) {
   const [message, setMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const onEmojiClick = (emojiObject) => {
     setMessage((prev) => prev + emojiObject.emoji);
+    // setShowEmojiPicker(false);
+  };
+
+  const handleClickAway = (event) => {
+    if (event.target.closest('[aria-label="Add emoji"]')) {
+      return;
+    }
     setShowEmojiPicker(false);
   };
 
- const handleSendMessage = () => {
-  if (!message.trim() || !activeChannel?.id) return;
-  
-  if (stompClient && stompClient.connected) {
-    const storedUserId = localStorage.getItem("userId");
+  const handleSendMessage = () => {
+    if (!message.trim() || !activeChannel?.id) return;
 
-    stompClient.publish({
-      destination: "/app/chat/send",
-      body: JSON.stringify({
-        channelId: activeChannel.id,
-        content: message,
-        threadId: null,
-        replyToId: null,
-        mentions: [],
-        clientMessageId: crypto.randomUUID(),
-        userId: storedUserId ? Number(storedUserId) : null,
-      })
-    });
-    setMessage("");
-  } else {
-    console.warn("WebSocket not connected — message not sent");
-    alert("can't send message right now");
-  }
-};
+    if (stompClient && stompClient.connected) {
+      const storedUserId = localStorage.getItem("userId");
+
+      stompClient.publish({
+        destination: "/app/chat/send",
+        body: JSON.stringify({
+          channelId: activeChannel.id,
+          content: message,
+          threadId: null,
+          replyToId: null,
+          mentions: [],
+          clientMessageId: crypto.randomUUID(),
+          userId: storedUserId ? Number(storedUserId) : null,
+        }),
+      });
+      setMessage("");
+    } else {
+      console.warn("WebSocket not connected — message not sent");
+      alert("can't send message right now");
+    }
+  };
   // typing indicator:
   const handleTyping = () => {
     if (stompClient && stompClient.connected && activeChannel?.id) {
@@ -69,7 +77,10 @@ export default function MessageInput({ activeChannel, stompClient }) {
           placeholder={placeholderText}
           className="message-input-field"
           value={message}
-          onChange={(e) => {setMessage(e.target.value); handleTyping();}}
+          onChange={(e) => {
+            setMessage(e.target.value);
+            handleTyping();
+          }}
           onKeyDown={handleKeyDown}
         />
 
@@ -98,9 +109,16 @@ export default function MessageInput({ activeChannel, stompClient }) {
 
       {/* Emoji Picker */}
       {showEmojiPicker && (
-        <div className="emoji-picker-wrapper">
-          <EmojiPicker onEmojiClick={onEmojiClick} />
-        </div>
+        <ClickAwayListener onClickAway={handleClickAway}>
+          <div className="emoji-picker-wrapper">
+            <EmojiPicker
+              onEmojiClick={onEmojiClick}
+              theme={
+                document.body.classList.contains("dark-mode") ? "dark" : "light"
+              }
+            />
+          </div>
+        </ClickAwayListener>
       )}
     </div>
   );

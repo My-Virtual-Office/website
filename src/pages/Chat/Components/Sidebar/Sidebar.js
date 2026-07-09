@@ -270,7 +270,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
                 const otherUserId = dm.members?.find((m) => m !== currentId);
                 const dmDisplayName = dm.name
                   ? dm.name
-                  : (MOCK_USERS[otherUserId] || `User ${otherUserId || "X"}`);
+                  : MOCK_USERS[otherUserId] || `User ${otherUserId || "X"}`;
 
                 return (
                   <div
@@ -315,11 +315,11 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
                       width: "100%",
                       height: "100%",
                       borderRadius: "50%",
-                      backgroundColor: "#e5e7ff",
+                      backgroundColor: "var(--accent-bg-active)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      color: "#5048e5",
+                      color: "var(--accent-color)",
                       fontWeight: "700",
                       fontSize: "14px",
                     }}

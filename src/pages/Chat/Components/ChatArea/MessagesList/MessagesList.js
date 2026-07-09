@@ -9,8 +9,15 @@ export default function MessagesList({
   onOpenThread,
   activeThread,
   usersMap,
+  onMessagesUpdated,
 }) {
   const [messages, setMessages] = useState([]);
+
+  useEffect(() => {
+    if (onMessagesUpdated) {
+      onMessagesUpdated(messages);
+    }
+  }, [messages, onMessagesUpdated]);
 
   // Effect 1 : Core message loading
   //
@@ -142,7 +149,9 @@ export default function MessagesList({
   return (
     <div className="messages-list">
       {messages.map((message, index) => {
-        const displayName = (usersMap && usersMap[message.senderId]) || `User ${message.senderId}`;
+        const displayName =
+          (usersMap && usersMap[message.senderId]) ||
+          `User ${message.senderId}`;
 
         // Render a date divider whenever the calendar day changes between messages,
         // using the message's own timestamp instead of the current system date.
@@ -152,7 +161,7 @@ export default function MessagesList({
         const showDivider = currentLabel && currentLabel !== previousLabel;
 
         return (
-          <div key={message.id}>
+          <div key={message.id} id={`msg-${message.id}`}>
             {showDivider && (
               <div className="date-divider">
                 <span className="horizontal-divider"></span>

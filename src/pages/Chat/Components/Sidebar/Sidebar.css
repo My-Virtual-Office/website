@@ -2,26 +2,30 @@
   width: 216px;
   height: 100vh;
   font-family: Inter, sans-serif;
-  border-right: 1px solid #e2e8f0;
+  /* border-right: 1px solid #e2e8f0; */
+  border-right: 1px solid var(--border-secondary);
 }
 .sidebar {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: #f8fafc;
+  /* background-color: #f8fafc; */
+  background-color: var(--bg-secondary);
 }
 .sidebar-header {
   width: 215px;
   height: 56px;
-  border-bottom: 1px solid #e2e8f0;
+  /* border-bottom: 1px solid #e2e8f0; */
+  border-bottom: 1px solid var(--border-secondary);
   display: flex;
   align-items: center;
   justify-content: space-around;
 }
 .sidebar-header span {
   padding: 16px;
-  color: #1e293b;
+  /* color: #1e293b; */
+  color: var(--text-primary);
   font-weight: 700;
   font-size: 16px;
   line-height: 24px;
@@ -41,7 +45,8 @@
 .channels-section .channels-header button:hover,
 .direct-messages-header button:hover,
 .settings-btn:hover {
-  color: #475569;
+  /* color: #475569; */
+  color: var(--text-secondary);
 }
 
 .sidebar-header button svg {
@@ -64,7 +69,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #475569;
+  /* color: #475569; */
+  color: var(--text-secondary);
 }
 
 .sidebar-main .search span,
@@ -83,21 +89,32 @@
 }
 .channels-section .channels-header {
   width: 191px;
-  height: 16px;
+  height: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 8px;
+  border-left: 3px solid var(--accent-color);
+  padding-left: 8px;
   color: #64748b;
   font-weight: 700;
-  font-size: 12px;
-  line-height: 16px;
-  letter-spacing: 0.6px;
-  margin-bottom: 8px;
+  font-size: 13px;
+  line-height: 20px;
+  letter-spacing: 0.8px;
+  margin-bottom: 12px;
 }
+
 .channels-section .channels-header button,
 .direct-messages-header button {
-  color: #94a3b8;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  transition: color 0.2s ease;
+}
+
+.channels-section .channels-header button:hover,
+.direct-messages-header button:hover {
+  color: var(--accent-color);
 }
 .channels-list {
   width: 191px;
@@ -113,24 +130,31 @@
   padding: 6px 8px;
   display: flex;
   gap: 4px;
-  color: #475569;
+  /* color: #475569; */
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.3s;
 }
 .channel-item:hover {
-  color: #5048e5;
-  background-color: #cbd5e1;
+  /* color: #5048e5;
+  background-color: #cbd5e1; */
+  color: var(--accent-color);
+  background-color: var(--border-primary);
 }
 .channel-item.active {
-  background: #e5e7ff;
-  color: #5048e5;
+  /* background: #e5e7ff;
+  color: #5048e5; */
+  background: var(--accent-bg-active);
+  color: var(--accent-color);
   font-weight: 500;
 }
+
 .channel-item svg {
   font-size: 18px;
 }
 .channel-item.active svg {
-  color: #5048e5;
+  /* color: #5048e5; */
+  color: var(--accent-color);
 }
 .channel-name {
   font-weight: 500;
@@ -151,15 +175,20 @@
   align-items: center;
   opacity: 1;
   padding: 0 8px;
+  border-left: 3px solid var(--accent-color);
+  padding-left: 8px;
+  color: #64748b;
+  margin-bottom: 12px;
 }
+
 .direct-messages-header span {
   font-weight: 700;
-  font-size: 12px;
-  line-height: 16px;
-  letter-spacing: 0.6px;
+  font-size: 13px;
+  line-height: 20px;
+  letter-spacing: 0.8px;
   vertical-align: middle;
-  color: #64748b;
-  padding: 0 8px;
+  color: inherit;
+  padding: 0;
 }
 
 .direct-messages-list {
@@ -182,7 +211,8 @@
 }
 
 .dm-item:hover {
-  background: #f1f5f9;
+  /* background: #f1f5f9; */
+  background: var(--bg-input);
 }
 
 .dm-avatar {
@@ -206,7 +236,8 @@
   border-radius: 50%;
   border-width: 2px;
   background: #22c55e;
-  border: 2px solid #f8fafc;
+  /* border: 2px solid #f8fafc; */
+  border: 2px solid var(--bg-secondary);
 }
 .offline {
   background: #94a3b8;
@@ -217,7 +248,7 @@
   line-height: 20px;
   letter-spacing: 0px;
   vertical-align: middle;
-  color: #475569;
+  color: var(--text-secondary);
 }
 
 .user-profile {
@@ -225,7 +256,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid #e2e8f0;
+  /* border-top: 1px solid #e2e8f0; */
+  border-top: 1px solid var(--border-secondary);
   width: 100%;
 }
 .user-info {
@@ -264,7 +296,8 @@
   font-size: 14px;
   line-height: 20px;
   letter-spacing: 0px;
-  color: #0f172a;
+  /* color: #0f172a; */
+  color: var(--text-primary);
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
@@ -277,10 +310,12 @@
   line-height: 16px;
   letter-spacing: 0px;
   vertical-align: middle;
-  color: #64748b;
+  /* color: #64748b; */
+  color: var(--text-secondary);
 }
 .settings-btn {
-  color: #94a3b8;
+  /* color: #94a3b8; */
+  color: var(--text-muted);
   transition: all 0.2s;
 }
 
@@ -292,11 +327,34 @@
 
 .direct-messages-list::-webkit-scrollbar-thumb,
 .channels-list::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--border-primary);
   border-radius: 10px;
 }
 
 .direct-messages-list::-webkit-scrollbar-track,
 .channels-list::-webkit-scrollbar-track {
   background: transparent;
+}
+
+.dm-item.active {
+  background: var(--accent-bg-active);
+  color: var(--accent-color);
+}
+
+.dm-item.active .dm-name {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+/* Dark mode overrides for headings */
+body.dark-mode .channels-section .channels-header {
+  color: var(--text-primary);
+}
+
+body.dark-mode .direct-messages-header {
+  color: var(--text-primary);
+}
+
+body.dark-mode .sidebar-header button svg {
+  color: var(--text-primary);
 }
