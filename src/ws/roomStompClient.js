@@ -1,7 +1,7 @@
 import { getCurrentUserId } from "../utils/auth";
 
-async function fetchChatTicket() {
-  const response = await fetch("/api/chat/ws-ticket", {
+async function fetchRoomTicket() {
+  const response = await fetch("/api/rooms/ws-ticket", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -12,25 +12,25 @@ async function fetchChatTicket() {
 
   if (!response.ok) {
     const errorText = await response.text();
-    const error = new Error(errorText || "Failed to fetch websocket ticket");
+    const error = new Error(errorText || "Failed to fetch room websocket ticket");
     error.status = response.status;
     throw error;
   }
 
   const data = await response.json();
   if (!data.ticket) {
-    throw new Error("Failed to fetch websocket ticket.");
+    throw new Error("Failed to fetch room websocket ticket.");
   }
   return data.ticket;
 }
 
-export function wsChatUrl(ticket) {
+export function wsRoomUrl(ticket) {
   if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-    return `ws://localhost:8084/api/chat/connect?ticket=${ticket}`;
+    return `ws://localhost:8086/ws/rooms?ticket=${ticket}`;
   }
   const wsProtocol =
     window.location.protocol === "https:" ? "wss:" : "ws:";
-  return `${wsProtocol}//${window.location.host}/api/chat/connect?ticket=${ticket}`;
+  return `${wsProtocol}//${window.location.host}/ws/rooms?ticket=${ticket}`;
 }
 
-export { fetchChatTicket };
+export { fetchRoomTicket };

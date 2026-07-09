@@ -7,19 +7,23 @@ import ThreadArea from "./Components/ChatArea/Threads/ThreadArea";
 import { useState, useEffect, useRef } from "react";
 import { Client } from "@stomp/stompjs";
 import { fetchChatTicket, wsChatUrl } from "../../ws/chatStompClient";
+import { fetchRoomTicket, wsRoomUrl } from "../../ws/roomStompClient";
 import MembersList from "./Components/MembersList/MembersList";
 import { getCurrentUserId } from "../../utils/auth";
 import { getCurrentUser, getAllUsers } from "../../api/user";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function ChatPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const joinChannelId = location.state?.joinChannelId || null;
   const [activeChannel, setActiveChannel] = useState(null);
+  const [activeWorkspace, setActiveWorkspace] = useState(null);
   const [stompClient, setStompClient] = useState(null);
+  const [roomStompClient, setRoomStompClient] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [activeThread, setActiveThread] = useState(null);
   const [isThreadOpen, setIsThreadOpen] = useState(false);
-  // Controls the channels drawer on mobile (below the `md` breakpoint).
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [usersMap, setUsersMap] = useState({
     1: "Ahmed Aly",
@@ -31,10 +35,12 @@ export default function ChatPage() {
     7: "Mariam Ali",
   });
 
-  // A persistent reference tracking the active STOMP client structure across renders
-  const stompClientRef = useRef(null);
+  const [roomParticipants, setRoomParticipants] = useState([]);
 
-  // Hook 1: Authenticate the current workspace user and sync the team directory map
+  const stompClientRef = useRef(null);
+  const roomStompClientRef = useRef(null);
+  const roomSubRef = useRef(null);
+
   useEffect(() => {
     const initUser = async () => {
       const token = localStorage.getItem("token");
@@ -53,9 +59,6 @@ export default function ChatPage() {
           }));
         }
 
-        // Populate the shared user map with the real workspace users so that
-        // member names (and message authors) reflect actual profiles and stay
-        // in sync with backend changes instead of the static mock seed.
         try {
           const allUsers = await getAllUsers();
           if (Array.isArray(allUsers)) {
@@ -82,36 +85,10 @@ export default function ChatPage() {
     initUser();
   }, [navigate]);
 
-  // Hook 2: Handles single-use ticket fetching, WebSocket connection, and
-  // automatic reconnection. The ws-ticket is single-use, so STOMP's built-in
-  // reconnect (reconnectDelay) is disabled — it would replay the now-stale
-  // ticket. Instead we re-run the full ticket + activate flow ourselves with
-  // capped exponential backoff so a dropped socket recovers without a reload.
   useEffect(() => {
     if (loadingUser) return;
 
-    let isCancelled = false;
-    let reconnectAttempts = 0;
-    let reconnectTimer = null;
-
-    const MAX_RECONNECT_DELAY = 30000;
-
-    // Back off 1s, 2s, 4s, 8s … capped, plus jitter to avoid a reconnect storm
-    // if many clients drop at once. Each attempt re-runs connectWebSocket, which
-    // fetches a brand-new ticket.
-    const scheduleReconnect = () => {
-      if (isCancelled || reconnectTimer) return;
-      const base = Math.min(1000 * 2 ** reconnectAttempts, MAX_RECONNECT_DELAY);
-      const delay = base + Math.floor(Math.random() * 1000);
-      reconnectAttempts += 1;
-      console.warn(
-        `Reconnecting WebSocket in ${delay}ms (attempt ${reconnectAttempts})...`,
-      );
-      reconnectTimer = setTimeout(() => {
-        reconnectTimer = null;
-        if (!isCancelled) connectWebSocket();
-      }, delay);
-    };
+    let client;
 
     const connectWebSocket = async () => {
       try {
@@ -120,54 +97,29 @@ export default function ChatPage() {
           return;
         }
 
-        // Step A: Terminate any existing connection references before requesting a clean ticket.
-        // Detach the close handler first so this intentional teardown doesn't
-        // trigger another reconnect through onWebSocketClose.
         if (stompClientRef.current) {
-          console.log("Disconnecting existing stale WebSocket connection instance...");
           const stale = stompClientRef.current;
           stompClientRef.current = null;
           stale.onWebSocketClose = () => {};
           stale.deactivate();
         }
 
-        let ticket;
-        try {
-          ticket = await fetchChatTicket();
-        } catch (err) {
-          console.error("Failed to fetch websocket ticket:", err);
-          if (err.status === 401 || err.status === 400) {
-            // Auth is unrecoverable — bounce to login, don't retry.
-            localStorage.removeItem("token");
-            localStorage.removeItem("userId");
-            navigate("/login", { replace: true });
-            return;
-          }
-          // Transient failure (5xx / network) — back off and try again.
-          scheduleReconnect();
-          return;
-        }
+        const ticket = await fetchChatTicket();
+        console.log("Fetched ticket:", ticket);
 
-        // Safety verification check: Drop operations if the component unmounted during the HTTP ticket request
-        if (isCancelled) return;
-
-        // Step C: Initialize the Client directly to the mutable ref object
-        stompClientRef.current = new Client({
+        client = new Client({
           brokerURL: wsChatUrl(ticket),
-
-          // Disable STOMP auto-reconnection loop since it recycles expired tickets;
-          // scheduleReconnect() drives reconnects with a fresh ticket instead.
-          reconnectDelay: 0,
+          reconnectDelay: 5000,
+          beforeConnect: async () => {
+            const freshTicket = await fetchChatTicket();
+            client.brokerURL = wsChatUrl(freshTicket);
+          },
           onConnect: () => {
             console.log("Connected to STOMP!");
+            setStompClient(client);
+            stompClientRef.current = client;
 
-            // A healthy connection resets the backoff window.
-            reconnectAttempts = 0;
-
-            // Mirror current pointer context back to React state hook for downstream components
-            setStompClient(stompClientRef.current);
-
-            stompClientRef.current.subscribe("/user/queue/errors", (msg) => {
+            client.subscribe("/user/queue/errors", (msg) => {
               console.error("STOMP Error:", JSON.parse(msg.body));
             });
           },
@@ -181,42 +133,139 @@ export default function ChatPage() {
           onWebSocketClose: () => {
             console.warn("WebSocket stream closed down. Clearing application state...");
             setStompClient(null);
-            // Unexpected drop (not an intentional teardown) — attempt recovery.
-            if (!isCancelled) scheduleReconnect();
-          }
+            stompClientRef.current = null;
+          },
         });
 
-        stompClientRef.current.activate();
+        client.activate();
       } catch (err) {
         console.error("Failed to connect to websocket", err);
-        scheduleReconnect();
+        if (err.status === 401 || err.status === 400) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("userId");
+          navigate("/login", { replace: true });
+        }
       }
     };
 
     connectWebSocket();
 
-    // Cleanup phase: Teardown logic when layout dependencies switch
     return () => {
-      isCancelled = true;
-      if (reconnectTimer) {
-        clearTimeout(reconnectTimer);
-        reconnectTimer = null;
-      }
-      if (stompClientRef.current) {
-        console.log("Deactivating active WebSocket connection reference inside cleanup.");
-        stompClientRef.current.deactivate();
+      if (client) {
+        client.deactivate();
         stompClientRef.current = null;
       }
     };
   }, [loadingUser, navigate]);
 
-  // Hook 3: Debug logging for active thread contexts
+  useEffect(() => {
+    if (loadingUser) return;
+
+    let roomClient;
+
+    const connectRoomWebSocket = async () => {
+      try {
+        if (roomStompClientRef.current) {
+          const stale = roomStompClientRef.current;
+          roomStompClientRef.current = null;
+          stale.onWebSocketClose = () => {};
+          stale.deactivate();
+        }
+
+        const ticket = await fetchRoomTicket();
+
+        roomClient = new Client({
+          brokerURL: wsRoomUrl(ticket),
+          reconnectDelay: 5000,
+          beforeConnect: async () => {
+            const freshTicket = await fetchRoomTicket();
+            roomClient.brokerURL = wsRoomUrl(freshTicket);
+          },
+          onConnect: () => {
+            console.log("Connected to room STOMP!");
+            setRoomStompClient(roomClient);
+            roomStompClientRef.current = roomClient;
+          },
+          onStompError: (frame) => {
+            console.error("Room STOMP error: " + frame.headers["message"]);
+          },
+          onWebSocketError: (event) => {
+            console.error("Room WebSocket error:", event);
+          },
+          onWebSocketClose: () => {
+            console.warn("Room WebSocket closed");
+            setRoomStompClient(null);
+            roomStompClientRef.current = null;
+          },
+        });
+
+        roomClient.activate();
+      } catch (err) {
+        console.error("Failed to connect to room websocket", err);
+      }
+    };
+
+    connectRoomWebSocket();
+
+    return () => {
+      if (roomClient) {
+        roomClient.deactivate();
+        roomStompClientRef.current = null;
+      }
+    };
+  }, [loadingUser]);
+
+  useEffect(() => {
+    if (!roomStompClient?.connected || activeChannel?.type !== "ROOM") {
+      if (roomSubRef.current) {
+        roomSubRef.current.unsubscribe();
+        roomSubRef.current = null;
+      }
+      setRoomParticipants([]);
+      return;
+    }
+
+    const roomId = activeChannel.id;
+
+    if (roomSubRef.current) {
+      roomSubRef.current.unsubscribe();
+    }
+
+    roomSubRef.current = roomStompClient.subscribe(`/topic/room/${roomId}`, (message) => {
+      try {
+        const event = JSON.parse(message.body);
+        const { action, payload } = event;
+
+        if (action === "PARTICIPANT_JOINED") {
+          setRoomParticipants((prev) => {
+            if (!prev.find((p) => p.userId === payload.userId)) {
+              return [...prev, { userId: payload.userId, joinedAt: new Date() }];
+            }
+            return prev;
+          });
+        } else if (action === "PARTICIPANT_LEFT") {
+          setRoomParticipants((prev) => prev.filter((p) => p.userId !== payload.userId));
+        } else if (action === "STATE_CHANGED") {
+          setRoomParticipants(payload.participants || []);
+        }
+      } catch (err) {
+        console.error("Failed to parse room event:", err);
+      }
+    });
+
+    return () => {
+      if (roomSubRef.current) {
+        roomSubRef.current.unsubscribe();
+        roomSubRef.current = null;
+      }
+    };
+  }, [roomStompClient, activeChannel]);
+
   useEffect(() => {
     console.log("activeThread state just changed to:", activeThread);
   }, [activeThread]);
 
   const handleOpenThread = async (clickedMessage) => {
-    // Scenario A: If message has a thread ID, look up its metadata immediately
     if (clickedMessage.threadId) {
       try {
         const res = await fetch(
@@ -225,6 +274,7 @@ export default function ChatPage() {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
               "X-User-Id": String(getCurrentUserId()),
               "X-User-Role": "USER",
             },
@@ -234,7 +284,7 @@ export default function ChatPage() {
           const threadData = await res.json();
           setActiveThread(threadData);
           setIsThreadOpen(true);
-          return; // Exit out safely
+          return;
         }
       } catch (err) {
         console.error("Error fetching existing thread metadata:", err);
@@ -248,6 +298,7 @@ export default function ChatPage() {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
               "X-User-Id": String(getCurrentUserId()),
               "X-User-Role": "USER",
             },
@@ -263,11 +314,12 @@ export default function ChatPage() {
           setActiveThread(threadData);
           setIsThreadOpen(true);
         }
-        else if (res.status === 409) { // thread already exists
+        else if (res.status === 409) {
           const listRes = await fetch(`/api/chat/channels/${clickedMessage.channelId}/threads?page=1&limit=50`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
               "X-User-Id": String(getCurrentUserId()),
               "X-User-Role": "USER",
             },
@@ -318,13 +370,14 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="chatPage relative flex w-screen h-screen overflow-hidden">
-      {/* Workspace icon rail — tablet and up */}
+    <div className={`chatPage relative flex w-screen h-screen overflow-hidden ${isThreadOpen ? "thread-open" : ""}`}>
       <div className="hidden md:flex shrink-0">
-        <WorkspaceSidebar />
+        <WorkspaceSidebar
+          activeWorkspace={activeWorkspace}
+          setActiveWorkspace={setActiveWorkspace}
+        />
       </div>
 
-      {/* Backdrop for the mobile channels drawer */}
       {isSidebarOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/30 md:hidden"
@@ -333,7 +386,6 @@ export default function ChatPage() {
         />
       )}
 
-      {/* Channels sidebar — slide-in drawer on mobile, static column on md+ */}
       <div
         className={`fixed top-0 left-0 z-40 h-full shrink-0 transform transition-transform duration-300 ease-in-out md:static md:z-auto md:translate-x-0 ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -343,23 +395,26 @@ export default function ChatPage() {
           activeChannel={activeChannel}
           setActiveChannel={(channel) => {
             setActiveChannel(channel);
-            // Auto-dismiss the drawer once a channel is picked on mobile.
             setIsSidebarOpen(false);
           }}
+          workspaceId={activeWorkspace?.id}
+          activeWorkspace={activeWorkspace}
+          joinChannelId={joinChannelId}
         />
       </div>
 
-      {/* Main chat space — always absorbs the remaining width */}
       <ChatArea
         activeChannel={activeChannel}
         stompClient={stompClient}
+        roomStompClient={roomStompClient}
+        roomParticipants={roomParticipants}
         onOpenThread={handleOpenThread}
         activeThread={activeThread}
         usersMap={usersMap}
         onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
+        workspaceId={activeWorkspace?.id}
       />
 
-      {/* Thread panel — full-screen overlay on mobile/tablet, docked column on lg+ */}
       {isThreadOpen && activeThread && (
         <div className="fixed inset-0 z-50 w-full shrink-0 lg:static lg:inset-auto lg:z-auto lg:w-[400px]">
           <ThreadArea
@@ -375,7 +430,6 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* Members list — ultra-wide screens only */}
       <div className="hidden xl:flex shrink-0">
         <MembersList activeChannel={activeChannel} usersMap={usersMap} />
       </div>

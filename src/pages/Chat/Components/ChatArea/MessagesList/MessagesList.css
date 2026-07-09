@@ -32,21 +32,14 @@
 /* ___________________________--------------------------------- */
 /* --- Message Navigation Highlight --- */
 
-@keyframes pulseHighlight {
-  0% {
-    background-color: transparent;
-  }
-  30% {
-    background-color: #fef08a;
-  }
-  100% {
-    background-color: transparent;
-  }
+@keyframes highlightFlash {
+  0% { background-color: #fef08a; }
+  100% { background-color: transparent; }
 }
 
-.highlight-pulse {
-  animation: pulseHighlight 2s ease-out;
-  border-radius: 8px;
+.highlight-flash {
+  animation: highlightFlash 2s ease-out;
+  border-radius: 6px;
 }
 
 .messages-list::-webkit-scrollbar {

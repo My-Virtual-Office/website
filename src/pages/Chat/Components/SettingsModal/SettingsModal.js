@@ -197,13 +197,25 @@ export default function SettingsModal({
           </Tabs>
         </Box>
 
-        {/* ── Right content ───────────────────────────────────────── */}
         <Box
           sx={{
             flex: 1,
             p: 4,
             overflowY: "auto",
             backgroundColor: "var(--bg-primary)",
+            "&::-webkit-scrollbar": {
+              width: "6px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.15)" : "var(--border-primary)",
+              borderRadius: "10px",
+              "&:hover": {
+                backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.3)" : "var(--text-muted)",
+              },
+            },
+            "&::-webkit-scrollbar-track": {
+              backgroundColor: "transparent",
+            },
           }}
         >
           {/* Security tab */}

@@ -38,6 +38,7 @@ export default function Message({ message, stompClient, onOpenThread }) {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
           "X-User-Id": String(getCurrentUserId()),
           "X-User-Role": "USER",
         },
@@ -62,6 +63,7 @@ export default function Message({ message, stompClient, onOpenThread }) {
       const response = await fetch(`/api/chat/messages/${message.id}`, {
         method: "DELETE",
         headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
           "X-User-Id": String(getCurrentUserId()),
           "X-User-Role": "USER",
         },

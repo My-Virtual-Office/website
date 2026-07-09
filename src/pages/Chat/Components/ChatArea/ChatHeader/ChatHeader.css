@@ -87,6 +87,7 @@ height: 24px; */
   cursor: pointer;
 }
 .header-search {
+  position: relative;
   display: flex;
   align-items: center;
   background-color: var(--bg-input);
@@ -121,6 +122,105 @@ height: 24px; */
   vertical-align: middle;
   /* color: #6b7280; */
   color: var(--text-secondary);
+}
+
+.search-clear-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  margin-left: 4px;
+}
+
+.search-clear-btn:hover {
+  color: #64748b;
+}
+
+.search-results-dropdown {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  width: 380px;
+  max-height: 420px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  z-index: 2000;
+}
+
+.search-results-header {
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  border-bottom: 1px solid #f1f5f9;
+  background: #f8fafc;
+  border-radius: 10px 10px 0 0;
+}
+
+.search-results-empty {
+  padding: 24px 14px;
+  font-size: 13px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.search-result-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid #f8fafc;
+  transition: background-color 0.1s;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover,
+.search-result-item.selected {
+  background-color: #f1f5f9;
+}
+
+.search-result-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.search-result-sender {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.search-result-date {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.search-result-content {
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.search-highlight {
+  background-color: #fef08a;
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+  font-weight: 600;
 }
 
 /* --- Channel Info Dropdown Menu Styles --- */
@@ -328,7 +428,7 @@ height: 24px; */
 
 .search-results-dropdown {
   position: absolute;
-  top: 45px;
+  top: calc(100% + 6px);
   right: 0;
   /* background-color: #ffffff;
   border: 1px solid #e2e8f0; */
@@ -357,7 +457,7 @@ height: 24px; */
   padding: 10px 16px;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-secondary);
   text-align: left;
 }
 
@@ -470,4 +570,59 @@ body.dark-mode .theme-switch-mui .MuiSwitch-thumb {
 .theme-switch-mui .moon-icon {
   font-size: 14px !important;
   color: #17100b !important;
+}
+
+/* Responsive adjustments when thread is open next to ChatArea */
+.chatPage.thread-open .chat-header {
+  padding: 0 12px;
+}
+
+.chatPage.thread-open .chat-header .channel-description,
+.chatPage.thread-open .chat-header .margin {
+  display: none !important;
+}
+
+.chatPage.thread-open .chat-header .header-search {
+  display: none !important;
+}
+
+.chatPage.thread-open .chat-header .channel-info h3 span {
+  font-size: 15px;
+}
+
+.chatPage.thread-open .chat-header .channel-info h3 svg {
+  font-size: 20px;
+}
+
+/* Dark mode and premium styling for search box */
+.header-search {
+  border: 1px solid transparent;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.header-search:focus-within {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px var(--accent-bg-active);
+}
+
+body.dark-mode .header-search {
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-secondary);
+}
+
+body.dark-mode .header-search input {
+  background-color: transparent;
+  color: var(--text-primary);
+}
+
+body.dark-mode .header-search input::placeholder {
+  color: var(--text-muted);
+}
+
+body.dark-mode .search-clear-btn {
+  color: var(--text-muted);
+}
+
+body.dark-mode .search-clear-btn:hover {
+  color: var(--text-primary);
 }

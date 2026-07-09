@@ -125,3 +125,26 @@ body.dark-mode .threadArea {
   color: var(--text-muted);
   cursor: not-allowed;
 }
+
+/* Scrollbar styles for thread messages scroll zone */
+.thread-messages-scroll-zone::-webkit-scrollbar {
+  width: 6px;
+}
+
+.thread-messages-scroll-zone::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 10px;
+}
+
+.thread-messages-scroll-zone::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Dark mode scrollbar styles */
+body.dark-mode .thread-messages-scroll-zone::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+body.dark-mode .thread-messages-scroll-zone::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
