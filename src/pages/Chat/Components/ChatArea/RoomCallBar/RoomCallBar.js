@@ -42,7 +42,6 @@ export default function RoomCallBar({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
           "X-User-Id": String(getCurrentUserId()),
           "X-User-Role": "USER",
         },

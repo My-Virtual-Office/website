@@ -6,7 +6,6 @@ const API_BASE = "/api/notifications";
 // Helper function to prepare request headers
 const getHeaders = () => ({
   "Content-Type": "application/json",
-  Authorization: `Bearer ${localStorage.getItem("token")}`,
   "X-User-Id": String(getCurrentUserId()),
 });
 
