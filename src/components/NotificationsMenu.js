@@ -20,11 +20,10 @@ import AssignmentIcon from "@mui/icons-material/Assignment";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CircleIcon from "@mui/icons-material/Circle";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-// import { Client } from "@stomp/stompjs";
+import { Client } from "@stomp/stompjs";
 import { subscribeToNotifications } from "../ws/notificationsStompClient";
 import { getCurrentUserId } from "../utils/auth";
 
-// Import the fetch function from the notifications API file
 import {
   fetchNotifications,
   fetchUnreadCount,
@@ -37,11 +36,15 @@ export default function NotificationsMenu() {
   const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
   const [isDarkMode, setIsDarkMode] = useState(
     document.body.classList.contains("dark-mode"),
   );
 
-  // Keep dark mode in sync when toggled elsewhere
   useEffect(() => {
     const observer = new MutationObserver(() => {
       setIsDarkMode(document.body.classList.contains("dark-mode"));
@@ -50,14 +53,6 @@ export default function NotificationsMenu() {
     return () => observer.disconnect();
   }, []);
 
-  // State to store the notifications fetched from the server
-  const [notifications, setNotifications] = useState([]);
-  // State to track whether notifications are still loading
-  const [loading, setLoading] = useState(false);
-  // 1. State variable to store the badge count (starts at 0)
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  // Fetch notifications from the server every time the popover opens
   useEffect(() => {
     if (!open) return;
 
@@ -69,7 +64,6 @@ export default function NotificationsMenu() {
       } catch (err) {
         console.error("Failed to fetch notifications:", err);
       } finally {
-        // Whether it succeeded or failed, stop loading
         setLoading(false);
       }
     };
@@ -80,7 +74,6 @@ export default function NotificationsMenu() {
     const loadUnreadCount = async () => {
       try {
         const data = await fetchUnreadCount();
-        console.log("📢 Data from Backend API:", data);
         setUnreadCount(data.unread || 0);
       } catch (error) {
         console.error("Failed to load unread count", error);
@@ -92,14 +85,10 @@ export default function NotificationsMenu() {
   const handleNotificationClick = async (notif) => {
     if (!notif.read) {
       try {
-        // 1. Send PATCH request to the backend
         await markNotificationAsRead(notif.id);
-
-        // 2. Update local state to change status immediately without refresh
         setNotifications((prev) =>
           prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n)),
         );
-
         setUnreadCount((prev) => Math.max(0, prev - 1));
       } catch (err) {
         console.error("Failed to mark as read:", err);
@@ -109,13 +98,10 @@ export default function NotificationsMenu() {
 
   const handleMarkAllAsRead = async () => {
     try {
-      // 1. Send request to backend to mark all as read
       await markAllNotificationsAsRead();
-
       setNotifications((prev) =>
         prev.map((notif) => ({ ...notif, read: true })),
       );
-
       setUnreadCount(0);
     } catch (err) {
       console.error("Failed to mark all as read:", err);
@@ -123,15 +109,11 @@ export default function NotificationsMenu() {
   };
 
   const handleDelete = async (e, id, isRead) => {
-    e.stopPropagation(); // Stop propagation to prevent triggering "mark as read" when clicking delete
+    e.stopPropagation();
 
     try {
-      // 1. Send delete request to the backend
       await deleteNotification(id);
-
       setNotifications((prev) => prev.filter((n) => n.id !== id));
-
-      // 3. Decrement red badge count if the deleted notification was unread
       if (!isRead) {
         setUnreadCount((prev) => Math.max(0, prev - 1));
       }
@@ -140,7 +122,6 @@ export default function NotificationsMenu() {
     }
   };
 
-  // Single shared WebSocket connection (avoids duplicate connects in Strict Mode)
   useEffect(() => {
     const userId = getCurrentUserId();
     if (!userId) return;
@@ -157,23 +138,24 @@ export default function NotificationsMenu() {
 
   const handleClick = (event) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
+
   const getNotificationContent = (notification) => {
     switch (notification.type) {
       case "TASK_ASSIGNED":
         return {
-          icon: <AssignmentIcon sx={{ color: "var(--accent-color)" }} />,
+          icon: <AssignmentIcon color="primary" />,
           title: notification.body,
           subtitle: notification.createdAt,
         };
       case "SIGNUP_SUCCESS":
         return {
-          icon: <CheckCircleIcon sx={{ color: "#22c55e" }} />,
+          icon: <CheckCircleIcon color="success" />,
           title: "Welcome to Virtual Office!",
           subtitle: `Hello ${notification.payload.firstName}, your account is ready.`,
         };
       default:
         return {
-          icon: <NotificationsIcon sx={{ color: "var(--text-secondary)" }} />,
+          icon: <NotificationsIcon />,
           title: notification.body || "Notification",
           subtitle: notification.createdAt,
         };
@@ -182,17 +164,13 @@ export default function NotificationsMenu() {
 
   return (
     <>
-      {/*  IconButton */}
       <IconButton
         onClick={handleClick}
         sx={{
-          color: "var(--text-muted)",
+          color: "#94a3b8",
           transition: "all 0.2s",
           padding: "4px",
-          "&:hover": {
-            color: "var(--text-secondary)",
-            backgroundColor: "transparent",
-          },
+          "&:hover": { color: "#475569", backgroundColor: "transparent" },
         }}
       >
         <Badge badgeContent={unreadCount} color="error">
@@ -200,7 +178,6 @@ export default function NotificationsMenu() {
         </Badge>
       </IconButton>
 
-      {/* Notifications Popover */}
       <Popover
         open={open}
         anchorEl={anchorEl}
@@ -213,9 +190,8 @@ export default function NotificationsMenu() {
             maxHeight: 500,
             display: "flex",
             flexDirection: "column",
-            backgroundColor: "var(--bg-secondary)",
-            border: "1px solid var(--border-secondary)",
-            color: "var(--text-primary)",
+            bgcolor: "background.paper",
+            color: "text.primary",
             boxShadow: isDarkMode
               ? "0 8px 32px rgba(0,0,0,0.5)"
               : "0 4px 20px rgba(0,0,0,0.12)",
@@ -229,17 +205,12 @@ export default function NotificationsMenu() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            borderBottom: "1px solid var(--border-secondary)",
           }}
         >
-          <Typography variant="h6" fontWeight="bold" sx={{ color: "var(--text-primary)" }}>
+          <Typography variant="h6" fontWeight="bold">
             Notifications
           </Typography>
-          <Button
-            size="small"
-            onClick={handleMarkAllAsRead}
-            sx={{ color: "var(--accent-color)", fontWeight: 600 }}
-          >
+          <Button size="small" color="primary" onClick={handleMarkAllAsRead}>
             Mark all as read
           </Button>
         </Box>
@@ -247,7 +218,6 @@ export default function NotificationsMenu() {
         <Divider />
 
         <List sx={{ p: 0, overflowY: "auto", flexGrow: 1 }}>
-          {/* Show loading text while fetching */}
           {loading && (
             <Box sx={{ p: 2, textAlign: "center" }}>
               <Typography variant="body2" color="text.secondary">
@@ -256,7 +226,6 @@ export default function NotificationsMenu() {
             </Box>
           )}
 
-          {/* Show message if no notifications found */}
           {!loading && notifications.length === 0 && (
             <Box sx={{ p: 2, textAlign: "center" }}>
               <Typography variant="body2" color="text.secondary">
@@ -276,21 +245,18 @@ export default function NotificationsMenu() {
                   sx={{
                     bgcolor: notif.read
                       ? "transparent"
-                      : isDarkMode
-                        ? "var(--accent-bg-active)"
-                        : "rgba(80, 72, 229, 0.06)",
+                      : "rgba(25, 118, 210, 0.08)",
                     transition: "background-color 0.2s",
-                    "&:hover": { bgcolor: "var(--bg-input)" },
+                    "&:hover": { bgcolor: "rgba(0, 0, 0, 0.04)" },
                     cursor: "pointer",
                     pr: 6,
-                    borderBottom: "1px solid var(--border-secondary)",
                   }}
                 >
                   <ListItemAvatar>
                     <Avatar
                       sx={{
-                        bgcolor: "var(--bg-secondary)",
-                        border: "1px solid var(--border-primary)",
+                        bgcolor: "white",
+                        border: `1px solid ${theme.palette.grey[300]}`,
                       }}
                     >
                       {content.icon}
@@ -302,7 +268,7 @@ export default function NotificationsMenu() {
                       <Typography
                         variant="subtitle2"
                         fontWeight={notif.read ? "normal" : "bold"}
-                        sx={{ color: "var(--text-primary)" }}
+                        color="text.primary"
                       >
                         {content.title}
                       </Typography>
@@ -311,16 +277,16 @@ export default function NotificationsMenu() {
                       <>
                         <Typography
                           variant="body2"
+                          color="text.secondary"
                           component="span"
                           display="block"
-                          sx={{ color: "var(--text-secondary)" }}
                         >
                           {content.subtitle}
                         </Typography>
                         <Typography
                           variant="caption"
+                          color="text.disabled"
                           component="span"
-                          sx={{ color: "var(--text-muted)" }}
                         >
                           {notif.occurredAt}
                         </Typography>
@@ -328,14 +294,12 @@ export default function NotificationsMenu() {
                     }
                   />
 
-                  {/* Accent dot for unread notifications */}
                   {!notif.read && (
                     <CircleIcon
-                      sx={{ fontSize: 12, color: "var(--accent-color)", ml: 1, mr: 1 }}
+                      sx={{ fontSize: 12, color: "primary.main", ml: 1, mr: 1 }}
                     />
                   )}
 
-                  {/* Delete button */}
                   <Tooltip title="Dismiss">
                     <IconButton
                       size="small"
@@ -344,7 +308,7 @@ export default function NotificationsMenu() {
                         right: 8,
                         top: "50%",
                         transform: "translateY(-50%)",
-                        color: "var(--text-muted)",
+                        color: "#94a3b8",
                         "&:hover": {
                           color: "#ef4444",
                           backgroundColor: "rgba(239,68,68,0.08)",
@@ -360,15 +324,10 @@ export default function NotificationsMenu() {
             })}
         </List>
 
-        <Divider sx={{ borderColor: "var(--border-secondary)" }} />
+        <Divider />
 
-        {/* Load more button */}
-        <Box sx={{ p: 1, textAlign: "center", backgroundColor: "var(--bg-secondary)" }}>
-          <Button
-            size="small"
-            fullWidth
-            sx={{ color: "var(--text-secondary)", "&:hover": { color: "var(--text-primary)" } }}
-          >
+        <Box sx={{ p: 1, textAlign: "center" }}>
+          <Button size="small" color="inherit" fullWidth>
             Load More
           </Button>
         </Box>

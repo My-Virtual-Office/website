@@ -36,12 +36,6 @@ export default function MessagesList({
     }
   }, [scrollToMessageId, onScrollComplete]);
 
-  // Effect 1 : Core message loading
-  //
-  // Ordering matters here. To avoid a race condition we MUST subscribe to the
-  // live WebSocket stream BEFORE requesting history. If we fetched first, any
-  // message produced between the history response and the subscription becoming
-  // active would be received by neither source and stay invisible until reload.
   useEffect(() => {
     if (!activeChannel?.id) return;
 

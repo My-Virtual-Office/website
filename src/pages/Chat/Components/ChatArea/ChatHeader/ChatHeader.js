@@ -9,7 +9,6 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { getCurrentUserId } from "../../../../../utils/auth";
 import { Snackbar, Alert } from "@mui/material";
-
 import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined";
 import NightsStayOutlinedIcon from "@mui/icons-material/NightsStayOutlined";
 import Switch from "@mui/material/Switch";
@@ -371,6 +370,7 @@ export default function ChatHeader({ activeChannel, onToggleSidebar, workspaceId
             </div>
           )}
         </div>
+
       </div>
 
       <Snackbar
