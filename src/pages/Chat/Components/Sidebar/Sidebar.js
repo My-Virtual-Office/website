@@ -35,6 +35,11 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId, 
   const isInviteOpen = Boolean(inviteDialogChannel);
 
   const handleCreateChannel = async () => {
+    if (!workspaceId) {
+      alert("No workspace selected. Please wait for the workspace to load.");
+      return;
+    }
+
     const channelName = prompt(
       "Enter the new channel name (e.g. Development):",
     );
@@ -70,6 +75,7 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId, 
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
           "X-User-Id": String(getCurrentUserId()), // Hardcoded user ID, update dynamically later
           "X-User-Role": "USER",
         },
@@ -182,6 +188,7 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId, 
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
             "X-User-Id": String(getCurrentUserId()),
             "X-User-Role": "USER",
           },
@@ -198,6 +205,7 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId, 
 
     const fetchRoomsList = async () => {
       try {
+        if (!workspaceId) return;
         const roomsData = await fetchRooms(workspaceId);
         setRooms(roomsData);
       } catch (error) {
@@ -395,11 +403,11 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId, 
                       width: "100%",
                       height: "100%",
                       borderRadius: "50%",
-                      backgroundColor: "#e5e7ff",
+                      backgroundColor: "var(--accent-bg-active)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      color: "#5048e5",
+                      color: "var(--accent-color)",
                       fontWeight: "700",
                       fontSize: "14px",
                     }}

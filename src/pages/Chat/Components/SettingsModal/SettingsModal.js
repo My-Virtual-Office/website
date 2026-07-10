@@ -20,6 +20,7 @@ import { updatePassword, uploadPhoto } from "../../../../api/user";
 
 import InputField from "../../../../components/InputField";
 import Button from "../../../../components/Button";
+
 export default function SettingsModal({
   open,
   onClose,
@@ -33,6 +34,21 @@ export default function SettingsModal({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [photoPreview, setPhotoPreview] = useState(userPhoto);
+
+  // ── Dark mode awareness ───────────────────────────────────────────
+  const [isDarkMode, setIsDarkMode] = useState(
+    document.body.classList.contains("dark-mode"),
+  );
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDarkMode(document.body.classList.contains("dark-mode"));
+    });
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -86,9 +102,19 @@ export default function SettingsModal({
       fullWidth
       maxWidth={false}
       PaperProps={{
-        sx: { width: "700px", maxWidth: "90%" },
+        sx: {
+          width: "700px",
+          maxWidth: "90%",
+          backgroundColor: "var(--bg-primary)",
+          color: "var(--text-primary)",
+          border: "1px solid var(--border-secondary)",
+          boxShadow: isDarkMode
+            ? "0 16px 48px rgba(0,0,0,0.6)"
+            : "0 8px 30px rgba(0,0,0,0.15)",
+        },
       }}
     >
+      {/* ── Header ─────────────────────────────────────────────────── */}
       <DialogTitle
         sx={{
           m: 0,
@@ -96,23 +122,35 @@ export default function SettingsModal({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          borderBottom: "1px solid var(--border-secondary)",
+          backgroundColor: "var(--bg-primary)",
         }}
       >
-        <Typography variant="h6" fontWeight="700" component="span">
+        <Typography
+          variant="h6"
+          fontWeight="700"
+          component="span"
+          sx={{ color: "var(--text-primary)" }}
+        >
           Preferences
         </Typography>
-        <IconButton onClick={onClose}>
+        <IconButton
+          onClick={onClose}
+          sx={{
+            color: "var(--text-muted)",
+            "&:hover": { color: "var(--text-primary)", bgcolor: "var(--bg-secondary)" },
+          }}
+        >
           <CloseIcon />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ p: 0, display: "flex", height: "450px" }}>
-        {/* sidebar content */}
+      <DialogContent dividers sx={{ p: 0, display: "flex", height: "450px", borderColor: "var(--border-secondary)" }}>
+        {/* ── Left sidebar (tabs) ─────────────────────────────────── */}
         <Box
           sx={{
-            borderRight: 1,
-            borderColor: "divider",
-            bgcolor: "#f8fafc",
+            borderRight: "1px solid var(--border-secondary)",
+            backgroundColor: "var(--bg-secondary)",
             width: "200px",
           }}
         >
@@ -126,22 +164,22 @@ export default function SettingsModal({
                 textAlign: "center",
                 textTransform: "none",
                 fontWeight: "600",
-                color: "#64748b",
+                color: "var(--text-secondary)",
                 minHeight: "50px",
                 transition: "0.2s",
                 "&:hover": {
-                  color: "#5048e5",
-                  bgcolor: "rgba(80, 72, 229, 0.04)",
+                  color: "var(--accent-color)",
+                  bgcolor: "var(--accent-bg-active)",
                 },
               },
               "& .Mui-selected": {
-                color: "#5048e5 !important",
-                bgcolor: "#e5e7ff",
+                color: "var(--accent-color) !important",
+                bgcolor: "var(--accent-bg-active)",
               },
               "& .MuiTabs-indicator": {
                 left: 0,
                 width: "4px",
-                bgcolor: "#5048e5",
+                bgcolor: "var(--accent-color)",
                 borderRadius: "0 4px 4px 0",
               },
             }}
@@ -159,15 +197,44 @@ export default function SettingsModal({
           </Tabs>
         </Box>
 
-        {/* right side content */}
-        <Box sx={{ flex: 1, p: 4, overflowY: "auto" }}>
+        <Box
+          sx={{
+            flex: 1,
+            p: 4,
+            overflowY: "auto",
+            backgroundColor: "var(--bg-primary)",
+            "&::-webkit-scrollbar": {
+              width: "6px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.15)" : "var(--border-primary)",
+              borderRadius: "10px",
+              "&:hover": {
+                backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.3)" : "var(--text-muted)",
+              },
+            },
+            "&::-webkit-scrollbar-track": {
+              backgroundColor: "transparent",
+            },
+          }}
+        >
+          {/* Security tab */}
           {activeTab === 1 && (
             <Fade in={activeTab === 1} timeout={400}>
               <Box>
-                <Typography variant="h6" gutterBottom fontWeight="600">
+                <Typography
+                  variant="h6"
+                  gutterBottom
+                  fontWeight="600"
+                  sx={{ color: "var(--text-primary)" }}
+                >
                   Change Password
                 </Typography>
-                <Typography variant="body2" color="textSecondary" mb={3}>
+                <Typography
+                  variant="body2"
+                  mb={3}
+                  sx={{ color: "var(--text-secondary)" }}
+                >
                   Make sure to choose a strong password to protect your account.
                 </Typography>
 
@@ -177,7 +244,7 @@ export default function SettingsModal({
                   </Typography>
                 )}
                 {success && (
-                  <Typography color="primary" mb={2} sx={{ color: "#02c27c" }}>
+                  <Typography mb={2} sx={{ color: "#02c27c" }}>
                     {success}
                   </Typography>
                 )}
@@ -188,11 +255,7 @@ export default function SettingsModal({
                     e.preventDefault();
                     handlePasswordUpdate();
                   }}
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 2,
-                  }}
+                  sx={{ display: "flex", flexDirection: "column", gap: 2 }}
                 >
                   <InputField
                     label="Old Password"
@@ -202,7 +265,6 @@ export default function SettingsModal({
                     onChange={(e) => setOldPassword(e.target.value)}
                     required
                   />
-
                   <InputField
                     label="New Password"
                     type="password"
@@ -211,13 +273,13 @@ export default function SettingsModal({
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
                   />
-
                   <Button type="submit">Save Changes</Button>
                 </Box>
               </Box>
             </Fade>
           )}
 
+          {/* Account tab */}
           {activeTab === 0 && (
             <Fade in={activeTab === 0} timeout={400}>
               <Box sx={{ position: "relative" }}>
@@ -236,24 +298,26 @@ export default function SettingsModal({
                       gap: 3,
                       mb: 2,
                       pb: 2,
-                      borderBottom: "1px solid #f1f5f9",
+                      borderBottom: "1px solid var(--border-secondary)",
                       cursor: "pointer",
                     }}
                   >
+                    {/* Avatar */}
                     <Box
                       sx={{
                         width: 80,
                         height: 80,
                         borderRadius: "12px",
-                        bgcolor: "#e5e7ff",
+                        bgcolor: "var(--accent-bg-active)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         fontSize: "32px",
                         fontWeight: "700",
-                        color: "#5048e5",
+                        color: "var(--accent-color)",
                         position: "relative",
                         overflow: "hidden",
+                        border: "2px solid var(--border-primary)",
                         "&:hover .camera-overlay": { opacity: 1 },
                       }}
                     >
@@ -261,11 +325,7 @@ export default function SettingsModal({
                         <img
                           src={photoPreview}
                           alt="Profile"
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
                         />
                       ) : (
                         <>
@@ -274,15 +334,13 @@ export default function SettingsModal({
                         </>
                       )}
 
+                      {/* Camera hover overlay */}
                       <Box
                         className="camera-overlay"
                         sx={{
                           position: "absolute",
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          bgcolor: "rgba(0,0,0,0.4)",
+                          top: 0, left: 0, right: 0, bottom: 0,
+                          bgcolor: "rgba(0,0,0,0.45)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -294,15 +352,19 @@ export default function SettingsModal({
                       </Box>
                     </Box>
 
+                    {/* Name & time */}
                     <Box>
                       <Typography
                         variant="h5"
                         fontWeight="700"
-                        sx={{ color: "#0f172a" }}
+                        sx={{ color: "var(--text-primary)" }}
                       >
                         {user?.firstName} {user?.lastName}
                       </Typography>
-                      <Typography variant="body2" color="textSecondary">
+                      <Typography
+                        variant="body2"
+                        sx={{ color: "var(--text-secondary)" }}
+                      >
                         Local time:{" "}
                         {new Date().toLocaleTimeString([], {
                           hour: "2-digit",
@@ -313,16 +375,23 @@ export default function SettingsModal({
                   </Box>
                 </label>
 
+                {/* Section label */}
                 <Typography
                   variant="subtitle2"
                   fontWeight="700"
                   mb={1}
-                  sx={{ color: "#475569", letterSpacing: "0.5px" }}
+                  sx={{
+                    color: "var(--text-secondary)",
+                    letterSpacing: "0.5px",
+                    borderLeft: "3px solid var(--accent-color)",
+                    paddingLeft: "8px",
+                  }}
                 >
                   CONTACT INFORMATION
                 </Typography>
 
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 3, mt: 2 }}>
+                  {/* Email */}
                   <Box
                     sx={{
                       display: "flex",
@@ -334,13 +403,13 @@ export default function SettingsModal({
                       <Typography
                         variant="caption"
                         fontWeight="700"
-                        color="textSecondary"
+                        sx={{ color: "var(--text-muted)" }}
                       >
                         EMAIL ADDRESS
                       </Typography>
                       <Typography
                         variant="body1"
-                        sx={{ mt: 0.5, color: "#0f172a", fontWeight: "500" }}
+                        sx={{ mt: 0.5, color: "var(--text-primary)", fontWeight: "500" }}
                       >
                         {user?.email}
                       </Typography>
@@ -348,14 +417,18 @@ export default function SettingsModal({
                     <IconButton
                       size="small"
                       sx={{
-                        color: "#64748b",
-                        "&:hover": { color: "#5048e5", bgcolor: "#f1f5f9" },
+                        color: "var(--text-muted)",
+                        "&:hover": {
+                          color: "var(--accent-color)",
+                          bgcolor: "var(--accent-bg-active)",
+                        },
                       }}
                     >
                       <EditOutlinedIcon sx={{ fontSize: 18 }} />
                     </IconButton>
                   </Box>
 
+                  {/* Phone */}
                   <Box
                     sx={{
                       display: "flex",
@@ -367,13 +440,13 @@ export default function SettingsModal({
                       <Typography
                         variant="caption"
                         fontWeight="700"
-                        color="textSecondary"
+                        sx={{ color: "var(--text-muted)" }}
                       >
                         PHONE NUMBER
                       </Typography>
                       <Typography
                         variant="body1"
-                        sx={{ mt: 0.5, color: "#0f172a", fontWeight: "500" }}
+                        sx={{ mt: 0.5, color: "var(--text-primary)", fontWeight: "500" }}
                       >
                         {user?.phoneNumber || "Not provided"}
                       </Typography>
@@ -381,23 +454,35 @@ export default function SettingsModal({
                     <IconButton
                       size="small"
                       sx={{
-                        color: "#64748b",
-                        "&:hover": { color: "#5048e5", bgcolor: "#f1f5f9" },
+                        color: "var(--text-muted)",
+                        "&:hover": {
+                          color: "var(--accent-color)",
+                          bgcolor: "var(--accent-bg-active)",
+                        },
                       }}
                     >
                       <EditOutlinedIcon sx={{ fontSize: 18 }} />
                     </IconButton>
                   </Box>
 
-                  <Box sx={{ pt: 2, mt: 1, borderTop: "1px solid #f1f5f9" }}>
+                  {/* Account status */}
+                  <Box
+                    sx={{
+                      pt: 2,
+                      mt: 1,
+                      borderTop: "1px solid var(--border-secondary)",
+                    }}
+                  >
                     <Typography
                       variant="subtitle2"
                       fontWeight="700"
                       sx={{
-                        color: "#475569",
+                        color: "var(--text-secondary)",
                         letterSpacing: "0.5px",
                         mt: 1,
                         mb: 1,
+                        borderLeft: "3px solid var(--accent-color)",
+                        paddingLeft: "8px",
                       }}
                     >
                       ACCOUNT STATUS
@@ -417,8 +502,8 @@ export default function SettingsModal({
                           borderRadius: "50%",
                           bgcolor:
                             user?.accountStatus === "ACTIVE"
-                              ? "#02c27c"
-                              : "#94a3b8",
+                              ? "var(--accent-color)"
+                              : "var(--text-muted)",
                         }}
                       />
                       <Typography
@@ -427,8 +512,8 @@ export default function SettingsModal({
                         sx={{
                           color:
                             user?.accountStatus === "ACTIVE"
-                              ? "#00c853"
-                              : "#94a3b8",
+                              ? "var(--accent-color)"
+                              : "var(--text-muted)",
                           textTransform: "capitalize",
                         }}
                       >

@@ -7,7 +7,8 @@
 }
 
 .message:hover {
-  background: #f8fafc;
+  /* background: #f8fafc; */
+  background: var(--bg-secondary);
   margin: 0 -8px;
   padding: 8px;
   border-radius: 6px;
@@ -42,7 +43,8 @@
   line-height: 20px;
   letter-spacing: 0px;
   vertical-align: middle;
-  color: #a7adb6;
+  /* color: #a7adb6; */
+  color: var(--text-secondary);
 }
 .message-time {
   font-weight: 400;
@@ -50,7 +52,8 @@
   line-height: 15px;
   letter-spacing: 0px;
   vertical-align: middle;
-  color: #94a3b8;
+  /* color: #94a3b8; */
+  color: var(--text-muted);
 }
 .message-text {
   padding-bottom: 0.63px;
@@ -59,14 +62,16 @@
   line-height: 22.75px;
   letter-spacing: 0px;
   vertical-align: middle;
-  color: #475569;
+  /* color: #475569; */
+  color: var(--text-primary);
   word-wrap: break-word;
   overflow-wrap: break-word;
   white-space: normal;
 }
 .message-attachment {
   width: fit-content;
-  border: 1px solid #e2e8f0;
+  /* border: 1px solid #e2e8f0; */
+  border: 1px solid var(--border-secondary);
   border-radius: 8px;
   padding: 12px;
   display: flex;
@@ -96,7 +101,8 @@
   line-height: 20px;
   letter-spacing: 0px;
   vertical-align: middle;
-  color: #1e293b;
+  /* color: #1e293b; */
+  color: var(--text-primary);
 }
 .attachment-size {
   font-weight: 400;
@@ -104,7 +110,8 @@
   line-height: 16px;
   letter-spacing: 0px;
   vertical-align: middle;
-  color: #64748b;
+  /* color: #64748b; */
+  color: var(--text-secondary);
 }
 .attachment-download {
   width: 16px;
@@ -131,7 +138,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  color: #94a3b8;
+  /* color: #94a3b8; */
+  color: var(--text-muted);
 }
 .system-text {
   display: flex;
@@ -144,12 +152,46 @@
   line-height: 16px;
   letter-spacing: 0px;
   vertical-align: middle;
-  color: #79828f;
+  /* color: #79828f; */
+  color: var(--text-secondary);
 }
 .system-action {
   font-weight: 400;
   font-size: 12px;
 
   line-height: 100%;
+  /* color: #94a3b8; */
+  color: var(--text-muted);
+}
+
+/* ── Message action buttons (thread / edit / delete) ── */
+.msg-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
   color: #94a3b8;
+}
+
+.msg-action-btn--delete {
+  color: #f87171;
+}
+
+/* Dark mode overrides */
+body.dark-mode .msg-action-btn {
+  color: var(--text-secondary);
+}
+
+body.dark-mode .msg-action-btn:hover {
+  color: var(--text-primary);
+}
+
+body.dark-mode .msg-action-btn--delete {
+  color: #fc8181;
+}
+
+body.dark-mode .msg-action-btn--delete:hover {
+  color: #fca5a5;
 }

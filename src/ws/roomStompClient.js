@@ -4,6 +4,7 @@ async function fetchRoomTicket() {
   const response = await fetch("/api/rooms/ws-ticket", {
     method: "POST",
     headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
       "X-User-Id": String(getCurrentUserId()),
       "X-User-Role": "USER",
     },

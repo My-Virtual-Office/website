@@ -30,6 +30,7 @@ export default function ThreadArea({ activeChannel, activeThread, stompClient, o
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
             "X-User-Id": String(getCurrentUserId()),
             "X-User-Role": "USER",
           },

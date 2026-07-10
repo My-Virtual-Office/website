@@ -20,6 +20,7 @@ export default function RoomCallBar({
       const res = await fetch(`/api/rooms?workspaceId=${workspaceId}&page=1&limit=50`, {
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
           "X-User-Id": String(getCurrentUserId()),
           "X-User-Role": "USER",
         },

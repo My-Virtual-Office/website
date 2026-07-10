@@ -9,6 +9,9 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { getCurrentUserId } from "../../../../../utils/auth";
 import { Snackbar, Alert } from "@mui/material";
+import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined";
+import NightsStayOutlinedIcon from "@mui/icons-material/NightsStayOutlined";
+import Switch from "@mui/material/Switch";
 
 function highlightText(text, query) {
   if (!query || !text) return text;
@@ -145,6 +148,7 @@ export default function ChatHeader({ activeChannel, onToggleSidebar, workspaceId
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
             "X-User-Id": String(getCurrentUserId()),
             "X-User-Role": "USER",
           },
@@ -174,6 +178,7 @@ export default function ChatHeader({ activeChannel, onToggleSidebar, workspaceId
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
               "X-User-Id": String(getCurrentUserId()),
               "X-User-Role": "USER",
             },
@@ -189,6 +194,24 @@ export default function ChatHeader({ activeChannel, onToggleSidebar, workspaceId
       } catch (error) {
         console.error("Error:", error);
       }
+    }
+  };
+
+
+
+  const [isDarkMode, setIsDarkMode] = useState(
+    document.body.classList.contains("dark-mode"),
+  );
+
+  const toggleDarkMode = () => {
+    if (document.body.classList.contains("dark-mode")) {
+      document.body.classList.remove("dark-mode");
+      localStorage.setItem("theme", "light");
+      setIsDarkMode(false);
+    } else {
+      document.body.classList.add("dark-mode");
+      localStorage.setItem("theme", "dark");
+      setIsDarkMode(true);
     }
   };
 
@@ -221,10 +244,78 @@ export default function ChatHeader({ activeChannel, onToggleSidebar, workspaceId
       {/* Right Side */}
       <div className="header-actions">
 
+        <div className="header-search" ref={searchContainerRef}>
+          <SearchOutlinedIcon />
+          <input
+            ref={searchInputRef}
+            type="text"
+            placeholder="Search messages..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            onFocus={handleSearchFocus}
+            onKeyDown={handleSearchKeyDown}
+          />
+          {searchQuery && (
+            <button className="search-clear-btn" onClick={closeSearch}>
+              <CloseIcon sx={{ fontSize: 16 }} />
+            </button>
+          )}
+
+          {searchOpen && searchResults.length > 0 && (
+            <div className="search-results-dropdown" ref={searchDropdownRef}>
+              <div className="search-results-header">
+                {searchResults.length} result{searchResults.length !== 1 ? "s" : ""}
+              </div>
+              {searchResults.map((msg, idx) => {
+                const senderName = (usersMap && usersMap[msg.senderId]) || `User ${msg.senderId}`;
+                const date = new Date(msg.createdAt).toLocaleDateString();
+                return (
+                  <div
+                    key={msg.id}
+                    className={`search-result-item ${idx === selectedSearchIndex ? "selected" : ""}`}
+                    onClick={() => handleResultClick(msg)}
+                  >
+                    <div className="search-result-meta">
+                      <span className="search-result-sender">{senderName}</span>
+                      <span className="search-result-date">{date}</span>
+                    </div>
+                    <div className="search-result-content">
+                      {highlightText(msg.content, searchQuery)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {searchOpen && searchQuery.trim() && searchResults.length === 0 && (
+            <div className="search-results-dropdown">
+              <div className="search-results-empty">No messages found</div>
+            </div>
+          )}
+        </div>
+
         <div
           className="info-dropdown-container"
           style={{ position: "relative" }}
         >
+          <Switch
+            checked={isDarkMode}
+            onChange={toggleDarkMode}
+            className="theme-switch-mui"
+            icon={
+              <span className="mui-switch-icon-wrapper">
+                <WbSunnyOutlinedIcon className="sunny-icon" />
+              </span>
+            }
+            checkedIcon={
+              <span className="mui-switch-icon-wrapper">
+                <NightsStayOutlinedIcon className="moon-icon" />
+              </span>
+            }
+            inputProps={{ "aria-label": "Toggle Theme" }}
+          />
+
           <button className="header-btn" aria-label="Info" onClick={toggleMenu}>
             <InfoOutlinedIcon />
           </button>
@@ -280,56 +371,6 @@ export default function ChatHeader({ activeChannel, onToggleSidebar, workspaceId
           )}
         </div>
 
-        <div className="header-search" ref={searchContainerRef}>
-          <SearchOutlinedIcon />
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="Search messages..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-            onFocus={handleSearchFocus}
-            onKeyDown={handleSearchKeyDown}
-          />
-          {searchQuery && (
-            <button className="search-clear-btn" onClick={closeSearch}>
-              <CloseIcon sx={{ fontSize: 16 }} />
-            </button>
-          )}
-
-          {searchOpen && searchResults.length > 0 && (
-            <div className="search-results-dropdown" ref={searchDropdownRef}>
-              <div className="search-results-header">
-                {searchResults.length} result{searchResults.length !== 1 ? "s" : ""}
-              </div>
-              {searchResults.map((msg, idx) => {
-                const senderName = (usersMap && usersMap[msg.senderId]) || `User ${msg.senderId}`;
-                const date = new Date(msg.createdAt).toLocaleDateString();
-                return (
-                  <div
-                    key={msg.id}
-                    className={`search-result-item ${idx === selectedSearchIndex ? "selected" : ""}`}
-                    onClick={() => handleResultClick(msg)}
-                  >
-                    <div className="search-result-meta">
-                      <span className="search-result-sender">{senderName}</span>
-                      <span className="search-result-date">{date}</span>
-                    </div>
-                    <div className="search-result-content">
-                      {highlightText(msg.content, searchQuery)}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {searchOpen && searchQuery.trim() && searchResults.length === 0 && (
-            <div className="search-results-dropdown">
-              <div className="search-results-empty">No messages found</div>
-            </div>
-          )}
-        </div>
       </div>
 
       <Snackbar

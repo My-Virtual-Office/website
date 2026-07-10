@@ -4,8 +4,8 @@
   gap: 12px;
   padding: 8px 16px;
   margin: 0 12px 8px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-secondary);
   border-radius: 8px;
   font-family: Inter, sans-serif;
 }
@@ -13,7 +13,7 @@
 .participant-count {
   font-size: 13px;
   font-weight: 500;
-  color: #64748b;
+  color: var(--text-secondary);
   margin-right: auto;
 }
 
@@ -28,10 +28,10 @@
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-secondary);
   border-radius: 8px;
-  background: #ffffff;
-  color: #475569;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   font-family: Inter, sans-serif;
   font-size: 13px;
   font-weight: 600;
@@ -40,19 +40,19 @@
 }
 
 .call-btn:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
+  background: var(--bg-secondary);
+  border-color: var(--border-primary);
 }
 
 .join-btn {
-  background: #5048e5;
+  background: var(--accent-color);
   color: #ffffff;
-  border-color: #5048e5;
+  border-color: var(--accent-color);
 }
 
 .join-btn:hover {
-  background: #4338ca;
-  border-color: #4338ca;
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 
 .call-btn.muted {
@@ -84,4 +84,17 @@
 .end-call-btn:hover {
   background: #dc2626;
   border-color: #dc2626;
+}
+
+/* Dark mode overrides for active/muted call states */
+body.dark-mode .call-btn.muted,
+body.dark-mode .call-btn.cam-off {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+
+body.dark-mode .call-btn.muted:hover,
+body.dark-mode .call-btn.cam-off:hover {
+  background: rgba(239, 68, 68, 0.25);
 }

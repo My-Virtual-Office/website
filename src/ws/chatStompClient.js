@@ -4,6 +4,7 @@ async function fetchChatTicket() {
   const response = await fetch("/api/chat/ws-ticket", {
     method: "POST",
     headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
       "X-User-Id": String(getCurrentUserId()),
       "X-User-Role": "USER",
     },

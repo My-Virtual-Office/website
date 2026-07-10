@@ -274,6 +274,7 @@ export default function ChatPage() {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
               "X-User-Id": String(getCurrentUserId()),
               "X-User-Role": "USER",
             },
@@ -297,6 +298,7 @@ export default function ChatPage() {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
               "X-User-Id": String(getCurrentUserId()),
               "X-User-Role": "USER",
             },
@@ -317,6 +319,7 @@ export default function ChatPage() {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
               "X-User-Id": String(getCurrentUserId()),
               "X-User-Role": "USER",
             },
@@ -367,7 +370,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="chatPage relative flex w-screen h-screen overflow-hidden">
+    <div className={`chatPage relative flex w-screen h-screen overflow-hidden ${isThreadOpen ? "thread-open" : ""}`}>
       <div className="hidden md:flex shrink-0">
         <WorkspaceSidebar
           activeWorkspace={activeWorkspace}

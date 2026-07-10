@@ -8,22 +8,28 @@
 .input-group label {
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-secondary);
 }
 
 .input-group input {
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid #aaaa;
+  border: 1px solid var(--border-primary);
+  background-color: var(--bg-input);
+  color: var(--text-primary);
   font-size: 15px;
+  border-radius: 6px;
   transition: 0.2s;
+  box-sizing: border-box;
 }
 
 .input-group input:focus {
   outline: none;
-  border-left: #0e865a 3px solid;
+  border-color: var(--accent-color);
+  border-left: 3px solid var(--accent-color);
+  box-shadow: 0 0 0 3px var(--accent-bg-active);
 }
 
 .input-group input::placeholder {
-  color: #666666;
+  color: var(--text-muted);
 }

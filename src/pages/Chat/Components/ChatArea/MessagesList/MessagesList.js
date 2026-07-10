@@ -86,6 +86,7 @@ export default function MessagesList({
             method: "GET",
             headers: {
               "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
               "X-User-Id": String(getCurrentUserId()),
               "X-User-Role": "USER",
             },
@@ -141,7 +142,9 @@ export default function MessagesList({
   return (
     <div className="messages-list">
       {messages.map((message, index) => {
-        const displayName = (usersMap && usersMap[message.senderId]) || `User ${message.senderId}`;
+        const displayName =
+          (usersMap && usersMap[message.senderId]) ||
+          `User ${message.senderId}`;
 
         const currentLabel = getDateLabel(message.createdAt);
         const previousLabel =
@@ -151,6 +154,7 @@ export default function MessagesList({
         return (
           <div
             key={message.id}
+            id={`msg-${message.id}`}
             ref={(el) => { messageRefs.current[message.id] = el; }}
           >
             {showDivider && (
