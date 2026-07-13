@@ -8,6 +8,7 @@ import { Client } from "@stomp/stompjs";
 import MembersList from "./Components/MembersList/MembersList";
 import ResizeHandle from "../../components/ResizeHandle";
 import { authHeaders } from "../../utils/auth";
+import { resolveWorkspace } from "../../api/workspace";
 
 /** useState that persists to localStorage under `key`. */
 function usePersistentState(key, initial) {
@@ -32,6 +33,21 @@ function usePersistentState(key, initial) {
 export default function ChatPage() {
   const [activeChannel, setActiveChannel] = useState(null);
   const [stompClient, setStompClient] = useState(null);
+  // The user's active workspace id (membership lives here; required for channels).
+  const [workspaceId, setWorkspaceId] = useState(null);
+
+  // Resolve (or auto-create) the user's workspace so channel operations authorize.
+  useEffect(() => {
+    let cancelled = false;
+    resolveWorkspace()
+      .then((ws) => {
+        if (!cancelled && ws?.id != null) setWorkspaceId(ws.id);
+      })
+      .catch((err) => console.error("Failed to resolve workspace:", err));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Collapsible + resizable side panels (persisted).
   const [sidebarOpen, setSidebarOpen] = usePersistentState("vo-sidebar-open", true);
@@ -102,6 +118,7 @@ export default function ChatPage() {
             <Sidebar
               activeChannel={activeChannel}
               setActiveChannel={setActiveChannel}
+              workspaceId={workspaceId}
             />
           </div>
           <ResizeHandle

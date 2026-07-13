@@ -4,10 +4,10 @@ import { useState, useEffect } from "react";
 import { getCurrentUser } from "../../../../api/user";
 import SettingsModal from "../SettingsModal/SettingsModal";
 import { getUserPhoto } from "../../../../api/user";
-import { authHeaders } from "../../../../utils/auth";
+import { getCurrentUserId, authHeaders } from "../../../../utils/auth";
 import { useDialogs } from "../../../../components/DialogProvider";
 
-export default function Sidebar({ activeChannel, setActiveChannel }) {
+export default function Sidebar({ activeChannel, setActiveChannel, workspaceId }) {
   // Channels state
   const [channels, setChannels] = useState([]);
   // DMs state
@@ -30,16 +30,21 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
     });
 
     if (!channelName) return;
+    if (!workspaceId) {
+      notify("Workspace still loading — try again in a moment.", "warning");
+      return;
+    }
 
     try {
-      // Send request to create a new channel
+      // Send request to create a new channel. The creator is auto-added by chat-service,
+      // but `members` must be non-empty, so send the current user.
       const response = await fetch("/api/chat/channels", {
         method: "POST",
         headers: authHeaders(),
         body: JSON.stringify({
           name: channelName,
-          workspaceId: 100, // Hardcoded workspaceId
-          members: [1, 2, 3], // Hardcoded members
+          workspaceId,
+          members: [getCurrentUserId()],
         }),
       });
 
@@ -92,13 +97,13 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
     }
   };
 
-  // Fetch channels and DMs on component mount
+  // Fetch channels once the workspace is resolved; DMs on mount.
   useEffect(() => {
     const fetchChannels = async () => {
+      if (!workspaceId) return;
       try {
-        // Fetch channels for workspaceId=100
         const response = await fetch(
-          "/api/chat/channels?workspaceId=100&page=1&limit=20",
+          `/api/chat/channels?workspaceId=${workspaceId}&page=1&limit=20`,
           {
             method: "GET",
             headers: authHeaders(),
@@ -150,7 +155,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
     fetchChannels();
     fetchDMs();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [workspaceId]);
 
   const fetchUser = async () => {
     try {
