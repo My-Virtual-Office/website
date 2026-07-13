@@ -193,7 +193,7 @@ export default function ChatPage() {
             direction={-1}
           />
           <div className="side-panel" style={{ width: membersWidth }}>
-            <MembersList />
+            <MembersList workspaceId={workspaceId} />
           </div>
         </>
       )}

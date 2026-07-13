@@ -5,6 +5,12 @@ export const getCurrentUser = async () => {
   return response.data;
 };
 
+/** All users (id, firstName, lastName, email) — used to resolve member display names. */
+export const getAllUsers = async () => {
+  const response = await axiosInstance.get("/api/users");
+  return response.data ?? [];
+};
+
 export const updatePassword = async (passwords) => {
   // passwords = { oldPassword: "...", newPassword: "..." }
   const response = await axiosInstance.put("/api/users/me/password", passwords);

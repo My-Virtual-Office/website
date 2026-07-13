@@ -16,6 +16,47 @@ export async function createWorkspace({ name, slug, defaultTimezone }) {
   return res.data;
 }
 
+/** Members (desks) of a workspace: [{id(deskId), userId, fullName, title, teamId, role, personalImageUrl, isOnline, ...}]. */
+export async function getMembers(workspaceId) {
+  const res = await axiosInstance.get(`/api/workspace/${workspaceId}/desks?page=0&size=100`);
+  // DeskController returns a PageResponse; content holds the rows.
+  return res.data?.content ?? res.data ?? [];
+}
+
+/** The caller's own desk in the workspace (carries their role). */
+export async function getMyDesk(workspaceId) {
+  const res = await axiosInstance.get(`/api/workspace/${workspaceId}/desks/me`);
+  return res.data;
+}
+
+/** Teams in a workspace. */
+export async function getTeams(workspaceId) {
+  const res = await axiosInstance.get(`/api/workspace/${workspaceId}/teams`);
+  return res.data ?? [];
+}
+
+/** ADMIN: set a member's role / title / team (teamId 0 unassigns). */
+export async function updateMembership(workspaceId, deskId, { role, title, teamId }) {
+  const res = await axiosInstance.patch(
+    `/api/workspace/${workspaceId}/desks/${deskId}/membership`,
+    { role, title, teamId },
+  );
+  return res.data;
+}
+
+/** ADMIN team CRUD. */
+export async function createTeam(workspaceId, { name, description }) {
+  const res = await axiosInstance.post(`/api/workspace/${workspaceId}/teams`, { name, description });
+  return res.data;
+}
+export async function updateTeam(workspaceId, teamId, { name, description }) {
+  const res = await axiosInstance.put(`/api/workspace/${workspaceId}/teams/${teamId}`, { name, description });
+  return res.data;
+}
+export async function deleteTeam(workspaceId, teamId) {
+  await axiosInstance.delete(`/api/workspace/${workspaceId}/teams/${teamId}`);
+}
+
 /** Accept a workspace invitation by token → creates a MEMBER desk for the caller. */
 export async function acceptInvite(token) {
   const res = await axiosInstance.post(
