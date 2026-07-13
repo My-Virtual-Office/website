@@ -9,6 +9,28 @@ import { getCurrentUserId, authHeaders } from "../../../../../../utils/auth";
 import { toggleReaction, fileUrl, pinMessage, unpinMessage } from "../../../../../../api/chat";
 import { useDialogs } from "../../../../../../components/DialogProvider";
 
+/** Highlight @mention and #channel tokens inside message text. */
+function renderContent(text) {
+  if (!text) return null;
+  const parts = [];
+  const regex = /(^|[\s(])([@#][\w-]+)/g;
+  let last = 0;
+  let m;
+  while ((m = regex.exec(text)) !== null) {
+    const token = m[2];
+    const start = m.index + m[1].length; // skip the leading boundary char
+    if (start > last) parts.push(text.slice(last, start));
+    parts.push(
+      <span key={start} className={token[0] === "@" ? "mention" : "mention-channel"}>
+        {token}
+      </span>,
+    );
+    last = start + token.length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts;
+}
+
 export default function Message({ message, stompClient, grouped, onOpenThread }) {
   // --- Message State ---
 
@@ -173,7 +195,7 @@ export default function Message({ message, stompClient, grouped, onOpenThread })
             </div>
           </div>
         ) : currentContent ? (
-          <div className="message-text">{currentContent}</div>
+          <div className="message-text">{renderContent(currentContent)}</div>
         ) : null}
 
         {/* Uploaded attachments */}

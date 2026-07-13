@@ -98,6 +98,63 @@
   border-radius: 8px;
 }
 
+/* @mention / #channel autocomplete popover (floats above the composer) */
+.mention-menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  min-width: 240px;
+  max-width: 340px;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--overlay-shadow);
+  padding: 6px;
+  z-index: 120;
+}
+.mention-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 9px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--content-fg);
+  cursor: pointer;
+  text-align: left;
+  font-size: 14px;
+}
+.mention-item svg {
+  color: var(--content-muted);
+  flex-shrink: 0;
+}
+.mention-item.active {
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-fg, #fff);
+}
+.mention-item.active svg {
+  color: var(--sidebar-active-fg, #fff);
+}
+.mention-item-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mention-item-handle {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--content-muted);
+  white-space: nowrap;
+}
+.mention-item.active .mention-item-handle {
+  color: color-mix(in srgb, var(--sidebar-active-fg, #fff) 80%, transparent);
+}
+
 /* Pending attachments (before send) */
 .pending-attachments {
   display: flex;

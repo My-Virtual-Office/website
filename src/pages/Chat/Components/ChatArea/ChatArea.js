@@ -29,7 +29,11 @@ export default function ChatArea({
         stompClient={stompClient}
         onOpenThread={onOpenThread}
       />
-      <MessageInput activeChannel={activeChannel} stompClient={stompClient}></MessageInput>
+      <MessageInput
+        activeChannel={activeChannel}
+        workspaceId={workspaceId}
+        stompClient={stompClient}
+      ></MessageInput>
     </div>
   );
 }

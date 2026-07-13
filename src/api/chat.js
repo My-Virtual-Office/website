@@ -24,6 +24,14 @@ export async function getChannel(channelId) {
   return res.json();
 }
 
+/** Channels in a workspace (for #channel mentions). */
+export async function getChannels(workspaceId) {
+  const res = await fetch(`/api/chat/channels?workspaceId=${workspaceId}&page=1&limit=100`, { headers: authHeaders() });
+  if (!res.ok) throw res;
+  const d = await res.json();
+  return d.content ?? d ?? [];
+}
+
 /** Threads in a channel. */
 export async function getChannelThreads(channelId) {
   const res = await fetch(`/api/chat/channels/${channelId}/threads?page=1&limit=100`, { headers: authHeaders() });

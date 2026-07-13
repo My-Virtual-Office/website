@@ -52,6 +52,21 @@
   white-space: pre-wrap;
 }
 
+/* @mention and #channel highlights */
+.mention,
+.mention-channel {
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 0 3px;
+  color: var(--link);
+  background: color-mix(in srgb, var(--link) 12%, transparent);
+  cursor: pointer;
+}
+.mention:hover,
+.mention-channel:hover {
+  background: color-mix(in srgb, var(--link) 20%, transparent);
+}
+
 /* Hover action toolbar */
 .message-actions {
   position: absolute;
