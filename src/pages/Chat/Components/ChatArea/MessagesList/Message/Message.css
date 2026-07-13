@@ -54,13 +54,41 @@
 
 /* Hover action toolbar */
 .message-actions {
+  position: absolute;
+  top: -12px;
+  right: 16px;
   display: flex;
   gap: 2px;
-  margin-left: 8px;
+  padding: 2px;
+  background: var(--content-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--overlay-shadow);
+  opacity: 0;
+  transition: opacity 0.1s;
+  z-index: 2;
+}
+.message:hover .message-actions {
+  opacity: 1;
+}
+
+/* Grouped (consecutive-author) messages: compact, no header, time-on-hover */
+.message.grouped {
+  padding-top: 1px;
+  padding-bottom: 1px;
+}
+.grouped-time {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  font-size: 10px;
+  color: var(--content-muted);
   opacity: 0;
   transition: opacity 0.1s;
 }
-.message:hover .message-actions {
+.message:hover .grouped-time {
   opacity: 1;
 }
 .msg-action-btn {

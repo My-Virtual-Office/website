@@ -1,7 +1,17 @@
 import "./MessagesList.css";
 import Message from "./Message/Message";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { authHeaders } from "../../../../../utils/auth";
+
+const sameDay = (a, b) => a.toDateString() === b.toDateString();
+const dayLabel = (d) => {
+  const today = new Date();
+  const yest = new Date();
+  yest.setDate(today.getDate() - 1);
+  if (sameDay(d, today)) return "Today";
+  if (sameDay(d, yest)) return "Yesterday";
+  return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+};
 
 export default function MessagesList({ activeChannel, stompClient }) {
   const [messages, setMessages] = useState([]);
@@ -71,14 +81,32 @@ export default function MessagesList({ activeChannel, stompClient }) {
 
   return (
     <div className="messages-list">
-      <div className="date-divider">
-        <span className="horizontal-divider"></span>
-        <span className="date">TODAY</span>
-        <span className="horizontal-divider"></span>
-      </div>
-      {messages.map((message) => (
-        <Message key={message.id} message={message} stompClient={stompClient} />
-      ))}
+      {messages.map((message, i) => {
+        const cur = new Date(message.createdAt || Date.now());
+        const prev = messages[i - 1];
+        const prevDate = prev ? new Date(prev.createdAt || Date.now()) : null;
+        const newDay = !prev || !sameDay(cur, prevDate);
+        // Collapse consecutive messages from the same author within 5 minutes on the same day.
+        const grouped =
+          !newDay &&
+          !!prev &&
+          prev.senderId === message.senderId &&
+          message.type !== "SYSTEM" &&
+          prev.type !== "SYSTEM" &&
+          cur - prevDate < 5 * 60 * 1000;
+        return (
+          <Fragment key={message.id}>
+            {newDay && (
+              <div className="date-divider">
+                <span className="horizontal-divider" />
+                <span className="date">{dayLabel(cur)}</span>
+                <span className="horizontal-divider" />
+              </div>
+            )}
+            <Message message={message} stompClient={stompClient} grouped={grouped} />
+          </Fragment>
+        );
+      })}
     </div>
   );
 }

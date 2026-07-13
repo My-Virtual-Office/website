@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { getCurrentUserId, authHeaders } from "../../../../../../utils/auth";
 import { useDialogs } from "../../../../../../components/DialogProvider";
 
-export default function Message({ message, stompClient }) {
+export default function Message({ message, stompClient, grouped }) {
   // --- Message State ---
 
   const [isEditing, setIsEditing] = useState(false); // Editing mode state
@@ -92,49 +92,35 @@ export default function Message({ message, stompClient }) {
   if (!currentContent || currentContent.trim() === "") return null;
   // Show actions only for current user's messages
   const isMyMessage = message.senderId === getCurrentUserId();
+  const timeStr =
+    message.time ||
+    (message.createdAt
+      ? new Date(message.createdAt).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "");
 
   return (
-    <div className="message">
+    <div className={`message ${grouped ? "grouped" : ""}`}>
       <div className="message-avatar">
-        <img src={message.avatar || "/avatar1.jpg"} alt="User"></img>
+        {grouped ? (
+          <span className="grouped-time">{timeStr}</span>
+        ) : (
+          <img src={message.avatar || "/avatar1.jpg"} alt="User" />
+        )}
       </div>
 
       <div className="message-content">
-        {/* Message header */}
-        <div className="message-header">
-          <span className="message-user">
-            {message.user || `User ${message.senderId || "1"}`}
-          </span>
-          <span className="message-time">
-            {message.time ||
-              (message.createdAt
-                ? new Date(message.createdAt).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-                : "")}
-          </span>
-
-          {/* Show actions if it's my message and not in edit mode */}
-          {isMyMessage && !isEditing && (
-            <div className="message-actions">
-              <button
-                className="msg-action-btn"
-                onClick={() => setIsEditing(true)}
-                title="Edit message"
-              >
-                <Pencil size={15} />
-              </button>
-              <button
-                className="msg-action-btn danger"
-                onClick={handleDelete}
-                title="Delete message"
-              >
-                <Trash2 size={15} />
-              </button>
-            </div>
-          )}
-        </div>
+        {/* Message header (hidden for grouped follow-up messages) */}
+        {!grouped && (
+          <div className="message-header">
+            <span className="message-user">
+              {message.user || `User ${message.senderId || "1"}`}
+            </span>
+            <span className="message-time">{timeStr}</span>
+          </div>
+        )}
 
         {/* Message content */}
         {isEditing ? (
@@ -182,6 +168,18 @@ export default function Message({ message, stompClient }) {
           </div>
         )}
       </div>
+
+      {/* Hover action toolbar (floats top-right; works for grouped rows too) */}
+      {isMyMessage && !isEditing && (
+        <div className="message-actions">
+          <button className="msg-action-btn" onClick={() => setIsEditing(true)} title="Edit message">
+            <Pencil size={15} />
+          </button>
+          <button className="msg-action-btn danger" onClick={handleDelete} title="Delete message">
+            <Trash2 size={15} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
