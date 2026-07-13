@@ -13,8 +13,10 @@ import CloseIcon from "@mui/icons-material/Close";
 import LockIcon from "@mui/icons-material/Lock";
 import PersonIcon from "@mui/icons-material/Person";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import PaletteOutlinedIcon from "@mui/icons-material/PaletteOutlined";
 import { Fade } from "@mui/material";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
+import ThemeSwitcher from "../../../../theme/ThemeSwitcher";
 
 import { updatePassword, uploadPhoto } from "../../../../api/user";
 
@@ -156,11 +158,24 @@ export default function SettingsModal({
               iconPosition="start"
               label="Security"
             />
+            <Tab
+              icon={<PaletteOutlinedIcon sx={{ fontSize: 20 }} />}
+              iconPosition="start"
+              label="Themes"
+            />
           </Tabs>
         </Box>
 
         {/* right side content */}
         <Box sx={{ flex: 1, p: 4, overflowY: "auto" }}>
+          {activeTab === 2 && (
+            <Fade in={activeTab === 2} timeout={400}>
+              <Box>
+                <ThemeSwitcher />
+              </Box>
+            </Fade>
+          )}
+
           {activeTab === 1 && (
             <Fade in={activeTab === 1} timeout={400}>
               <Box>

@@ -4,13 +4,17 @@ import "./index.css";
 import App from "./App";
 import { BrowserRouter } from "react-router-dom";
 import DialogProvider from "./components/DialogProvider";
+import ThemeProvider from "./theme/ThemeContext";
+import "./theme/themes.css";
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-      <DialogProvider>
-        <App />
-      </DialogProvider>
+      <ThemeProvider>
+        <DialogProvider>
+          <App />
+        </DialogProvider>
+      </ThemeProvider>
     </BrowserRouter>
   </React.StrictMode>,
 );

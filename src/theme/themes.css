@@ -1,0 +1,158 @@
+/* =============================================================================
+   Slack-style theme tokens.
+   Applied via a data-theme attribute on <html> (see ThemeContext).
+   :root is the default "Aubergine" theme (dark sidebar + light content),
+   matching classic Slack. [data-theme="light"] and [data-theme="dark"] override.
+   ============================================================================= */
+
+:root,
+:root[data-theme="aubergine"] {
+  /* Left workspace rail */
+  --rail-bg: #3a083c;
+  --rail-fg: #cfc3cf;
+  --rail-icon-bg: #4a154b;
+  --rail-active-ring: #ffffff;
+
+  /* Channel sidebar */
+  --sidebar-bg: #3f0e40;
+  --sidebar-heading: #ffffff;
+  --sidebar-fg: #cfc3cf;
+  --sidebar-fg-muted: #bca8bc;
+  --sidebar-hover: #350d36;
+  --sidebar-active-bg: #1164a3;
+  --sidebar-active-fg: #ffffff;
+  --sidebar-border: #522653;
+  --sidebar-unread: #ffffff;
+
+  /* Main content (messages) */
+  --content-bg: #ffffff;
+  --content-fg: #1d1c1d;
+  --content-strong: #1d1c1d;
+  --content-muted: #616061;
+  --border: #e8e8e8;
+  --hover-bg: #f8f8f8;
+  --panel-bg: #ffffff;
+
+  /* Composer / inputs */
+  --input-bg: #ffffff;
+  --input-border: #8d8d8d;
+  --input-fg: #1d1c1d;
+  --input-muted: #616061;
+  --input-toolbar-bg: #f8f8f8;
+
+  /* Accents */
+  --accent: #007a5a;          /* Slack green (primary actions) */
+  --accent-hover: #148567;
+  --accent-fg: #ffffff;
+  --link: #1264a3;
+
+  /* Chrome */
+  --badge-bg: #e8e8e8;
+  --badge-fg: #616061;
+  --danger: #e01e5a;
+  --danger-hover: #b4123f;
+
+  /* Presence */
+  --online: #2bac76;
+  --away: #ecb22e;
+  --offline: #949494;
+
+  --scroll-thumb: #bcbcbc;
+  --overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+:root[data-theme="light"] {
+  --rail-bg: #f8f8f8;
+  --rail-fg: #616061;
+  --rail-icon-bg: #ececed;
+  --rail-active-ring: #1264a3;
+
+  --sidebar-bg: #f8f8f8;
+  --sidebar-heading: #1d1c1d;
+  --sidebar-fg: #1d1c1d;
+  --sidebar-fg-muted: #616061;
+  --sidebar-hover: #e8e8e8;
+  --sidebar-active-bg: #1264a3;
+  --sidebar-active-fg: #ffffff;
+  --sidebar-border: #e2e2e2;
+  --sidebar-unread: #1d1c1d;
+
+  --content-bg: #ffffff;
+  --content-fg: #1d1c1d;
+  --content-strong: #1d1c1d;
+  --content-muted: #616061;
+  --border: #e8e8e8;
+  --hover-bg: #f8f8f8;
+  --panel-bg: #ffffff;
+
+  --input-bg: #ffffff;
+  --input-border: #8d8d8d;
+  --input-fg: #1d1c1d;
+  --input-muted: #616061;
+  --input-toolbar-bg: #f8f8f8;
+
+  --accent: #007a5a;
+  --accent-hover: #148567;
+  --accent-fg: #ffffff;
+  --link: #1264a3;
+
+  --badge-bg: #e2e2e2;
+  --badge-fg: #616061;
+  --danger: #e01e5a;
+  --danger-hover: #b4123f;
+
+  --online: #2bac76;
+  --away: #ecb22e;
+  --offline: #949494;
+
+  --scroll-thumb: #cccccc;
+  --overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+:root[data-theme="dark"] {
+  --rail-bg: #121016;
+  --rail-fg: #ababad;
+  --rail-icon-bg: #222529;
+  --rail-active-ring: #ffffff;
+
+  --sidebar-bg: #19171d;
+  --sidebar-heading: #ffffff;
+  --sidebar-fg: #ababad;
+  --sidebar-fg-muted: #8e8e90;
+  --sidebar-hover: #27242c;
+  --sidebar-active-bg: #1164a3;
+  --sidebar-active-fg: #ffffff;
+  --sidebar-border: #2c2d30;
+  --sidebar-unread: #ffffff;
+
+  --content-bg: #1a1d21;
+  --content-fg: #d1d2d3;
+  --content-strong: #f8f8f8;
+  --content-muted: #ababad;
+  --border: #35373b;
+  --hover-bg: #222529;
+  --panel-bg: #1a1d21;
+
+  --input-bg: #222529;
+  --input-border: #565856;
+  --input-fg: #d1d2d3;
+  --input-muted: #ababad;
+  --input-toolbar-bg: #222529;
+
+  --accent: #007a5a;
+  --accent-hover: #148567;
+  --accent-fg: #ffffff;
+  --link: #1d9bd1;
+
+  --badge-bg: #35373b;
+  --badge-fg: #ababad;
+  --danger: #e01e5a;
+  --danger-hover: #f2557e;
+
+  --online: #2bac76;
+  --away: #ecb22e;
+  --offline: #6a6a6a;
+
+  --scroll-thumb: #3a3d42;
+  --overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
