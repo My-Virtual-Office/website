@@ -8,9 +8,10 @@ import { useState, useEffect } from "react";
 import { getCurrentUserId, authHeaders } from "../../../../../../utils/auth";
 import { toggleReaction, fileUrl, pinMessage, unpinMessage } from "../../../../../../api/chat";
 import { useDialogs } from "../../../../../../components/DialogProvider";
+import { useMentions } from "../../../../mentionContext";
 
-/** Highlight @mention and #channel tokens inside message text. */
-function renderContent(text) {
+/** Highlight @mention and #channel tokens, making them clickable. */
+function renderContent(text, onMention, onChannel) {
   if (!text) return null;
   const parts = [];
   const regex = /(^|[\s(])([@#][\w-]+)/g;
@@ -20,8 +21,16 @@ function renderContent(text) {
     const token = m[2];
     const start = m.index + m[1].length; // skip the leading boundary char
     if (start > last) parts.push(text.slice(last, start));
+    const isUser = token[0] === "@";
+    const handler = isUser ? onMention : onChannel;
     parts.push(
-      <span key={start} className={token[0] === "@" ? "mention" : "mention-channel"}>
+      <span
+        key={start}
+        className={isUser ? "mention" : "mention-channel"}
+        role={handler ? "button" : undefined}
+        tabIndex={handler ? 0 : undefined}
+        onClick={handler ? () => handler(token.slice(1)) : undefined}
+      >
         {token}
       </span>,
     );
@@ -32,6 +41,7 @@ function renderContent(text) {
 }
 
 export default function Message({ message, stompClient, grouped, onOpenThread }) {
+  const { onMention, onChannel } = useMentions();
   // --- Message State ---
 
   const [isEditing, setIsEditing] = useState(false); // Editing mode state
@@ -195,7 +205,7 @@ export default function Message({ message, stompClient, grouped, onOpenThread })
             </div>
           </div>
         ) : currentContent ? (
-          <div className="message-text">{renderContent(currentContent)}</div>
+          <div className="message-text">{renderContent(currentContent, onMention, onChannel)}</div>
         ) : null}
 
         {/* Uploaded attachments */}

@@ -9,10 +9,15 @@ import { Client } from "@stomp/stompjs";
 import MembersList from "./Components/MembersList/MembersList";
 import ContactsDirectory from "./Components/ContactsDirectory/ContactsDirectory";
 import ThreadPanel from "./Components/ThreadPanel/ThreadPanel";
+import ProfileModal from "./Components/ProfileModal/ProfileModal";
 import ResizeHandle from "../../components/ResizeHandle";
+import { MentionContext } from "./mentionContext";
 import { authHeaders } from "../../utils/auth";
-import { getMyWorkspaces } from "../../api/workspace";
-import { getChannelThreads, createThread } from "../../api/chat";
+import { getMyWorkspaces, getMembers, getTeams } from "../../api/workspace";
+import { getChannelThreads, createThread, getChannels } from "../../api/chat";
+import { getAllUsers } from "../../api/user";
+
+const norm = (s) => (s || "").replace(/\s+/g, "").toLowerCase();
 
 /** useState that persists to localStorage under `key`. */
 function usePersistentState(key, initial) {
@@ -39,6 +44,11 @@ export default function ChatPage() {
   const [stompClient, setStompClient] = useState(null);
   const [view, setView] = useState("chat"); // "chat" | "contacts"
   const [activeThread, setActiveThread] = useState(null); // {threadId, rootMessage, channelId}
+
+  // Workspace directory used to resolve @mention / #channel clicks.
+  const [dirMembers, setDirMembers] = useState([]);
+  const [dirChannels, setDirChannels] = useState([]);
+  const [profileMember, setProfileMember] = useState(null);
 
   // Selecting a channel returns to the chat view.
   const selectChannel = (ch) => {
@@ -116,6 +126,68 @@ export default function ChatPage() {
     setSearchParams({ work_name: ws.slug });
   };
 
+  // Load the workspace directory (members + channels) for mention resolution.
+  useEffect(() => {
+    if (!workspaceId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [desks, teams, users, channels] = await Promise.all([
+          getMembers(workspaceId).catch(() => []),
+          getTeams(workspaceId).catch(() => []),
+          getAllUsers().catch(() => []),
+          getChannels(workspaceId).catch(() => []),
+        ]);
+        if (cancelled) return;
+        const nameById = {};
+        users.forEach((u) => {
+          nameById[u.id] = {
+            name: `${u.firstName || ""} ${u.lastName || ""}`.trim(),
+            email: u.email,
+          };
+        });
+        const enriched = desks
+          .filter((m) => m.userId != null)
+          .map((m) => {
+            const name = nameById[m.userId]?.name || m.fullName || `User ${m.userId}`;
+            return {
+              userId: m.userId,
+              name,
+              title: m.title || "",
+              team: teams.find((t) => t.id === m.teamId)?.name || "",
+              role: m.role,
+              email: nameById[m.userId]?.email || m.workEmail || "",
+              avatar: m.personalImageUrl || "",
+              online: m.isOnline,
+              handle: norm(name),
+              altHandle: norm(m.fullName),
+            };
+          });
+        setDirMembers(enriched);
+        setDirChannels(channels.map((c) => ({ id: c.id, name: c.name })));
+      } catch {
+        /* directory best-effort — mentions just won't resolve */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [workspaceId]);
+
+  // Clicking an @mention opens that person's profile card.
+  const handleMentionClick = (handle) => {
+    const h = norm(handle);
+    const found = dirMembers.find((m) => m.handle === h || m.altHandle === h);
+    if (found) setProfileMember(found);
+  };
+
+  // Clicking a #channel jumps to it (if the caller can see it).
+  const handleChannelClick = (name) => {
+    const n = (name || "").toLowerCase();
+    const ch = dirChannels.find((c) => (c.name || "").toLowerCase() === n);
+    if (ch) selectChannel(ch);
+  };
+
   // Collapsible + resizable side panels (persisted).
   const [sidebarOpen, setSidebarOpen] = usePersistentState("vo-sidebar-open", true);
   const [membersOpen, setMembersOpen] = usePersistentState("vo-members-open", true);
@@ -176,6 +248,9 @@ export default function ChatPage() {
   }, []); // 3. The array safely stays empty!
 
   return (
+    <MentionContext.Provider
+      value={{ onMention: handleMentionClick, onChannel: handleChannelClick }}
+    >
     <div className="chatPage">
       <WorkspaceSidebar
         workspaces={workspaces}
@@ -255,6 +330,9 @@ export default function ChatPage() {
           ) : null}
         </>
       )}
+
+      <ProfileModal member={profileMember} onClose={() => setProfileMember(null)} />
     </div>
+    </MentionContext.Provider>
   );
 }
