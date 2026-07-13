@@ -1,0 +1,5 @@
+# Build context hygiene for the web client image.
+node_modules
+build
+.git
+*.log
