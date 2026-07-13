@@ -1,11 +1,13 @@
-import "./ProfileModal.css";
-import { X, Mail, Briefcase, Users2, Shield } from "lucide-react";
+import "./ProfilePanel.css";
+import { X, Mail, Briefcase, Users2, Shield, MessageSquare } from "lucide-react";
+import { getCurrentUserId } from "../../../../utils/auth";
 
 const ROLE_LABEL = { OWNER: "Owner", ADMIN: "Admin", MEMBER: "Member", GUEST: "Guest" };
 
-/** Lightweight profile card shown when an @mention is clicked. */
-export default function ProfileModal({ member, onClose }) {
+/** Right-side profile panel with a "Message" action to open a DM. */
+export default function ProfilePanel({ member, onClose, onMessage }) {
   if (!member) return null;
+  const isMe = member.userId === getCurrentUserId();
   const initials =
     (member.name || "?")
       .split(/\s+/)
@@ -15,28 +17,34 @@ export default function ProfileModal({ member, onClose }) {
       .toUpperCase() || "?";
 
   return (
-    <div className="profile-overlay" onClick={onClose}>
-      <div className="profile-card" onClick={(e) => e.stopPropagation()}>
+    <div className="profile-panel">
+      <div className="profile-panel-head">
+        <span className="profile-panel-title">Profile</span>
         <button className="profile-close" onClick={onClose} aria-label="Close">
           <X size={18} />
         </button>
+      </div>
 
-        <div className="profile-head">
-          <div className="profile-avatar">
-            {member.avatar ? (
-              <img src={member.avatar} alt={member.name} />
-            ) : (
-              <span>{initials}</span>
-            )}
-            {member.online != null && (
-              <span className={`profile-presence ${member.online ? "on" : "off"}`} />
-            )}
-          </div>
-          <div className="profile-id">
-            <h3>{member.name}</h3>
-            {member.title && <span className="profile-title">{member.title}</span>}
-          </div>
+      <div className="profile-panel-body">
+        <div className="profile-avatar">
+          {member.avatar ? (
+            <img src={member.avatar} alt={member.name} />
+          ) : (
+            <span>{initials}</span>
+          )}
+          {member.online != null && (
+            <span className={`profile-presence ${member.online ? "on" : "off"}`} />
+          )}
         </div>
+
+        <h3 className="profile-name">{member.name}</h3>
+        {member.title && <span className="profile-title">{member.title}</span>}
+
+        {!isMe && (
+          <button className="profile-message-btn" onClick={() => onMessage(member)}>
+            <MessageSquare size={16} /> Message
+          </button>
+        )}
 
         <div className="profile-rows">
           {member.email && member.email !== "—" && (

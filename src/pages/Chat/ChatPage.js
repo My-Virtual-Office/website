@@ -9,12 +9,12 @@ import { Client } from "@stomp/stompjs";
 import MembersList from "./Components/MembersList/MembersList";
 import ContactsDirectory from "./Components/ContactsDirectory/ContactsDirectory";
 import ThreadPanel from "./Components/ThreadPanel/ThreadPanel";
-import ProfileModal from "./Components/ProfileModal/ProfileModal";
+import ProfilePanel from "./Components/ProfilePanel/ProfilePanel";
 import ResizeHandle from "../../components/ResizeHandle";
 import { MentionContext } from "./mentionContext";
 import { authHeaders } from "../../utils/auth";
 import { getMyWorkspaces, getMembers, getTeams } from "../../api/workspace";
-import { getChannelThreads, createThread, getChannels } from "../../api/chat";
+import { getChannelThreads, createThread, getChannels, getOrCreateDm } from "../../api/chat";
 import { getAllUsers } from "../../api/user";
 
 const norm = (s) => (s || "").replace(/\s+/g, "").toLowerCase();
@@ -193,6 +193,18 @@ export default function ChatPage() {
     if (ch) selectChannel(ch);
   };
 
+  // "Message" on a profile — open (or create) a DM and switch to it.
+  const startDm = async (member) => {
+    try {
+      const dm = await getOrCreateDm(member.userId);
+      // DM channels carry no name; use the person's name for the header.
+      selectChannel({ id: dm.id, name: member.name, type: "DIRECT" });
+      setProfileMember(null);
+    } catch (e) {
+      console.error("Failed to open DM", e);
+    }
+  };
+
   // Collapsible + resizable side panels (persisted).
   const [sidebarOpen, setSidebarOpen] = usePersistentState("vo-sidebar-open", true);
   const [membersOpen, setMembersOpen] = usePersistentState("vo-members-open", true);
@@ -302,7 +314,24 @@ export default function ChatPage() {
             onOpenThread={openThread}
           />
 
-          {activeThread ? (
+          {profileMember ? (
+            <>
+              <ResizeHandle
+                width={membersWidth}
+                setWidth={setMembersWidth}
+                min={260}
+                max={420}
+                direction={-1}
+              />
+              <div className="side-panel" style={{ width: Math.max(membersWidth, 300) }}>
+                <ProfilePanel
+                  member={profileMember}
+                  onClose={() => setProfileMember(null)}
+                  onMessage={startDm}
+                />
+              </div>
+            </>
+          ) : activeThread ? (
             <>
               <ResizeHandle
                 width={membersWidth}
@@ -335,8 +364,6 @@ export default function ChatPage() {
           ) : null}
         </>
       )}
-
-      <ProfileModal member={profileMember} onClose={() => setProfileMember(null)} />
     </div>
     </MentionContext.Provider>
   );

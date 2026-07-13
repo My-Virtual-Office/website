@@ -206,7 +206,8 @@ export default function MessageInput({ activeChannel, workspaceId, stompClient }
 
   let placeholderText = "Message";
   if (activeChannel !== null && activeChannel.name !== undefined) {
-    placeholderText = "Message #" + activeChannel.name;
+    const prefix = activeChannel.type === "DIRECT" ? "Message " : "Message #";
+    placeholderText = prefix + activeChannel.name;
   }
 
   return (

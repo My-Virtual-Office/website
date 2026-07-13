@@ -1,6 +1,7 @@
 import "./ChatHeader.css";
 import {
   Hash,
+  AtSign,
   Phone,
   Info,
   Search,
@@ -127,10 +128,13 @@ export default function ChatHeader({
         </button>
         <div className="channel-info">
           <h3
-            onClick={() => activeChannel?.id && setSettingsOpen(true)}
-            title="Channel settings"
+            onClick={() =>
+              activeChannel?.type !== "DIRECT" && activeChannel?.id && setSettingsOpen(true)
+            }
+            title={activeChannel?.type === "DIRECT" ? "" : "Channel settings"}
+            style={activeChannel?.type === "DIRECT" ? { cursor: "default" } : undefined}
           >
-            <Hash size={18} />
+            {activeChannel?.type === "DIRECT" ? <AtSign size={18} /> : <Hash size={18} />}
             <span>{channelNameForDisplay}</span>
           </h3>
           <span className="margin">|</span>

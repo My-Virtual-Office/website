@@ -24,6 +24,17 @@ export async function getChannel(channelId) {
   return res.json();
 }
 
+/** Open (or create) a 1:1 direct-message channel with another user. */
+export async function getOrCreateDm(targetUserId) {
+  const res = await fetch(`/api/chat/dm`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ targetUserId }),
+  });
+  if (!res.ok) throw res;
+  return res.json();
+}
+
 /** Channels in a workspace (for #channel mentions). */
 export async function getChannels(workspaceId) {
   const res = await fetch(`/api/chat/channels?workspaceId=${workspaceId}&page=1&limit=100`, { headers: authHeaders() });
