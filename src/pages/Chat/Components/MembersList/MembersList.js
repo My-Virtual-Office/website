@@ -13,7 +13,8 @@ import {
 import { getAllUsers } from "../../../../api/user";
 import { useDialogs } from "../../../../components/DialogProvider";
 
-const ROLES = ["GUEST", "MEMBER", "ADMIN", "OWNER"];
+// OWNER is intentionally not assignable here — ownership transfer is a separate flow.
+const ROLES = ["GUEST", "MEMBER", "ADMIN"];
 
 export default function MembersList({ workspaceId }) {
   const { confirm, notify } = useDialogs();
@@ -217,8 +218,12 @@ export default function MembersList({ workspaceId }) {
         </DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: "8px !important" }}>
           <TextField select size="small" label="Role" value={manage?.role || "MEMBER"}
+            disabled={manage?.desk?.role === "OWNER"}
+            helperText={manage?.desk?.role === "OWNER" ? "The owner's role can't be changed here." : ""}
             onChange={(e) => setManage((s) => ({ ...s, role: e.target.value }))}>
-            {ROLES.map((r) => <MenuItem key={r} value={r}>{r}</MenuItem>)}
+            {[...new Set([manage?.role, ...ROLES])].filter(Boolean).map((r) => (
+              <MenuItem key={r} value={r}>{r}</MenuItem>
+            ))}
           </TextField>
           <TextField size="small" label="Title" placeholder="e.g. Software Engineer"
             value={manage?.title || ""}
