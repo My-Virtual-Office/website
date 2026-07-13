@@ -246,31 +246,35 @@
 }
 .user-details {
   width: 110.25px;
-  height: 36px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 .user-name {
-  width: 110.25px;
-  height: 20px;
+  max-width: 110.25px;
   font-weight: 700;
-  font-style: Bold;
   font-size: 14px;
   line-height: 20px;
   letter-spacing: 0px;
-  vertical-align: middle;
   color: #0f172a;
+  /* Keep the name on a single line; long names truncate with an ellipsis
+     (full name available on hover via the title attribute). */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .user-status {
-  width: 110.25px;
-  height: 16px;
+  max-width: 110.25px;
   font-weight: 400;
   font-size: 12px;
   line-height: 16px;
   letter-spacing: 0px;
-  vertical-align: middle;
   color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: capitalize;
 }
 .settings-btn {
   color: #94a3b8;
