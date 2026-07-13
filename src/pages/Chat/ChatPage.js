@@ -22,6 +22,7 @@ import {
   getDirectMessages,
   getUnread,
   markRead,
+  markUnread,
 } from "../../api/chat";
 import { getAllUsers } from "../../api/user";
 
@@ -283,6 +284,21 @@ export default function ChatPage() {
     return () => subs.forEach((s) => s.unsubscribe());
   }, [stompClient, convoIds]);
 
+  // "Mark unread" on a message — move the read cursor back and refresh the badge.
+  const handleMarkUnread = async (channelId, messageId) => {
+    if (!channelId || !messageId) return;
+    try {
+      await markUnread(channelId, messageId);
+      const u = await getUnread(channelId);
+      setUnread((prev) => ({
+        ...prev,
+        [channelId]: { count: u.unreadCount || 0, mention: !!u.mentioned },
+      }));
+    } catch (e) {
+      console.error("Failed to mark unread", e);
+    }
+  };
+
   // Opening a conversation clears its badge and marks it read on the server.
   useEffect(() => {
     if (view !== "chat" || !activeChannel?.id) return;
@@ -364,7 +380,11 @@ export default function ChatPage() {
 
   return (
     <MentionContext.Provider
-      value={{ onMention: handleMentionClick, onChannel: handleChannelClick }}
+      value={{
+        onMention: handleMentionClick,
+        onChannel: handleChannelClick,
+        onMarkUnread: handleMarkUnread,
+      }}
     >
     <div className="chatPage">
       <WorkspaceSidebar

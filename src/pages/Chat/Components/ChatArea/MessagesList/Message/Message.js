@@ -2,9 +2,20 @@ import "./Message.css";
 import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
-import { Pencil, Trash2, SmilePlus, MessageSquare, Paperclip, Download, Pin } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  SmilePlus,
+  MessageSquare,
+  Paperclip,
+  Download,
+  Pin,
+  MoreVertical,
+  Circle,
+  Link2,
+} from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getCurrentUserId, authHeaders } from "../../../../../../utils/auth";
 import { toggleReaction, fileUrl, pinMessage, unpinMessage } from "../../../../../../api/chat";
 import { useDialogs } from "../../../../../../components/DialogProvider";
@@ -41,7 +52,9 @@ function renderContent(text, onMention, onChannel) {
 }
 
 export default function Message({ message, stompClient, grouped, onOpenThread }) {
-  const { onMention, onChannel } = useMentions();
+  const { onMention, onChannel, onMarkUnread } = useMentions();
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
   // --- Message State ---
 
   const [isEditing, setIsEditing] = useState(false); // Editing mode state
@@ -70,6 +83,33 @@ export default function Message({ message, stompClient, grouped, onOpenThread })
       notify("Could not pin", "error");
     }
   };
+
+  const handleMarkUnread = () => {
+    setShowMenu(false);
+    if (onMarkUnread) onMarkUnread(message.channelId, message.id);
+    notify("Marked as unread", "success");
+  };
+
+  const handleCopyLink = async () => {
+    setShowMenu(false);
+    const base = `${window.location.origin}${window.location.pathname}${window.location.search}`;
+    try {
+      await navigator.clipboard.writeText(`${base}#msg-${message.id}`);
+      notify("Link copied", "success");
+    } catch {
+      notify("Couldn't copy link", "error");
+    }
+  };
+
+  // Close the actions menu on an outside click.
+  useEffect(() => {
+    if (!showMenu) return;
+    const onDoc = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setShowMenu(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [showMenu]);
 
   useEffect(() => {
     setEditedText(message.content || message.text || "");
@@ -304,6 +344,59 @@ export default function Message({ message, stompClient, grouped, onOpenThread })
               </button>
             </>
           )}
+
+          {/* More actions (Slack-style ⋮ menu) */}
+          <div className="msg-menu-wrap" ref={menuRef}>
+            <button
+              className="msg-action-btn"
+              onClick={() => setShowMenu((s) => !s)}
+              title="More actions"
+            >
+              <MoreVertical size={15} />
+            </button>
+            {showMenu && (
+              <div className="msg-menu">
+                <button className="msg-menu-item" onClick={handleMarkUnread}>
+                  <Circle size={15} /> Mark unread
+                </button>
+                <button className="msg-menu-item" onClick={handleCopyLink}>
+                  <Link2 size={15} /> Copy link
+                </button>
+                <button
+                  className="msg-menu-item"
+                  onClick={() => {
+                    setShowMenu(false);
+                    handlePin();
+                  }}
+                >
+                  <Pin size={15} /> {message.pinned ? "Unpin from channel" : "Pin to channel"}
+                </button>
+                {isMyMessage && (
+                  <>
+                    <div className="msg-menu-sep" />
+                    <button
+                      className="msg-menu-item"
+                      onClick={() => {
+                        setShowMenu(false);
+                        setIsEditing(true);
+                      }}
+                    >
+                      <Pencil size={15} /> Edit message
+                    </button>
+                    <button
+                      className="msg-menu-item danger"
+                      onClick={() => {
+                        setShowMenu(false);
+                        handleDelete();
+                      }}
+                    >
+                      <Trash2 size={15} /> Delete message
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

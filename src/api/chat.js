@@ -41,6 +41,16 @@ export async function markRead(channelId, lastReadMessageId) {
   if (!res.ok) throw res;
 }
 
+/** Mark a channel unread starting at the given message. */
+export async function markUnread(channelId, messageId) {
+  const res = await fetch(`/api/chat/channels/${channelId}/mark-unread`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ lastReadMessageId: messageId }),
+  });
+  if (!res.ok) throw res;
+}
+
 /** Open (or create) a 1:1 direct-message channel with another user. */
 export async function getOrCreateDm(targetUserId) {
   const res = await fetch(`/api/chat/dm`, {
