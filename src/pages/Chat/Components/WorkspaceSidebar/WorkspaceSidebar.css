@@ -1,80 +1,107 @@
-.container {
-  width: 61px;
-  height: 95vh;
-}
-.workspace {
-  width: 100%;
-  height: 100%;
-  padding: 16px 0;
-  background-color: #e2e8f0;
-  border-right: 1px solid #cbd5e1;
+.rail {
+  width: 64px;
+  flex-shrink: 0;
+  height: 100vh;
+  background: var(--rail-bg);
+  border-right: 1px solid var(--sidebar-border);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
+  padding: 12px 0;
 }
-.workspace-items {
+
+.rail-top {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 10px;
-  align-items: center;
 }
-.workspace i {
-  width: 48px;
-  height: 48px;
-  background-color: #5048e5;
+
+.rail-workspace {
+  width: 40px;
+  height: 40px;
   border-radius: 12px;
-  color: white;
+  background: var(--rail-icon-bg);
+  color: #fff;
+  border: none;
+  cursor: pointer;
   display: flex;
-  justify-content: center;
   align-items: center;
-  cursor: pointer;
-  transition: transform 0.2s;
+  justify-content: center;
+  transition: border-radius 0.15s, transform 0.15s;
+}
+.rail-workspace:hover {
+  border-radius: 14px;
+  transform: translateY(-1px);
 }
 
-.workspace i:hover {
-  transform: scale(1.05);
+.rail-divider {
+  width: 28px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.14);
+}
+:root[data-theme="light"] .rail-divider {
+  background: rgba(0, 0, 0, 0.1);
 }
 
-.workspace i svg {
-  font-size: 24px;
-}
-
-.workspace hr {
-  width: 32px;
-  border: solid 1px #cbd5e1;
-}
-.workspace-img {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s;
+.rail-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
   object-fit: cover;
-}
-.workspace-img:hover {
-  border-color: #5048e5;
-}
-.workspace button {
-  width: 48px;
-  height: 48px;
-  color: #5048e5;
-  border: dashed 2px #cbd5e1;
-  border-radius: 50%;
-  background-color: #ffffff;
   cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: all 0.3s;
-  margin-top: auto;
+  border: 2px solid transparent;
+  transition: border-radius 0.15s;
 }
-.workspace button:hover {
-  border-color: #5048e5;
-  transform: scale(1.05);
+.rail-img:hover {
+  border-radius: 14px;
 }
 
-.workspace button svg {
-  font-size: 24px;
+.rail-add {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--rail-fg);
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+:root[data-theme="light"] .rail-add {
+  border-color: rgba(0, 0, 0, 0.2);
+}
+.rail-add:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+:root[data-theme="light"] .rail-add:hover {
+  color: var(--content-strong);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.rail-theme {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--rail-fg);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.rail-theme:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+:root[data-theme="light"] .rail-theme:hover {
+  color: var(--content-strong);
+  background: rgba(0, 0, 0, 0.06);
 }

@@ -1,8 +1,5 @@
 import "./ChatHeader.css";
-import LocalPhoneOutlinedIcon from "@mui/icons-material/LocalPhoneOutlined";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
-import NumbersIcon from "@mui/icons-material/Numbers";
+import { Hash, Phone, Info, Search } from "lucide-react";
 import { useState } from "react";
 import { authHeaders } from "../../../../../utils/auth";
 import { useDialogs } from "../../../../../components/DialogProvider";
@@ -87,7 +84,7 @@ export default function ChatHeader({ activeChannel }) {
       {/* Left Side */}
       <div className="channel-info">
         <h3>
-          <NumbersIcon></NumbersIcon>
+          <Hash size={18} />
           <span>{channelNameForDisplay}</span>
         </h3>
         <span className="margin">|</span>
@@ -99,7 +96,7 @@ export default function ChatHeader({ activeChannel }) {
       {/* Right Side */}
       <div className="header-actions">
         <button className="header-btn" aria-label="Call">
-          <LocalPhoneOutlinedIcon />
+          <Phone size={18} />
         </button>
 
         <div
@@ -107,7 +104,7 @@ export default function ChatHeader({ activeChannel }) {
           style={{ position: "relative" }}
         >
           <button className="header-btn" aria-label="Info" onClick={toggleMenu}>
-            <InfoOutlinedIcon />
+            <Info size={18} />
           </button>
 
           {isMenuOpen && (
@@ -156,7 +153,7 @@ export default function ChatHeader({ activeChannel }) {
         </div>
 
         <div className="header-search">
-          <SearchOutlinedIcon />
+          <Search size={16} />
           <input type="text" placeholder="Search" />
         </div>
       </div>

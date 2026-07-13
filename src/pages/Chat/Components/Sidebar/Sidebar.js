@@ -1,10 +1,5 @@
 import "./Sidebar.css";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import SearchIcon from "@mui/icons-material/Search";
-import DraftsOutlinedIcon from "@mui/icons-material/DraftsOutlined";
-import NumbersIcon from "@mui/icons-material/Numbers";
-import AddIcon from "@mui/icons-material/Add";
-import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import { ChevronDown, Search, FileText, Hash, Plus, Settings } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getCurrentUser } from "../../../../api/user";
 import SettingsModal from "../SettingsModal/SettingsModal";
@@ -190,18 +185,18 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
         <div className="sidebar-header">
           <span>Virtual-Office</span>
           <button>
-            <KeyboardArrowDownIcon></KeyboardArrowDownIcon>
+            <ChevronDown size={18} />
           </button>
         </div>
 
         <div className="sidebar-main">
           <div className="search-drafts">
             <div className="search">
-              <SearchIcon></SearchIcon>
+              <Search size={18} />
               <span>Search</span>
             </div>
             <div className="drafts">
-              <DraftsOutlinedIcon></DraftsOutlinedIcon>
+              <FileText size={18} />
               <span>Drafts</span>
             </div>
           </div>
@@ -210,7 +205,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
             <div className="channels-header">
               <span>CHANNELS</span>
               <button onClick={handleCreateChannel}>
-                <AddIcon></AddIcon>
+                <Plus size={16} />
               </button>
             </div>
 
@@ -227,7 +222,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
                   }}
                 >
                   <span>
-                    <NumbersIcon></NumbersIcon>
+                    <Hash size={16} />
                   </span>
                   <span className="channel-name">{channel.name}</span>
                 </div>
@@ -243,7 +238,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
                 aria-label="New Direct Message"
                 title="New DM"
               >
-                <AddIcon />
+                <Plus size={16} />
               </button>
             </div>
 
@@ -331,7 +326,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
               aria-label="Settings"
               onClick={() => setIsSettingsOpen(true)}
             >
-              <SettingsOutlinedIcon></SettingsOutlinedIcon>
+              <Settings size={18} />
             </button>
 
             {/* Settings Modal */}

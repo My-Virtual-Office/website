@@ -1,7 +1,5 @@
 import "./MessageInput.css";
-import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
-import SentimentSatisfiedAltOutlinedIcon from "@mui/icons-material/SentimentSatisfiedAltOutlined";
-import SendOutlinedIcon from "@mui/icons-material/SendOutlined";
+import { Plus, Smile, SendHorizontal } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
 import { useState } from "react";
 import { useDialogs } from "../../../../../components/DialogProvider";
@@ -77,21 +75,21 @@ export default function MessageInput({ activeChannel, stompClient }) {
         <div className="input-icons">
           <div className="input-actions-left">
             <button className="input-btn" aria-label="Add attachment">
-              <AddCircleOutlineOutlinedIcon />
+              <Plus size={20} />
             </button>
             <button
               className="input-btn"
               aria-label="Add emoji"
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             >
-              <SentimentSatisfiedAltOutlinedIcon />
+              <Smile size={20} />
             </button>
           </div>
 
           {/* Send Button */}
           <button className="send-btn" onClick={handleSendMessage}>
             Send
-            <SendOutlinedIcon />
+            <SendHorizontal size={15} />
           </button>
         </div>
       </div>

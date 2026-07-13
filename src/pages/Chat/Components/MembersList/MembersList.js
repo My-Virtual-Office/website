@@ -1,5 +1,5 @@
 import "./MembersList.css";
-import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
+import { UserPlus } from "lucide-react";
 export default function MembersList() {
   const totalMembers = 12;
 
@@ -97,7 +97,7 @@ export default function MembersList() {
         {/* Invite Button */}
         <div className="invite-section">
           <button className="invite-btn">
-            <PersonAddAltOutlinedIcon></PersonAddAltOutlinedIcon>
+            <UserPlus size={17} />
             <span>Invite Member</span>
           </button>
         </div>

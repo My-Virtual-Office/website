@@ -1,37 +1,36 @@
 .message-input-container {
-  padding: 0 24px 24px 24px;
+  padding: 0 20px 20px;
   position: relative;
+  background: var(--content-bg);
 }
 .message-input {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 8px;
-  border-radius: 12px;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0px 1px 2px 0px #0000000d;
-  transition: all 0.2s;
+  border-radius: 10px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  overflow: hidden;
 }
-
 .message-input:focus-within {
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: var(--content-muted);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 .message-input-field {
-  padding: 8px 12px;
-  background: #f1f5f9;
+  padding: 11px 12px;
+  background: transparent;
+  color: var(--input-fg);
   border: none;
   resize: none;
-  caret-color: #5048e5;
+  caret-color: var(--content-fg);
+  font-family: Inter, sans-serif;
+  font-size: 15px;
+  min-height: 22px;
+  max-height: 200px;
 }
 .message-input-field::placeholder {
-  font-family: Inter, sans-serif;
-  font-weight: 400;
-  font-size: 14px;
-  line-height: 20px;
-  letter-spacing: 0px;
-  vertical-align: middle;
-  color: #64748b;
+  color: var(--input-muted);
+  font-size: 15px;
 }
 .message-input-field:focus {
   outline: none;
@@ -40,65 +39,61 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-right: 7.99px;
-  padding-bottom: 4px;
-  padding-left: 8px;
+  padding: 6px 8px;
+  background: var(--input-toolbar-bg);
+  border-top: 1px solid var(--border);
 }
 .input-actions-left {
-  width: 68px;
-  height: 32px;
   display: flex;
-  gap: 4px;
+  gap: 2px;
 }
 .input-actions-left button {
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   border: none;
   width: 32px;
   height: 32px;
-  padding: 6px;
-  color: #64748b;
-  background-color: transparent;
-  transition: all 0.3s;
+  border-radius: 6px;
+  color: var(--input-muted);
+  background: transparent;
   cursor: pointer;
+  transition: all 0.15s;
 }
-
 .input-actions-left button:hover {
-  color: #475569;
+  color: var(--content-strong);
+  background: var(--hover-bg);
 }
-
 .input-actions-left button svg {
-  font-size: 25px;
+  font-size: 21px;
 }
 .send-btn {
-  width: 86.14px;
-  height: 32px;
-  gap: 8px;
-  padding: 6px 16px;
-  border-radius: 8px;
-  background: #5048e5;
+  height: 30px;
+  gap: 6px;
+  padding: 0 14px;
+  border-radius: 6px;
+  background: var(--accent);
   border: none;
-  color: #ffffff;
-  box-shadow: 0px 4px 6px -1px #0000001a;
+  color: var(--accent-fg);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3 s;
+  font-weight: 700;
+  font-size: 14px;
+  transition: background 0.15s;
 }
-
 .send-btn:hover {
-  background: #2d2981;
+  background: var(--accent-hover);
 }
 .send-btn svg {
   font-size: 15px;
 }
 .emoji-picker-wrapper {
   position: absolute;
-  bottom: 80px;
-  left: 24px;
+  bottom: 92px;
+  left: 20px;
   z-index: 100;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--overlay-shadow);
   border-radius: 8px;
 }

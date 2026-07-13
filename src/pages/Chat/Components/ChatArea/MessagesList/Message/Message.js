@@ -2,9 +2,7 @@ import "./Message.css";
 import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
-// Import edit and delete icons
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import { Pencil, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getCurrentUserId, authHeaders } from "../../../../../../utils/auth";
 import { useDialogs } from "../../../../../../components/DialogProvider";
@@ -105,10 +103,7 @@ export default function Message({ message, stompClient }) {
 
       <div className="message-content">
         {/* Message header */}
-        <div
-          className="message-header"
-          style={{ display: "flex", alignItems: "center" }}
-        >
+        <div className="message-header">
           <span className="message-user">
             {message.user || `User ${message.senderId || "1"}`}
           </span>
@@ -124,36 +119,20 @@ export default function Message({ message, stompClient }) {
 
           {/* Show actions if it's my message and not in edit mode */}
           {isMyMessage && !isEditing && (
-            <div
-              className="message-actions"
-              style={{ marginLeft: "12px", display: "flex", gap: "8px" }}
-            >
+            <div className="message-actions">
               <button
+                className="msg-action-btn"
                 onClick={() => setIsEditing(true)}
-                title="Edit Message"
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "#94a3b8",
-                  padding: 0,
-                }}
+                title="Edit message"
               >
-                <EditOutlinedIcon fontSize="small" />
+                <Pencil size={15} />
               </button>
-
               <button
+                className="msg-action-btn danger"
                 onClick={handleDelete}
-                title="Delete Message"
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "#f87171",
-                  padding: 0,
-                }}
+                title="Delete message"
               >
-                <DeleteOutlineOutlinedIcon fontSize="small" />
+                <Trash2 size={15} />
               </button>
             </div>
           )}
@@ -161,51 +140,22 @@ export default function Message({ message, stompClient }) {
 
         {/* Message content */}
         {isEditing ? (
-          <div className="edit-mode-box" style={{ marginTop: "4px" }}>
+          <div className="edit-mode-box">
             <textarea
               value={editedText}
               onChange={(e) => setEditedText(e.target.value)}
-              style={{
-                width: "100%",
-                minHeight: "40px",
-                padding: "8px",
-                borderRadius: "6px",
-                border: "1px solid #cbd5e1",
-                fontSize: "14px",
-                fontFamily: "inherit",
-              }}
+              autoFocus
             />
             {/* Save and cancel buttons */}
-            <div style={{ display: "flex", gap: "8px", marginTop: "6px" }}>
-              <button
-                onClick={handleEditSubmit}
-                style={{
-                  padding: "4px 12px",
-                  background: "#3b82f6",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontSize: "12px",
-                  fontWeight: "bold",
-                }}
-              >
+            <div className="edit-actions">
+              <button className="edit-save" onClick={handleEditSubmit}>
                 Save
               </button>
               <button
+                className="edit-cancel"
                 onClick={() => {
                   setIsEditing(false);
                   setEditedText(currentContent);
-                }}
-                style={{
-                  padding: "4px 12px",
-                  background: "#e2e8f0",
-                  color: "#475569",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontSize: "12px",
-                  fontWeight: "bold",
                 }}
               >
                 Cancel
