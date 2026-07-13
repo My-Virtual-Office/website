@@ -91,6 +91,63 @@
 .message:hover .grouped-time {
   opacity: 1;
 }
+
+/* Reactions */
+.reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.reaction-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--hover-bg);
+  color: var(--content-fg);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.reaction-pill:hover {
+  border-color: var(--content-muted);
+}
+.reaction-pill.mine {
+  background: color-mix(in srgb, var(--sidebar-active-bg) 15%, transparent);
+  border-color: var(--sidebar-active-bg);
+  color: var(--sidebar-active-bg);
+}
+.reaction-count {
+  font-weight: 700;
+  font-size: 11px;
+}
+.reaction-add-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--content-muted);
+  cursor: pointer;
+}
+.reaction-add-inline:hover {
+  color: var(--content-strong);
+  border-color: var(--content-muted);
+  background: var(--hover-bg);
+}
+.reaction-picker {
+  position: absolute;
+  top: 24px;
+  right: 20px;
+  z-index: 20;
+  box-shadow: var(--overlay-shadow);
+  border-radius: 8px;
+}
 .msg-action-btn {
   background: none;
   border: none;

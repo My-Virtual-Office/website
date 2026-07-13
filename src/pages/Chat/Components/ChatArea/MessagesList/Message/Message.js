@@ -2,9 +2,11 @@ import "./Message.css";
 import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, SmilePlus } from "lucide-react";
+import EmojiPicker from "emoji-picker-react";
 import { useState, useEffect } from "react";
 import { getCurrentUserId, authHeaders } from "../../../../../../utils/auth";
+import { toggleReaction } from "../../../../../../api/chat";
 import { useDialogs } from "../../../../../../components/DialogProvider";
 
 export default function Message({ message, stompClient, grouped }) {
@@ -16,6 +18,17 @@ export default function Message({ message, stompClient, grouped }) {
   ); // Edited text state
   // App dialogs / toasts
   const { confirm, notify } = useDialogs();
+  // Emoji reaction picker
+  const [showPicker, setShowPicker] = useState(false);
+
+  const handleReact = async (emoji) => {
+    setShowPicker(false);
+    try {
+      await toggleReaction(message.id, emoji); // WS REACTION event updates the UI
+    } catch {
+      notify("Could not react", "error");
+    }
+  };
 
   useEffect(() => {
     setEditedText(message.content || message.text || "");
@@ -167,17 +180,58 @@ export default function Message({ message, stompClient, grouped }) {
             </button>
           </div>
         )}
+
+        {/* Reactions */}
+        {message.reactions && Object.keys(message.reactions).length > 0 && (
+          <div className="reactions">
+            {Object.entries(message.reactions).map(([emoji, users]) => (
+              <button
+                key={emoji}
+                className={`reaction-pill ${users.includes(getCurrentUserId()) ? "mine" : ""}`}
+                onClick={() => handleReact(emoji)}
+              >
+                <span>{emoji}</span>
+                <span className="reaction-count">{users.length}</span>
+              </button>
+            ))}
+            <button
+              className="reaction-add-inline"
+              onClick={() => setShowPicker((s) => !s)}
+              title="Add reaction"
+            >
+              <SmilePlus size={14} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Hover action toolbar (floats top-right; works for grouped rows too) */}
-      {isMyMessage && !isEditing && (
+      {!isEditing && (
         <div className="message-actions">
-          <button className="msg-action-btn" onClick={() => setIsEditing(true)} title="Edit message">
-            <Pencil size={15} />
+          <button className="msg-action-btn" onClick={() => setShowPicker((s) => !s)} title="Add reaction">
+            <SmilePlus size={15} />
           </button>
-          <button className="msg-action-btn danger" onClick={handleDelete} title="Delete message">
-            <Trash2 size={15} />
-          </button>
+          {isMyMessage && (
+            <>
+              <button className="msg-action-btn" onClick={() => setIsEditing(true)} title="Edit message">
+                <Pencil size={15} />
+              </button>
+              <button className="msg-action-btn danger" onClick={handleDelete} title="Delete message">
+                <Trash2 size={15} />
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {showPicker && (
+        <div className="reaction-picker">
+          <EmojiPicker
+            onEmojiClick={(e) => handleReact(e.emoji)}
+            height={340}
+            width={300}
+            previewConfig={{ showPreview: false }}
+          />
         </div>
       )}
     </div>

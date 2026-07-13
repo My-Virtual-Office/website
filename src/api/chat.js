@@ -7,6 +7,16 @@ export async function getChannel(channelId) {
   return res.json();
 }
 
+/** Toggle the caller's emoji reaction on a message. */
+export async function toggleReaction(messageId, emoji) {
+  const res = await fetch(
+    `/api/chat/messages/${messageId}/reactions?emoji=${encodeURIComponent(emoji)}`,
+    { method: "POST", headers: authHeaders() },
+  );
+  if (!res.ok) throw res;
+  return res.json();
+}
+
 /** Update channel settings (creator or moderator). Partial body. */
 export async function updateChannel(channelId, body) {
   const res = await fetch(`/api/chat/channels/${channelId}`, {
