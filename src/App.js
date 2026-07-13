@@ -5,6 +5,7 @@ import ChatPage from "./pages/Chat/ChatPage";
 import Home from "./pages/Home/Home";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import VerifyEmail from "./pages/VerifyEmail/VerifyEmail";
+import Onboarding from "./pages/Onboarding/Onboarding";
 import PrivateRoute from "./components/PrivateRoute";
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
         <Route path="login" element={<Login />} />
         <Route path="signup" element={<Signup />} />
         <Route path="verify-email" element={<VerifyEmail />} />
+        <Route path="onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
         <Route path="chat" element={<PrivateRoute><ChatPage /></PrivateRoute>} />
         <Route path="dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
       </Route>

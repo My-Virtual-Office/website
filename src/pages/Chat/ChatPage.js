@@ -4,11 +4,12 @@ import WorkspaceSidebar from "./Components/WorkspaceSidebar/WorkspaceSidebar";
 import Sidebar from "./Components/Sidebar/Sidebar";
 import ChatArea from "./Components/ChatArea/ChatArea";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Client } from "@stomp/stompjs";
 import MembersList from "./Components/MembersList/MembersList";
 import ResizeHandle from "../../components/ResizeHandle";
 import { authHeaders } from "../../utils/auth";
-import { resolveWorkspace } from "../../api/workspace";
+import { getMyWorkspaces } from "../../api/workspace";
 
 /** useState that persists to localStorage under `key`. */
 function usePersistentState(key, initial) {
@@ -35,19 +36,22 @@ export default function ChatPage() {
   const [stompClient, setStompClient] = useState(null);
   // The user's active workspace id (membership lives here; required for channels).
   const [workspaceId, setWorkspaceId] = useState(null);
+  const navigate = useNavigate();
 
-  // Resolve (or auto-create) the user's workspace so channel operations authorize.
+  // Use the user's first workspace; if they have none, send them to onboarding.
   useEffect(() => {
     let cancelled = false;
-    resolveWorkspace()
-      .then((ws) => {
-        if (!cancelled && ws?.id != null) setWorkspaceId(ws.id);
+    getMyWorkspaces()
+      .then((list) => {
+        if (cancelled) return;
+        if (Array.isArray(list) && list.length > 0) setWorkspaceId(list[0].id);
+        else navigate("/onboarding");
       })
-      .catch((err) => console.error("Failed to resolve workspace:", err));
+      .catch((err) => console.error("Failed to load workspaces:", err));
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [navigate]);
 
   // Collapsible + resizable side panels (persisted).
   const [sidebarOpen, setSidebarOpen] = usePersistentState("vo-sidebar-open", true);
