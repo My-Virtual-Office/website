@@ -3,8 +3,9 @@ import { ChevronDown, Search, FileText, Hash, Plus, Settings, Users } from "luci
 import { useState, useEffect } from "react";
 import { getCurrentUser } from "../../../../api/user";
 import SettingsModal from "../SettingsModal/SettingsModal";
+import CreateChannelModal from "../CreateChannelModal/CreateChannelModal";
 import { getUserPhoto } from "../../../../api/user";
-import { getCurrentUserId, authHeaders } from "../../../../utils/auth";
+import { authHeaders } from "../../../../utils/auth";
 import { useDialogs } from "../../../../components/DialogProvider";
 
 export default function Sidebar({
@@ -27,44 +28,15 @@ export default function Sidebar({
   // App dialogs / toasts
   const { prompt, notify } = useDialogs();
 
-  const handleCreateChannel = async () => {
-    const channelName = await prompt({
-      title: "Create channel",
-      message: "Give your new channel a name.",
-      placeholder: "e.g. Development",
-      confirmText: "Create",
-    });
+  // Create-channel modal (Phase 3: name + description + access + moderators)
+  const [createOpen, setCreateOpen] = useState(false);
 
-    if (!channelName) return;
+  const openCreateChannel = () => {
     if (!workspaceId) {
       notify("Workspace still loading — try again in a moment.", "warning");
       return;
     }
-
-    try {
-      // Send request to create a new channel. The creator is auto-added by chat-service,
-      // but `members` must be non-empty, so send the current user.
-      const response = await fetch("/api/chat/channels", {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({
-          name: channelName,
-          workspaceId,
-          members: [getCurrentUserId()],
-        }),
-      });
-
-      if (response.ok) {
-        const newChannel = await response.json();
-
-        // Add the new channel to the local state
-        setChannels([...channels, newChannel]);
-      } else {
-        notify("Failed to create the channel", "error");
-      }
-    } catch (error) {
-      console.error("Connection error:", error);
-    }
+    setCreateOpen(true);
   };
 
   // Create a new DM
@@ -222,7 +194,7 @@ export default function Sidebar({
           <div className="channels-section">
             <div className="channels-header">
               <span>CHANNELS</span>
-              <button onClick={handleCreateChannel}>
+              <button onClick={openCreateChannel}>
                 <Plus size={16} />
               </button>
             </div>
@@ -358,6 +330,16 @@ export default function Sidebar({
           </div>
         </div>
       </div>
+
+      <CreateChannelModal
+        workspaceId={workspaceId}
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={(ch) => {
+          setChannels((c) => [...c, ch]);
+          setActiveChannel({ id: ch.id, name: ch.name });
+        }}
+      />
     </div>
   );
 }
