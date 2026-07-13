@@ -29,6 +29,15 @@ export async function getMyDesk(workspaceId) {
   return res.data;
 }
 
+/** Set my presence status (ACTIVE | AWAY | DO_NOT_DISTURB | FOCUS_MODE | CUSTOM). */
+export async function updateStatus(workspaceId, deskId, { status, statusEmoji, statusCustomText }) {
+  const res = await axiosInstance.patch(
+    `/api/workspace/${workspaceId}/desks/${deskId}/status`,
+    { status, statusEmoji: statusEmoji || null, statusCustomText: statusCustomText || null },
+  );
+  return res.data;
+}
+
 /** Teams in a workspace. */
 export async function getTeams(workspaceId) {
   const res = await axiosInstance.get(`/api/workspace/${workspaceId}/teams`);

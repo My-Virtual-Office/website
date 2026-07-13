@@ -172,6 +172,20 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.person-presence-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 1px;
+}
+.in-office {
+  color: #2bac76;
+}
+.status-word {
+  font-weight: 600;
+}
 .team-chip {
   display: inline-flex;
   align-items: center;

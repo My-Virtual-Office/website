@@ -10,6 +10,7 @@ import {
   getMembers, getMyDesk, getTeams, updateMembership,
   createTeam, updateTeam, deleteTeam,
 } from "../../../../api/workspace";
+import { statusColor, statusText } from "../../statusMeta";
 import { getAllUsers } from "../../../../api/user";
 import { useDialogs } from "../../../../components/DialogProvider";
 
@@ -116,7 +117,10 @@ export default function MembersList({ workspaceId }) {
         ) : (
           <span>{initials(m)}</span>
         )}
-        <span className={`presence ${m.isOnline ? "online" : ""}`} />
+        <span
+          className={`presence ${m.isOnline ? "online" : ""}`}
+          style={m.isOnline ? { background: statusColor(m.status) } : undefined}
+        />
       </div>
       <div className="person-info">
         <div className="person-name">
@@ -126,11 +130,24 @@ export default function MembersList({ workspaceId }) {
           )}
         </div>
         <div className="person-meta">
-          <span className="person-title">{m.title || "No title"}</span>
+          <span className="person-title">
+            {m.statusEmoji ? `${m.statusEmoji} ` : ""}
+            {m.statusCustomText || m.title || "No title"}
+          </span>
           {teamName(m.teamId) && (
             <span className="team-chip"><Hash size={11} />{teamName(m.teamId)}</span>
           )}
         </div>
+        {(m.isOnline || (m.status && m.status !== "ACTIVE")) && (
+          <div className="person-presence-line">
+            {m.isOnline && <span className="in-office">● In office</span>}
+            {m.status && m.status !== "ACTIVE" && (
+              <span className="status-word" style={{ color: statusColor(m.status) }}>
+                {statusText({ status: m.status })}
+              </span>
+            )}
+          </div>
+        )}
       </div>
       {isAdmin && (
         <button

@@ -44,6 +44,37 @@
   color: var(--sidebar-heading);
 }
 
+/* Prominent CTA to enter the SkyOffice virtual office */
+.virtual-office-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin: 12px;
+  padding: 11px 14px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #5b8def 0%, #7c5cf0 100%);
+  color: #fff;
+  font-weight: 800;
+  font-size: 14.5px;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(92, 92, 240, 0.35);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+}
+.virtual-office-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow: 0 6px 20px rgba(92, 92, 240, 0.45);
+}
+.virtual-office-btn:active {
+  transform: translateY(0);
+}
+.virtual-office-btn svg {
+  flex-shrink: 0;
+}
+
 .sidebar-main {
   flex: 1;
   min-height: 0;
@@ -244,6 +275,7 @@
 
 /* Current user footer */
 .user-profile {
+  position: relative;
   margin-top: auto;
   flex-shrink: 0;
   display: flex;
@@ -259,11 +291,26 @@
   flex: 1;
   min-width: 0;
   padding: 10px 12px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.user-info:hover {
+  background: var(--sidebar-hover);
 }
 .user-avatar {
+  position: relative;
   width: 30px;
   height: 30px;
   flex-shrink: 0;
+}
+.user-status-dot {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid var(--sidebar-bg);
 }
 .user-avatar img {
   width: 100%;

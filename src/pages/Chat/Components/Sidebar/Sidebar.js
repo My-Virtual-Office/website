@@ -1,10 +1,13 @@
 import "./Sidebar.css";
-import { ChevronDown, Search, FileText, Hash, Plus, Settings, Users } from "lucide-react";
+import { ChevronDown, Search, FileText, Hash, Plus, Settings, Users, Gamepad2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getCurrentUser } from "../../../../api/user";
 import SettingsModal from "../SettingsModal/SettingsModal";
 import CreateChannelModal from "../CreateChannelModal/CreateChannelModal";
+import StatusMenu from "../StatusMenu/StatusMenu";
 import { getUserPhoto } from "../../../../api/user";
+import { getMyDesk, updateStatus } from "../../../../api/workspace";
+import { statusColor, statusText } from "../../statusMeta";
 import { authHeaders } from "../../../../utils/auth";
 import { useDialogs } from "../../../../components/DialogProvider";
 
@@ -31,6 +34,43 @@ export default function Sidebar({
 
   // Create-channel modal (Phase 3: name + description + access + moderators)
   const [createOpen, setCreateOpen] = useState(false);
+
+  // My desk in this workspace (carries my presence status) + status picker.
+  const [myDesk, setMyDesk] = useState(null);
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
+
+  useEffect(() => {
+    if (!workspaceId) return;
+    getMyDesk(workspaceId).then(setMyDesk).catch(() => {});
+  }, [workspaceId]);
+
+  // Open the SkyOffice virtual office for this workspace, authenticated via the
+  // JWT (the office server verifies it + checks workspace membership).
+  const openVirtualOffice = () => {
+    if (!workspaceId) {
+      notify("Workspace still loading — try again in a moment.", "warning");
+      return;
+    }
+    const token = localStorage.getItem("token");
+    const url = `${window.location.protocol}//${window.location.hostname}:5000/?token=${encodeURIComponent(
+      token || "",
+    )}&workspaceId=${workspaceId}`;
+    window.open(url, "_blank", "noopener");
+  };
+
+  const saveStatus = async (status, statusEmoji, statusCustomText) => {
+    if (!myDesk?.id) return;
+    try {
+      const updated = await updateStatus(workspaceId, myDesk.id, {
+        status,
+        statusEmoji,
+        statusCustomText,
+      });
+      setMyDesk(updated);
+    } catch {
+      notify("Couldn't update status", "error");
+    }
+  };
 
   const openCreateChannel = () => {
     if (!workspaceId) {
@@ -173,6 +213,11 @@ export default function Sidebar({
           </button>
         </div>
 
+        <button className="virtual-office-btn" onClick={openVirtualOffice}>
+          <Gamepad2 size={19} />
+          <span>Enter Virtual Office</span>
+        </button>
+
         <div className="sidebar-main">
           <div className="search-drafts">
             <div className="search">
@@ -284,7 +329,12 @@ export default function Sidebar({
           </div>
 
           <div className="user-profile">
-            <div className="user-info">
+            <div
+              className="user-info"
+              onClick={() => setShowStatusMenu((s) => !s)}
+              title="Set your status"
+              role="button"
+            >
               <div className="user-avatar">
                 {userPhoto ? (
                   <img
@@ -316,6 +366,10 @@ export default function Sidebar({
                     {user?.lastName?.[0]}
                   </div>
                 )}
+                <span
+                  className="user-status-dot"
+                  style={{ background: statusColor(myDesk?.status) }}
+                />
               </div>
 
               <div className="user-details">
@@ -326,10 +380,19 @@ export default function Sidebar({
                   {user ? `${user.firstName} ${user.lastName}` : "Loading..."}
                 </span>
                 <span className="user-status">
-                  {user ? user.accountStatus : ""}
+                  {myDesk?.statusEmoji ? `${myDesk.statusEmoji} ` : ""}
+                  {statusText(myDesk) || "Set a status"}
                 </span>
               </div>
             </div>
+
+            {showStatusMenu && (
+              <StatusMenu
+                desk={myDesk}
+                onSave={saveStatus}
+                onClose={() => setShowStatusMenu(false)}
+              />
+            )}
 
             <button
               className="settings-btn"
