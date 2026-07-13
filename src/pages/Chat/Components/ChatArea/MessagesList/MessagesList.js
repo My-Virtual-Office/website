@@ -13,7 +13,7 @@ const dayLabel = (d) => {
   return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
 };
 
-export default function MessagesList({ activeChannel, stompClient }) {
+export default function MessagesList({ activeChannel, stompClient, onOpenThread }) {
   const [messages, setMessages] = useState([]);
 
   useEffect(() => {
@@ -103,7 +103,12 @@ export default function MessagesList({ activeChannel, stompClient }) {
                 <span className="horizontal-divider" />
               </div>
             )}
-            <Message message={message} stompClient={stompClient} grouped={grouped} />
+            <Message
+              message={message}
+              stompClient={stompClient}
+              grouped={grouped}
+              onOpenThread={onOpenThread}
+            />
           </Fragment>
         );
       })}

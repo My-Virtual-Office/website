@@ -2,14 +2,14 @@ import "./Message.css";
 import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
-import { Pencil, Trash2, SmilePlus } from "lucide-react";
+import { Pencil, Trash2, SmilePlus, MessageSquare } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
 import { useState, useEffect } from "react";
 import { getCurrentUserId, authHeaders } from "../../../../../../utils/auth";
 import { toggleReaction } from "../../../../../../api/chat";
 import { useDialogs } from "../../../../../../components/DialogProvider";
 
-export default function Message({ message, stompClient, grouped }) {
+export default function Message({ message, stompClient, grouped, onOpenThread }) {
   // --- Message State ---
 
   const [isEditing, setIsEditing] = useState(false); // Editing mode state
@@ -211,6 +211,11 @@ export default function Message({ message, stompClient, grouped }) {
           <button className="msg-action-btn" onClick={() => setShowPicker((s) => !s)} title="Add reaction">
             <SmilePlus size={15} />
           </button>
+          {onOpenThread && (
+            <button className="msg-action-btn" onClick={() => onOpenThread(message)} title="Reply in thread">
+              <MessageSquare size={15} />
+            </button>
+          )}
           {isMyMessage && (
             <>
               <button className="msg-action-btn" onClick={() => setIsEditing(true)} title="Edit message">

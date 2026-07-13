@@ -8,9 +8,11 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Client } from "@stomp/stompjs";
 import MembersList from "./Components/MembersList/MembersList";
 import ContactsDirectory from "./Components/ContactsDirectory/ContactsDirectory";
+import ThreadPanel from "./Components/ThreadPanel/ThreadPanel";
 import ResizeHandle from "../../components/ResizeHandle";
 import { authHeaders } from "../../utils/auth";
 import { getMyWorkspaces } from "../../api/workspace";
+import { getChannelThreads, createThread } from "../../api/chat";
 
 /** useState that persists to localStorage under `key`. */
 function usePersistentState(key, initial) {
@@ -36,11 +38,29 @@ export default function ChatPage() {
   const [activeChannel, setActiveChannel] = useState(null);
   const [stompClient, setStompClient] = useState(null);
   const [view, setView] = useState("chat"); // "chat" | "contacts"
+  const [activeThread, setActiveThread] = useState(null); // {threadId, rootMessage, channelId}
 
   // Selecting a channel returns to the chat view.
   const selectChannel = (ch) => {
     setActiveChannel(ch);
     setView("chat");
+    setActiveThread(null);
+  };
+
+  // Open (or create) the thread rooted at a message, showing it in the right panel.
+  const openThread = async (rootMessage) => {
+    if (!activeChannel?.id || !rootMessage?.id) return;
+    try {
+      const threads = await getChannelThreads(activeChannel.id);
+      let thread = threads.find((t) => t.rootMessageId === rootMessage.id);
+      if (!thread) {
+        const nameSnippet = (rootMessage.content || "Thread").slice(0, 80);
+        thread = await createThread(activeChannel.id, rootMessage.id, nameSnippet);
+      }
+      setActiveThread({ threadId: thread.id, rootMessage, channelId: activeChannel.id });
+    } catch (e) {
+      console.error("Failed to open thread", e);
+    }
   };
   // The user's active workspace id (membership lives here; required for channels).
   const [workspaceId, setWorkspaceId] = useState(null);
@@ -199,9 +219,27 @@ export default function ChatPage() {
             onChannelUpdated={(ch) =>
               setActiveChannel({ id: ch.id, name: ch.name })
             }
+            onOpenThread={openThread}
           />
 
-          {membersOpen && (
+          {activeThread ? (
+            <>
+              <ResizeHandle
+                width={membersWidth}
+                setWidth={setMembersWidth}
+                min={300}
+                max={560}
+                direction={-1}
+              />
+              <div className="side-panel" style={{ width: Math.max(membersWidth, 360) }}>
+                <ThreadPanel
+                  thread={activeThread}
+                  stompClient={stompClient}
+                  onClose={() => setActiveThread(null)}
+                />
+              </div>
+            </>
+          ) : membersOpen ? (
             <>
               <ResizeHandle
                 width={membersWidth}
@@ -214,7 +252,7 @@ export default function ChatPage() {
                 <MembersList workspaceId={workspaceId} />
               </div>
             </>
-          )}
+          ) : null}
         </>
       )}
     </div>

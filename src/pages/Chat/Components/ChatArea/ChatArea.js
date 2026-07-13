@@ -11,6 +11,7 @@ export default function ChatArea({
   onToggleSidebar,
   onToggleMembers,
   onChannelUpdated,
+  onOpenThread,
 }) {
   return (
     <div className="chatArea">
@@ -23,7 +24,11 @@ export default function ChatArea({
         onToggleMembers={onToggleMembers}
         onChannelUpdated={onChannelUpdated}
       />
-      <MessagesList activeChannel={activeChannel} stompClient={stompClient} />
+      <MessagesList
+        activeChannel={activeChannel}
+        stompClient={stompClient}
+        onOpenThread={onOpenThread}
+      />
       <MessageInput activeChannel={activeChannel} stompClient={stompClient}></MessageInput>
     </div>
   );
