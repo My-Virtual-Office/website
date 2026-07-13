@@ -87,9 +87,16 @@
 .message.menu-open .message-actions {
   opacity: 1;
 }
-/* Keep the row (and its toolbar/menu) active while the ... menu is open */
+/* Keep the row (and its toolbar/menu) active while the ... menu is open, and
+   lift it above sibling rows so the menu is never overlapped. */
 .message.menu-open {
   background: var(--hover-bg);
+  z-index: 40;
+}
+/* While any menu is open, no other row shows its hover toolbar */
+body.msg-menu-active .message:not(.menu-open) .message-actions {
+  opacity: 0 !important;
+  pointer-events: none;
 }
 
 /* Unread messages — subtle tint so you can see where you left off */

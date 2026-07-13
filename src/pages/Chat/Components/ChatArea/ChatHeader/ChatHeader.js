@@ -31,6 +31,7 @@ export default function ChatHeader({
   const togglePins = async () => {
     const next = !showPins;
     setShowPins(next);
+    if (next) setIsMenuOpen(false); // only one header dropdown open at a time
     if (next && activeChannel?.id) {
       try {
         setPins(await getPins(activeChannel.id));
@@ -59,6 +60,7 @@ export default function ChatHeader({
   const toggleMenu = async () => {
     const newMenuState = !isMenuOpen;
     setIsMenuOpen(newMenuState);
+    if (newMenuState) setShowPins(false); // only one header dropdown open at a time
 
     // Fetch channel details when opening the menu
     if (newMenuState === true && activeChannel) {

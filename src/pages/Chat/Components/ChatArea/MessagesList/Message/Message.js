@@ -101,14 +101,19 @@ export default function Message({ message, stompClient, grouped, onOpenThread, u
     }
   };
 
-  // Close the actions menu on an outside click.
+  // Close the actions menu on an outside click, and flag the body so other rows'
+  // hover toolbars are suppressed while this menu is open (prevents overlap).
   useEffect(() => {
     if (!showMenu) return;
     const onDoc = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) setShowMenu(false);
     };
     document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
+    document.body.classList.add("msg-menu-active");
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.body.classList.remove("msg-menu-active");
+    };
   }, [showMenu]);
 
   useEffect(() => {
