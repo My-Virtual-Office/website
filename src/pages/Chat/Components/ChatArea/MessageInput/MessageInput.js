@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { useDialogs } from "../../../../../components/DialogProvider";
 import { uploadAttachment, fileUrl, getChannels } from "../../../../../api/chat";
 import { getMembers } from "../../../../../api/workspace";
+import { getAllUsers } from "../../../../../api/user";
 
 const isImage = (a) => (a.contentType || "").startsWith("image/");
 const toHandle = (name) => (name || "").replace(/\s+/g, "");
@@ -36,14 +37,23 @@ export default function MessageInput({ activeChannel, workspaceId, stompClient }
     let cancelled = false;
     (async () => {
       try {
-        const desks = await getMembers(workspaceId);
+        const [desks, users] = await Promise.all([
+          getMembers(workspaceId),
+          getAllUsers().catch(() => []),
+        ]);
         if (cancelled) return;
+        const nameById = {};
+        users.forEach((u) => {
+          nameById[u.id] = `${u.firstName || ""} ${u.lastName || ""}`.trim();
+        });
         const seen = new Set();
         const mem = [];
         for (const d of desks) {
           if (d.userId == null || seen.has(d.userId)) continue;
           seen.add(d.userId);
-          const name = d.fullName || `User${d.userId}`;
+          // Same name precedence as ChatPage's resolver, so the inserted
+          // @handle always maps back to a member (including yourself).
+          const name = nameById[d.userId] || d.fullName || `User${d.userId}`;
           mem.push({ id: d.userId, name, handle: toHandle(name) });
         }
         setMembers(mem);

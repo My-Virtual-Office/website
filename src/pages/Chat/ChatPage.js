@@ -159,8 +159,13 @@ export default function ChatPage() {
               email: nameById[m.userId]?.email || m.workEmail || "",
               avatar: m.personalImageUrl || "",
               online: m.isOnline,
-              handle: norm(name),
-              altHandle: norm(m.fullName),
+              // Every handle form the composer might have inserted for this person
+              // (display name, desk fullName, or the "User{id}" fallback).
+              handles: new Set(
+                [name, m.fullName, `User${m.userId}`, `User ${m.userId}`]
+                  .filter(Boolean)
+                  .map(norm),
+              ),
             };
           });
         setDirMembers(enriched);
@@ -177,7 +182,7 @@ export default function ChatPage() {
   // Clicking an @mention opens that person's profile card.
   const handleMentionClick = (handle) => {
     const h = norm(handle);
-    const found = dirMembers.find((m) => m.handle === h || m.altHandle === h);
+    const found = dirMembers.find((m) => m.handles.has(h));
     if (found) setProfileMember(found);
   };
 
