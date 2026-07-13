@@ -3,7 +3,7 @@ import "./ChatPage.css";
 import WorkspaceSidebar from "./Components/WorkspaceSidebar/WorkspaceSidebar";
 import Sidebar from "./Components/Sidebar/Sidebar";
 import ChatArea from "./Components/ChatArea/ChatArea";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Client } from "@stomp/stompjs";
 import MembersList from "./Components/MembersList/MembersList";
@@ -12,9 +12,17 @@ import ThreadPanel from "./Components/ThreadPanel/ThreadPanel";
 import ProfilePanel from "./Components/ProfilePanel/ProfilePanel";
 import ResizeHandle from "../../components/ResizeHandle";
 import { MentionContext } from "./mentionContext";
-import { authHeaders } from "../../utils/auth";
+import { authHeaders, getCurrentUserId } from "../../utils/auth";
 import { getMyWorkspaces, getMembers, getTeams } from "../../api/workspace";
-import { getChannelThreads, createThread, getChannels, getOrCreateDm } from "../../api/chat";
+import {
+  getChannelThreads,
+  createThread,
+  getChannels,
+  getOrCreateDm,
+  getDirectMessages,
+  getUnread,
+  markRead,
+} from "../../api/chat";
 import { getAllUsers } from "../../api/user";
 
 const norm = (s) => (s || "").replace(/\s+/g, "").toLowerCase();
@@ -49,6 +57,11 @@ export default function ChatPage() {
   const [dirMembers, setDirMembers] = useState([]);
   const [dirChannels, setDirChannels] = useState([]);
   const [profileMember, setProfileMember] = useState(null);
+
+  // Unread badges: { [conversationId]: { count, mention } }.
+  const [unread, setUnread] = useState({});
+  const [convoIds, setConvoIds] = useState([]);
+  const activeIdRef = useRef(null);
 
   // Selecting a channel returns to the chat view.
   const selectChannel = (ch) => {
@@ -132,11 +145,12 @@ export default function ChatPage() {
     let cancelled = false;
     (async () => {
       try {
-        const [desks, teams, users, channels] = await Promise.all([
+        const [desks, teams, users, channels, dms] = await Promise.all([
           getMembers(workspaceId).catch(() => []),
           getTeams(workspaceId).catch(() => []),
           getAllUsers().catch(() => []),
           getChannels(workspaceId).catch(() => []),
+          getDirectMessages().catch(() => []),
         ]);
         if (cancelled) return;
         const nameById = {};
@@ -170,6 +184,7 @@ export default function ChatPage() {
           });
         setDirMembers(enriched);
         setDirChannels(channels.map((c) => ({ id: c.id, name: c.name })));
+        setConvoIds([...channels.map((c) => c.id), ...dms.map((d) => d.id)]);
       } catch {
         /* directory best-effort — mentions just won't resolve */
       }
@@ -204,6 +219,89 @@ export default function ChatPage() {
       console.error("Failed to open DM", e);
     }
   };
+
+  // Keep a ref of the channel currently being viewed (so the global subscription
+  // doesn't badge it and can keep it marked read).
+  useEffect(() => {
+    activeIdRef.current = view === "chat" ? activeChannel?.id ?? null : null;
+  }, [activeChannel, view]);
+
+  // Seed unread counts for every conversation the user belongs to.
+  useEffect(() => {
+    if (!convoIds.length) return;
+    let cancelled = false;
+    (async () => {
+      const entries = await Promise.all(
+        convoIds.map(async (id) => {
+          try {
+            const u = await getUnread(id);
+            return [id, { count: u.unreadCount || 0, mention: !!u.mentioned }];
+          } catch {
+            return [id, { count: 0, mention: false }];
+          }
+        }),
+      );
+      if (!cancelled) setUnread(Object.fromEntries(entries));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [convoIds]);
+
+  // Live badge updates: subscribe to every conversation topic. New messages in a
+  // non-active conversation bump its count (and flag a mention if it targets me).
+  useEffect(() => {
+    if (!stompClient?.connected || !convoIds.length) return;
+    const myId = getCurrentUserId();
+    const subs = convoIds.map((id) =>
+      stompClient.subscribe(`/topic/channel/${id}`, (frame) => {
+        let ev;
+        try {
+          ev = JSON.parse(frame.body);
+        } catch {
+          return;
+        }
+        if (ev.action !== "NEW_MESSAGE") return;
+        const m = ev.payload || {};
+        if (m.senderId === myId) return;
+        if (activeIdRef.current === id) {
+          if (m.id) markRead(id, m.id).catch(() => {});
+          return;
+        }
+        setUnread((prev) => {
+          const cur = prev[id] || { count: 0, mention: false };
+          return {
+            ...prev,
+            [id]: {
+              count: cur.count + 1,
+              mention: cur.mention || (Array.isArray(m.mentions) && m.mentions.includes(myId)),
+            },
+          };
+        });
+      }),
+    );
+    return () => subs.forEach((s) => s.unsubscribe());
+  }, [stompClient, convoIds]);
+
+  // Opening a conversation clears its badge and marks it read on the server.
+  useEffect(() => {
+    if (view !== "chat" || !activeChannel?.id) return;
+    const id = activeChannel.id;
+    setUnread((prev) => (prev[id] ? { ...prev, [id]: { count: 0, mention: false } } : prev));
+    (async () => {
+      try {
+        const res = await fetch(`/api/chat/channels/${id}/messages?page=1&limit=1`, {
+          headers: authHeaders(),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const latest = (data.content || [])[0];
+        if (latest?.id) await markRead(id, latest.id);
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, [activeChannel, view]);
 
   // Collapsible + resizable side panels (persisted).
   const [sidebarOpen, setSidebarOpen] = usePersistentState("vo-sidebar-open", true);
@@ -283,6 +381,7 @@ export default function ChatPage() {
               setActiveChannel={selectChannel}
               workspaceId={workspaceId}
               activeView={view}
+              unread={unread}
               onOpenContacts={() => setView("contacts")}
             />
           </div>

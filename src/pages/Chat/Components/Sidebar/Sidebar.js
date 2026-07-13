@@ -13,6 +13,7 @@ export default function Sidebar({
   setActiveChannel,
   workspaceId,
   activeView,
+  unread = {},
   onOpenContacts,
 }) {
   // Channels state
@@ -200,23 +201,33 @@ export default function Sidebar({
             </div>
 
             <div className="channels-list">
-              {channels.map((channel) => (
-                <div
-                  key={channel.id}
-                  className={`channel-item ${activeChannel !== null && activeChannel.id === channel.id ? "active" : ""}`}
-                  onClick={() => {
-                    setActiveChannel({
-                      id: channel.id,
-                      name: channel.name,
-                    });
-                  }}
-                >
-                  <span>
-                    <Hash size={16} />
-                  </span>
-                  <span className="channel-name">{channel.name}</span>
-                </div>
-              ))}
+              {channels.map((channel) => {
+                const isActive = activeChannel !== null && activeChannel.id === channel.id;
+                const u = unread[channel.id];
+                const showBadge = !isActive && u && u.count > 0;
+                return (
+                  <div
+                    key={channel.id}
+                    className={`channel-item ${isActive ? "active" : ""} ${showBadge ? "unread" : ""}`}
+                    onClick={() => {
+                      setActiveChannel({
+                        id: channel.id,
+                        name: channel.name,
+                      });
+                    }}
+                  >
+                    <span>
+                      <Hash size={16} />
+                    </span>
+                    <span className="channel-name">{channel.name}</span>
+                    {showBadge && (
+                      <span className={`unread-badge ${u.mention ? "mention" : ""}`}>
+                        {u.count > 99 ? "99+" : u.count}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -240,14 +251,18 @@ export default function Sidebar({
                   ? dm.name
                   : `User ${otherUserId || "X"}`;
 
+                const isActive = activeChannel !== null && activeChannel.id === dm.id;
+                const u = unread[dm.id];
+                const showBadge = !isActive && u && u.count > 0;
                 return (
                   <div
                     key={dm.id}
-                    className={`dm-item ${activeChannel !== null && activeChannel.id === dm.id ? "active" : ""}`}
+                    className={`dm-item ${isActive ? "active" : ""} ${showBadge ? "unread" : ""}`}
                     onClick={() => {
                       setActiveChannel({
                         id: dm.id,
                         name: dmDisplayName,
+                        type: "DIRECT",
                       });
                     }}
                   >
@@ -257,6 +272,11 @@ export default function Sidebar({
                       <span className="status-dot online"></span>
                     </div>
                     <span className="dm-name">{dmDisplayName}</span>
+                    {showBadge && (
+                      <span className={`unread-badge ${u.mention ? "mention" : ""}`}>
+                        {u.count > 99 ? "99+" : u.count}
+                      </span>
+                    )}
                   </div>
                 );
               })}

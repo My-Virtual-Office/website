@@ -181,6 +181,36 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Unread channels/DMs: brighter, bolder name + a count badge */
+.channel-item.unread .channel-name,
+.dm-item.unread .dm-name {
+  font-weight: 700;
+  color: var(--sidebar-strong, var(--content-strong));
+}
+.channel-item.unread svg {
+  color: var(--sidebar-strong, var(--content-strong));
+}
+.unread-badge {
+  flex-shrink: 0;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: var(--sidebar-fg-muted);
+  color: var(--sidebar-active-fg, #fff);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+/* A mention gets a loud, unmissable badge */
+.unread-badge.mention {
+  background: var(--danger, #e01e5a);
+  color: #fff;
 }
 
 .dm-avatar {

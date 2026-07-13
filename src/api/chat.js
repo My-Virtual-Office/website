@@ -24,6 +24,23 @@ export async function getChannel(channelId) {
   return res.json();
 }
 
+/** Unread count + mention flag for a channel: { unreadCount, lastReadMessageId, mentioned }. */
+export async function getUnread(channelId) {
+  const res = await fetch(`/api/chat/channels/${channelId}/unread`, { headers: authHeaders() });
+  if (!res.ok) throw res;
+  return res.json();
+}
+
+/** Mark a channel read up to a message id. */
+export async function markRead(channelId, lastReadMessageId) {
+  const res = await fetch(`/api/chat/channels/${channelId}/read`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ lastReadMessageId }),
+  });
+  if (!res.ok) throw res;
+}
+
 /** Open (or create) a 1:1 direct-message channel with another user. */
 export async function getOrCreateDm(targetUserId) {
   const res = await fetch(`/api/chat/dm`, {
@@ -33,6 +50,14 @@ export async function getOrCreateDm(targetUserId) {
   });
   if (!res.ok) throw res;
   return res.json();
+}
+
+/** The caller's direct-message channels. */
+export async function getDirectMessages() {
+  const res = await fetch(`/api/chat/dm?page=1&limit=50`, { headers: authHeaders() });
+  if (!res.ok) throw res;
+  const d = await res.json();
+  return d.content ?? d ?? [];
 }
 
 /** Channels in a workspace (for #channel mentions). */
