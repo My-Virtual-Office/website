@@ -1,9 +1,23 @@
 import "./ChatHeader.css";
-import { Hash, Phone, Info, Search } from "lucide-react";
+import {
+  Hash,
+  Phone,
+  Info,
+  Search,
+  Users,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from "lucide-react";
 import { useState } from "react";
 import { authHeaders } from "../../../../../utils/auth";
 import { useDialogs } from "../../../../../components/DialogProvider";
-export default function ChatHeader({ activeChannel }) {
+export default function ChatHeader({
+  activeChannel,
+  sidebarOpen,
+  membersOpen,
+  onToggleSidebar,
+  onToggleMembers,
+}) {
   let channelNameForDisplay = "Loading...";
   if (activeChannel !== null) {
     if (activeChannel.name !== undefined) {
@@ -82,21 +96,39 @@ export default function ChatHeader({ activeChannel }) {
   return (
     <div className="chat-header">
       {/* Left Side */}
-      <div className="channel-info">
-        <h3>
-          <Hash size={18} />
-          <span>{channelNameForDisplay}</span>
-        </h3>
-        <span className="margin">|</span>
-        <span className="channel-description">
-          {channelDetails?.description || ""}
-        </span>
+      <div className="header-left">
+        <button
+          className="header-btn header-toggle"
+          onClick={onToggleSidebar}
+          aria-label="Toggle sidebar"
+          title={sidebarOpen ? "Collapse sidebar" : "Show sidebar"}
+        >
+          {sidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
+        </button>
+        <div className="channel-info">
+          <h3>
+            <Hash size={18} />
+            <span>{channelNameForDisplay}</span>
+          </h3>
+          <span className="margin">|</span>
+          <span className="channel-description">
+            {channelDetails?.description || ""}
+          </span>
+        </div>
       </div>
 
       {/* Right Side */}
       <div className="header-actions">
         <button className="header-btn" aria-label="Call">
           <Phone size={18} />
+        </button>
+        <button
+          className={`header-btn ${membersOpen ? "active" : ""}`}
+          onClick={onToggleMembers}
+          aria-label="Toggle members"
+          title={membersOpen ? "Hide members" : "Show members"}
+        >
+          <Users size={18} />
         </button>
 
         <div

@@ -6,11 +6,38 @@ import ChatArea from "./Components/ChatArea/ChatArea";
 import { useState, useEffect } from "react";
 import { Client } from "@stomp/stompjs";
 import MembersList from "./Components/MembersList/MembersList";
+import ResizeHandle from "../../components/ResizeHandle";
 import { authHeaders } from "../../utils/auth";
+
+/** useState that persists to localStorage under `key`. */
+function usePersistentState(key, initial) {
+  const [val, setVal] = useState(() => {
+    try {
+      const s = localStorage.getItem(key);
+      return s !== null ? JSON.parse(s) : initial;
+    } catch {
+      return initial;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(key, JSON.stringify(val));
+    } catch {
+      /* ignore */
+    }
+  }, [key, val]);
+  return [val, setVal];
+}
 
 export default function ChatPage() {
   const [activeChannel, setActiveChannel] = useState(null);
   const [stompClient, setStompClient] = useState(null);
+
+  // Collapsible + resizable side panels (persisted).
+  const [sidebarOpen, setSidebarOpen] = usePersistentState("vo-sidebar-open", true);
+  const [membersOpen, setMembersOpen] = usePersistentState("vo-members-open", true);
+  const [sidebarWidth, setSidebarWidth] = usePersistentState("vo-sidebar-w", 260);
+  const [membersWidth, setMembersWidth] = usePersistentState("vo-members-w", 240);
 
   useEffect(() => {
     let client; // 1. Local variable holds the reference
@@ -67,13 +94,49 @@ export default function ChatPage() {
 
   return (
     <div className="chatPage">
-      <WorkspaceSidebar></WorkspaceSidebar>
-      <Sidebar
+      <WorkspaceSidebar />
+
+      {sidebarOpen && (
+        <>
+          <div className="side-panel" style={{ width: sidebarWidth }}>
+            <Sidebar
+              activeChannel={activeChannel}
+              setActiveChannel={setActiveChannel}
+            />
+          </div>
+          <ResizeHandle
+            width={sidebarWidth}
+            setWidth={setSidebarWidth}
+            min={200}
+            max={420}
+            direction={1}
+          />
+        </>
+      )}
+
+      <ChatArea
         activeChannel={activeChannel}
-        setActiveChannel={setActiveChannel}
+        stompClient={stompClient}
+        sidebarOpen={sidebarOpen}
+        membersOpen={membersOpen}
+        onToggleSidebar={() => setSidebarOpen((o) => !o)}
+        onToggleMembers={() => setMembersOpen((o) => !o)}
       />
-      <ChatArea activeChannel={activeChannel} stompClient={stompClient} />
-      <MembersList></MembersList>
+
+      {membersOpen && (
+        <>
+          <ResizeHandle
+            width={membersWidth}
+            setWidth={setMembersWidth}
+            min={180}
+            max={400}
+            direction={-1}
+          />
+          <div className="side-panel" style={{ width: membersWidth }}>
+            <MembersList />
+          </div>
+        </>
+      )}
     </div>
   );
 }

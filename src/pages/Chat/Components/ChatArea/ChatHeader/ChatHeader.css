@@ -8,6 +8,15 @@
   background: var(--content-bg);
   align-items: center;
 }
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.header-toggle {
+  flex-shrink: 0;
+}
 .channel-info {
   display: flex;
   align-items: center;
@@ -73,6 +82,11 @@
 .header-btn:hover {
   background: var(--hover-bg);
   color: var(--content-strong);
+}
+.header-btn.active {
+  background: var(--hover-bg);
+  color: var(--content-strong);
+  border-color: var(--border);
 }
 .header-search {
   display: flex;

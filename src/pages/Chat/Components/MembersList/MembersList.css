@@ -1,6 +1,5 @@
 .members-list-container {
-  width: 240px;
-  flex-shrink: 0;
+  width: 100%;
   height: 100vh;
   font-family: Inter, sans-serif;
 }

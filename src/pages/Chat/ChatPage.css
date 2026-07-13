@@ -4,3 +4,11 @@
   overflow: hidden;
   height: 100vh;
 }
+
+/* Collapsible + resizable side panel wrapper (width set inline). */
+.side-panel {
+  flex-shrink: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+}
