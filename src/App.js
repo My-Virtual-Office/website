@@ -18,6 +18,7 @@ function App() {
         <Route path="verify-email" element={<VerifyEmail />} />
         <Route path="onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
         <Route path="chat" element={<PrivateRoute><ChatPage /></PrivateRoute>} />
+        <Route path="workspace" element={<PrivateRoute><ChatPage /></PrivateRoute>} />
         <Route path="dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
       </Route>
     </Routes>

@@ -1,30 +1,38 @@
 import "./WorkspaceSidebar.css";
-import { Hexagon, Plus, Palette, Check } from "lucide-react";
+import { Plus, Palette, Check } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Popover } from "@mui/material";
 import { useTheme } from "../../../../theme/ThemeContext";
 
-export default function WorkspaceSidebar() {
+export default function WorkspaceSidebar({ workspaces = [], activeId, onSwitch }) {
   const { theme, setTheme, themes } = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
-
-  const workspaces = [
-    { id: 1, name: "ws1", img: "/ws.jpg" },
-    { id: 2, name: "ws2", img: "/ws.jpg" },
-  ];
+  const navigate = useNavigate();
 
   return (
     <div className="rail">
       <div className="rail-top">
-        <button className="rail-workspace" title="Virtual Office">
-          <Hexagon size={26} strokeWidth={2.2} />
-        </button>
-        <div className="rail-divider" />
         {workspaces.map((ws) => (
-          <img src={ws.img} key={ws.id} alt={ws.name} className="rail-img" />
+          <button
+            key={ws.id}
+            className={`rail-ws ${ws.id === activeId ? "active" : ""}`}
+            onClick={() => onSwitch?.(ws)}
+            title={ws.name}
+          >
+            {ws.logoUrl ? (
+              <img src={ws.logoUrl} alt={ws.name} />
+            ) : (
+              <span>{(ws.name || "?").charAt(0).toUpperCase()}</span>
+            )}
+          </button>
         ))}
-        <button className="rail-add" title="Add a workspace">
+        <button
+          className="rail-add"
+          title="Add or join a workspace"
+          onClick={() => navigate("/onboarding")}
+        >
           <Plus size={22} />
         </button>
       </div>

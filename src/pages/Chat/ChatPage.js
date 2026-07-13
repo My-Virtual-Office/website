@@ -4,7 +4,7 @@ import WorkspaceSidebar from "./Components/WorkspaceSidebar/WorkspaceSidebar";
 import Sidebar from "./Components/Sidebar/Sidebar";
 import ChatArea from "./Components/ChatArea/ChatArea";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Client } from "@stomp/stompjs";
 import MembersList from "./Components/MembersList/MembersList";
 import ResizeHandle from "../../components/ResizeHandle";
@@ -36,22 +36,42 @@ export default function ChatPage() {
   const [stompClient, setStompClient] = useState(null);
   // The user's active workspace id (membership lives here; required for channels).
   const [workspaceId, setWorkspaceId] = useState(null);
+  const [workspaces, setWorkspaces] = useState([]);
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const workName = searchParams.get("work_name");
 
-  // Use the user's first workspace; if they have none, send them to onboarding.
+  // Pick the workspace named in ?work_name= (else the first); no workspace -> onboarding.
   useEffect(() => {
     let cancelled = false;
     getMyWorkspaces()
       .then((list) => {
         if (cancelled) return;
-        if (Array.isArray(list) && list.length > 0) setWorkspaceId(list[0].id);
-        else navigate("/onboarding");
+        if (!Array.isArray(list) || list.length === 0) {
+          navigate("/onboarding");
+          return;
+        }
+        setWorkspaces(list);
+        const active = list.find((w) => w.slug === workName) || list[0];
+        setWorkspaceId(active.id);
+        if (active.slug !== workName) {
+          setSearchParams({ work_name: active.slug }, { replace: true });
+        }
       })
       .catch((err) => console.error("Failed to load workspaces:", err));
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
+
+  // Switch to another workspace: update state + URL, reset the open channel.
+  const switchWorkspace = (ws) => {
+    if (!ws || ws.id === workspaceId) return;
+    setWorkspaceId(ws.id);
+    setActiveChannel(null);
+    setSearchParams({ work_name: ws.slug });
+  };
 
   // Collapsible + resizable side panels (persisted).
   const [sidebarOpen, setSidebarOpen] = usePersistentState("vo-sidebar-open", true);
@@ -114,7 +134,11 @@ export default function ChatPage() {
 
   return (
     <div className="chatPage">
-      <WorkspaceSidebar />
+      <WorkspaceSidebar
+        workspaces={workspaces}
+        activeId={workspaceId}
+        onSwitch={switchWorkspace}
+      />
 
       {sidebarOpen && (
         <>
