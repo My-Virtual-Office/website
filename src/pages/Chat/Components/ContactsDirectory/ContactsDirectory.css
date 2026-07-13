@@ -1,0 +1,224 @@
+.contacts {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--content-bg);
+  color: var(--content-fg);
+  min-width: 0;
+  overflow: hidden;
+  font-family: Inter, sans-serif;
+}
+.contacts-header {
+  height: 49px;
+  flex-shrink: 0;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.contacts-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--content-strong);
+}
+.contacts-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.contacts-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 10px;
+}
+.contacts-search svg {
+  color: var(--content-muted);
+}
+.contacts-search input {
+  border: none;
+  background: transparent;
+  color: var(--content-fg);
+  width: 180px;
+  outline: none;
+}
+.contacts-invite {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+.contacts-invite:hover {
+  background: var(--accent-hover);
+}
+
+.contacts-filters {
+  display: flex;
+  gap: 6px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.contacts-filters button {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  border-radius: 999px;
+  color: var(--content-muted);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+.contacts-filters button:hover {
+  background: var(--hover-bg);
+}
+.contacts-filters button.active {
+  background: var(--sidebar-active-bg);
+  color: #fff;
+  border-color: var(--sidebar-active-bg);
+}
+
+.contacts-table-wrap {
+  flex: 1;
+  overflow: auto;
+}
+.contacts-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.contacts-table th {
+  text-align: left;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: var(--content-muted);
+  font-weight: 700;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--content-bg);
+}
+.contacts-table td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--content-fg);
+  white-space: nowrap;
+}
+.contacts-table tr:hover td {
+  background: var(--hover-bg);
+}
+.c-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.c-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--sidebar-active-bg) 18%, var(--content-bg));
+  color: var(--sidebar-active-bg);
+  font-weight: 700;
+  font-size: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.c-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.c-name {
+  font-weight: 600;
+  color: var(--content-strong);
+}
+.c-email {
+  color: var(--content-muted);
+}
+.c-role {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--badge-bg);
+  color: var(--badge-fg);
+  text-transform: capitalize;
+}
+.c-role.owner {
+  background: #f5e8c7;
+  color: #8a6d1a;
+}
+.c-role.admin {
+  background: color-mix(in srgb, var(--sidebar-active-bg) 18%, transparent);
+  color: var(--sidebar-active-bg);
+}
+.c-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--offline);
+  margin-right: 6px;
+}
+.c-dot.online {
+  background: var(--online);
+}
+.c-empty {
+  text-align: center;
+  color: var(--content-muted);
+  padding: 30px;
+  font-style: italic;
+}
+.contacts-footer {
+  flex-shrink: 0;
+  padding: 8px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--content-muted);
+}
+
+/* invite modal result */
+.invite-result p {
+  color: var(--content-muted);
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+.invite-link {
+  display: flex;
+  gap: 6px;
+}
+.invite-link input {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: var(--input-bg);
+  color: var(--input-fg);
+  font-size: 13px;
+}
+.invite-link button {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--hover-bg);
+  color: var(--content-fg);
+  cursor: pointer;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+}

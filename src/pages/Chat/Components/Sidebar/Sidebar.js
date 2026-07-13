@@ -1,5 +1,5 @@
 import "./Sidebar.css";
-import { ChevronDown, Search, FileText, Hash, Plus, Settings } from "lucide-react";
+import { ChevronDown, Search, FileText, Hash, Plus, Settings, Users } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getCurrentUser } from "../../../../api/user";
 import SettingsModal from "../SettingsModal/SettingsModal";
@@ -7,7 +7,13 @@ import { getUserPhoto } from "../../../../api/user";
 import { getCurrentUserId, authHeaders } from "../../../../utils/auth";
 import { useDialogs } from "../../../../components/DialogProvider";
 
-export default function Sidebar({ activeChannel, setActiveChannel, workspaceId }) {
+export default function Sidebar({
+  activeChannel,
+  setActiveChannel,
+  workspaceId,
+  activeView,
+  onOpenContacts,
+}) {
   // Channels state
   const [channels, setChannels] = useState([]);
   // DMs state
@@ -203,6 +209,13 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId }
             <div className="drafts">
               <FileText size={18} />
               <span>Drafts</span>
+            </div>
+            <div
+              className={`drafts ${activeView === "contacts" ? "active-link" : ""}`}
+              onClick={onOpenContacts}
+            >
+              <Users size={18} />
+              <span>People</span>
             </div>
           </div>
 

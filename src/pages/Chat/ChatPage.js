@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Client } from "@stomp/stompjs";
 import MembersList from "./Components/MembersList/MembersList";
+import ContactsDirectory from "./Components/ContactsDirectory/ContactsDirectory";
 import ResizeHandle from "../../components/ResizeHandle";
 import { authHeaders } from "../../utils/auth";
 import { getMyWorkspaces } from "../../api/workspace";
@@ -34,6 +35,13 @@ function usePersistentState(key, initial) {
 export default function ChatPage() {
   const [activeChannel, setActiveChannel] = useState(null);
   const [stompClient, setStompClient] = useState(null);
+  const [view, setView] = useState("chat"); // "chat" | "contacts"
+
+  // Selecting a channel returns to the chat view.
+  const selectChannel = (ch) => {
+    setActiveChannel(ch);
+    setView("chat");
+  };
   // The user's active workspace id (membership lives here; required for channels).
   const [workspaceId, setWorkspaceId] = useState(null);
   const [workspaces, setWorkspaces] = useState([]);
@@ -160,8 +168,10 @@ export default function ChatPage() {
           <div className="side-panel" style={{ width: sidebarWidth }}>
             <Sidebar
               activeChannel={activeChannel}
-              setActiveChannel={setActiveChannel}
+              setActiveChannel={selectChannel}
               workspaceId={workspaceId}
+              activeView={view}
+              onOpenContacts={() => setView("contacts")}
             />
           </div>
           <ResizeHandle
@@ -174,27 +184,33 @@ export default function ChatPage() {
         </>
       )}
 
-      <ChatArea
-        activeChannel={activeChannel}
-        stompClient={stompClient}
-        sidebarOpen={sidebarOpen}
-        membersOpen={membersOpen}
-        onToggleSidebar={() => setSidebarOpen((o) => !o)}
-        onToggleMembers={() => setMembersOpen((o) => !o)}
-      />
-
-      {membersOpen && (
+      {view === "contacts" ? (
+        <ContactsDirectory workspaceId={workspaceId} />
+      ) : (
         <>
-          <ResizeHandle
-            width={membersWidth}
-            setWidth={setMembersWidth}
-            min={180}
-            max={400}
-            direction={-1}
+          <ChatArea
+            activeChannel={activeChannel}
+            stompClient={stompClient}
+            sidebarOpen={sidebarOpen}
+            membersOpen={membersOpen}
+            onToggleSidebar={() => setSidebarOpen((o) => !o)}
+            onToggleMembers={() => setMembersOpen((o) => !o)}
           />
-          <div className="side-panel" style={{ width: membersWidth }}>
-            <MembersList workspaceId={workspaceId} />
-          </div>
+
+          {membersOpen && (
+            <>
+              <ResizeHandle
+                width={membersWidth}
+                setWidth={setMembersWidth}
+                min={180}
+                max={400}
+                direction={-1}
+              />
+              <div className="side-panel" style={{ width: membersWidth }}>
+                <MembersList workspaceId={workspaceId} />
+              </div>
+            </>
+          )}
         </>
       )}
     </div>

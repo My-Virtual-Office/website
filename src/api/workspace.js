@@ -57,6 +57,12 @@ export async function deleteTeam(workspaceId, teamId) {
   await axiosInstance.delete(`/api/workspace/${workspaceId}/teams/${teamId}`);
 }
 
+/** ADMIN: invite someone by email with a role → returns an invitation with a token. */
+export async function createInvitation(workspaceId, { email, role }) {
+  const res = await axiosInstance.post(`/api/workspace/${workspaceId}/invitations`, { email, role });
+  return res.data;
+}
+
 /** Accept a workspace invitation by token → creates a MEMBER desk for the caller. */
 export async function acceptInvite(token) {
   const res = await axiosInstance.post(

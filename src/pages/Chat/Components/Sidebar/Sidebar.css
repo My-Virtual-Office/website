@@ -76,6 +76,13 @@
 .sidebar-main .drafts:hover {
   background: var(--sidebar-hover);
 }
+.sidebar-main .drafts.active-link {
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-fg);
+}
+.sidebar-main .drafts.active-link svg {
+  color: var(--sidebar-active-fg);
+}
 .sidebar-main .search svg,
 .sidebar-main .drafts svg {
   font-size: 19px;
