@@ -6,7 +6,8 @@ import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import { useState, useEffect } from "react";
-import { getCurrentUserId } from "../../../../../../utils/auth";
+import { getCurrentUserId, authHeaders } from "../../../../../../utils/auth";
+import { useDialogs } from "../../../../../../components/DialogProvider";
 
 export default function Message({ message, stompClient }) {
   // --- Message State ---
@@ -15,6 +16,8 @@ export default function Message({ message, stompClient }) {
   const [editedText, setEditedText] = useState(
     message.content || message.text || "",
   ); // Edited text state
+  // App dialogs / toasts
+  const { confirm, notify } = useDialogs();
 
   useEffect(() => {
     setEditedText(message.content || message.text || "");
@@ -31,11 +34,7 @@ export default function Message({ message, stompClient }) {
       // Use HTTP PUT to edit the message
       const response = await fetch(`/api/chat/messages/${message.id}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "X-User-Id": String(getCurrentUserId()),
-          "X-User-Role": "USER",
-        },
+        headers: authHeaders(),
         body: JSON.stringify({ content: editedText }),
       });
 
@@ -43,7 +42,7 @@ export default function Message({ message, stompClient }) {
         setIsEditing(false); // Close edit box on success
         // UI will update automatically when the EDIT_MESSAGE WebSocket event arrives!
       } else {
-        alert("Edit failed");
+        notify("Edit failed", "error");
       }
     } catch (error) {
       console.error("Error:", error);
@@ -52,23 +51,23 @@ export default function Message({ message, stompClient }) {
 
   // Handle deleting message
   const handleDelete = async () => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this message?",
-    );
+    const confirmDelete = await confirm({
+      title: "Delete message",
+      message: "Are you sure you want to delete this message?",
+      confirmText: "Delete",
+      tone: "danger",
+    });
     if (!confirmDelete) return;
 
     try {
       // Use HTTP DELETE to delete the message
       const response = await fetch(`/api/chat/messages/${message.id}`, {
         method: "DELETE",
-        headers: {
-          "X-User-Id": String(getCurrentUserId()),
-          "X-User-Role": "USER",
-        },
+        headers: authHeaders(),
       });
 
       if (!response.ok) {
-        alert("Failed to delete the message!");
+        notify("Failed to delete the message", "error");
       }
       // UI will update automatically when the DELETE_MESSAGE WebSocket event arrives!
     } catch (error) {

@@ -9,7 +9,8 @@ import { useState, useEffect } from "react";
 import { getCurrentUser } from "../../../../api/user";
 import SettingsModal from "../SettingsModal/SettingsModal";
 import { getUserPhoto } from "../../../../api/user";
-import { getCurrentUserId } from "../../../../utils/auth";
+import { authHeaders } from "../../../../utils/auth";
+import { useDialogs } from "../../../../components/DialogProvider";
 
 export default function Sidebar({ activeChannel, setActiveChannel }) {
   // Channels state
@@ -22,11 +23,16 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   // user photo state
   const [userPhoto, setUserPhoto] = useState(null);
+  // App dialogs / toasts
+  const { prompt, notify } = useDialogs();
 
   const handleCreateChannel = async () => {
-    const channelName = prompt(
-      "Enter the new channel name (e.g. Development):",
-    );
+    const channelName = await prompt({
+      title: "Create channel",
+      message: "Give your new channel a name.",
+      placeholder: "e.g. Development",
+      confirmText: "Create",
+    });
 
     if (!channelName) return;
 
@@ -34,11 +40,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
       // Send request to create a new channel
       const response = await fetch("/api/chat/channels", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-User-Id": String(getCurrentUserId()),
-          "X-User-Role": "USER",
-        },
+        headers: authHeaders(),
         body: JSON.stringify({
           name: channelName,
           workspaceId: 100, // Hardcoded workspaceId
@@ -52,7 +54,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
         // Add the new channel to the local state
         setChannels([...channels, newChannel]);
       } else {
-        alert("Failed to create the channel!");
+        notify("Failed to create the channel", "error");
       }
     } catch (error) {
       console.error("Connection error:", error);
@@ -61,23 +63,24 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
 
   // Create a new DM
   const handleCreateDM = async () => {
-    const targetIdStr = prompt("Enter the User ID you want to message:");
+    const targetIdStr = await prompt({
+      title: "New direct message",
+      message: "Enter the User ID of the person you want to message.",
+      placeholder: "User ID",
+      confirmText: "Start",
+    });
     if (!targetIdStr) return;
 
-    const targetUserId = parseInt(targetIdStr);
+    const targetUserId = parseInt(targetIdStr, 10);
     if (isNaN(targetUserId)) {
-      alert("Please enter a valid User ID (numbers only).");
+      notify("Please enter a valid User ID (numbers only).", "warning");
       return;
     }
 
     try {
       const response = await fetch("/api/chat/dm", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-User-Id": String(getCurrentUserId()), // Hardcoded user ID, update dynamically later
-          "X-User-Role": "USER",
-        },
+        headers: authHeaders(),
         body: JSON.stringify({
           targetUserId: targetUserId,
         }),
@@ -87,7 +90,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
         // Reload page to reflect new DM
         window.location.reload();
       } else {
-        alert("Failed to start direct message!");
+        notify("Failed to start direct message", "error");
       }
     } catch (error) {
       console.error("Connection error:", error);
@@ -103,11 +106,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
           "/api/chat/channels?workspaceId=100&page=1&limit=20",
           {
             method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              "X-User-Id": String(getCurrentUserId()),
-              "X-User-Role": "USER",
-            },
+            headers: authHeaders(),
           },
         );
 
@@ -141,11 +140,7 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
       try {
         const response = await fetch("/api/chat/dm?page=1&limit=20", {
           method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "X-User-Id": String(getCurrentUserId()),
-            "X-User-Role": "USER",
-          },
+          headers: authHeaders(),
         });
 
         if (response.ok) {
@@ -319,7 +314,10 @@ export default function Sidebar({ activeChannel, setActiveChannel }) {
               </div>
 
               <div className="user-details">
-                <span className="user-name">
+                <span
+                  className="user-name"
+                  title={user ? `${user.firstName} ${user.lastName}` : ""}
+                >
                   {user ? `${user.firstName} ${user.lastName}` : "Loading..."}
                 </span>
                 <span className="user-status">

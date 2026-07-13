@@ -4,9 +4,11 @@ import SentimentSatisfiedAltOutlinedIcon from "@mui/icons-material/SentimentSati
 import SendOutlinedIcon from "@mui/icons-material/SendOutlined";
 import EmojiPicker from "emoji-picker-react";
 import { useState } from "react";
+import { useDialogs } from "../../../../../components/DialogProvider";
 export default function MessageInput({ activeChannel, stompClient }) {
   const [message, setMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const { notify } = useDialogs();
 
   const onEmojiClick = (emojiObject) => {
     setMessage((prev) => prev + emojiObject.emoji);
@@ -32,7 +34,7 @@ export default function MessageInput({ activeChannel, stompClient }) {
     setMessage("");
   } else {
     console.warn("WebSocket not connected — message not sent");
-    alert("can't send message right now");
+    notify("Can't send message right now — reconnecting…", "warning");
   }
 };
   // typing indicator:

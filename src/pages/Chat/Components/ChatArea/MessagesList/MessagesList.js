@@ -1,7 +1,7 @@
 import "./MessagesList.css";
 import Message from "./Message/Message";
 import { useState, useEffect } from "react";
-import { getCurrentUserId } from "../../../../../utils/auth";
+import { authHeaders } from "../../../../../utils/auth";
 
 export default function MessagesList({ activeChannel, stompClient }) {
   const [messages, setMessages] = useState([]);
@@ -17,11 +17,7 @@ export default function MessagesList({ activeChannel, stompClient }) {
           `/api/chat/channels/${activeChannel.id}/messages?page=1&limit=50`,
           {
             method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              "X-User-Id": String(getCurrentUserId()),
-              "X-User-Role": "USER",
-            },
+            headers: authHeaders(),
           },
         );
         if (response.ok) {

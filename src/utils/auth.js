@@ -15,3 +15,21 @@ export function getCurrentUserId() {
     return null;
   }
 }
+
+/**
+ * Standard headers for authenticated backend calls made with fetch().
+ * Includes the JWT bearer token (required by the API gateway) plus the
+ * identity headers the chat-service expects. Pass `extra` to add/override.
+ */
+export function authHeaders(extra = {}) {
+  const token = localStorage.getItem("token");
+  const userId = getCurrentUserId();
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(userId != null
+      ? { "X-User-Id": String(userId), "X-User-Role": "USER" }
+      : {}),
+    ...extra,
+  };
+}

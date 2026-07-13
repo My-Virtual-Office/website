@@ -4,7 +4,8 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import NumbersIcon from "@mui/icons-material/Numbers";
 import { useState } from "react";
-import { getCurrentUserId } from "../../../../../utils/auth";
+import { authHeaders } from "../../../../../utils/auth";
+import { useDialogs } from "../../../../../components/DialogProvider";
 export default function ChatHeader({ activeChannel }) {
   let channelNameForDisplay = "Loading...";
   if (activeChannel !== null) {
@@ -19,6 +20,8 @@ export default function ChatHeader({ activeChannel }) {
   const [channelDetails, setChannelDetails] = useState(null);
   // Loading state
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  // App dialogs / toasts
+  const { confirm, notify } = useDialogs();
 
   // Toggle info menu
   const toggleMenu = async () => {
@@ -32,11 +35,7 @@ export default function ChatHeader({ activeChannel }) {
       try {
         const response = await fetch(`/api/chat/channels/${activeChannel.id}`, {
           method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "X-User-Id": String(getCurrentUserId()),
-            "X-User-Role": "USER",
-          },
+          headers: authHeaders(),
         });
         if (response.ok) {
           const data = await response.json();
@@ -53,9 +52,12 @@ export default function ChatHeader({ activeChannel }) {
   // Handle leaving the channel
   const handleLeaveChannel = async () => {
     // Prompt user for confirmation
-    const confirmLeave = window.confirm(
-      `Are you sure you want to leave ${channelNameForDisplay}?`,
-    );
+    const confirmLeave = await confirm({
+      title: "Leave channel",
+      message: `Are you sure you want to leave ${channelNameForDisplay}?`,
+      confirmText: "Leave",
+      tone: "danger",
+    });
 
     if (confirmLeave) {
       try {
@@ -63,20 +65,16 @@ export default function ChatHeader({ activeChannel }) {
           `/api/chat/channels/${activeChannel.id}/leave`,
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-User-Id": String(getCurrentUserId()),
-              "X-User-Role": "USER",
-            },
+            headers: authHeaders(),
           },
         );
 
         if (response.ok) {
-          alert("You have left the channel successfully!");
+          notify("You have left the channel", "success");
           setIsMenuOpen(false);
           // TODO: Notify Sidebar to remove the channel from the list
         } else {
-          alert("An error occurred while leaving the channel!");
+          notify("An error occurred while leaving the channel", "error");
         }
       } catch (error) {
         console.error("Error:", error);
