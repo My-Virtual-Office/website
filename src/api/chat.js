@@ -1,5 +1,22 @@
 import { authHeaders } from "../utils/auth";
 
+/** Upload a file to GridFS; returns { fileId, name, contentType, size }. */
+export async function uploadAttachment(file) {
+  const form = new FormData();
+  form.append("file", file);
+  const token = localStorage.getItem("token");
+  const res = await fetch("/api/chat/attachments", {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {}, // no Content-Type — browser sets multipart boundary
+    body: form,
+  });
+  if (!res.ok) throw res;
+  return res.json();
+}
+
+/** Public download/inline URL for an attachment. */
+export const fileUrl = (fileId) => `/api/chat/files/${fileId}`;
+
 /** Fetch one channel (must be a member). */
 export async function getChannel(channelId) {
   const res = await fetch(`/api/chat/channels/${channelId}`, { headers: authHeaders() });

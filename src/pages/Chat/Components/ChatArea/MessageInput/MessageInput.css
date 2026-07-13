@@ -97,3 +97,57 @@
   box-shadow: var(--overlay-shadow);
   border-radius: 8px;
 }
+
+/* Pending attachments (before send) */
+.pending-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 8px 0;
+  align-items: center;
+}
+.pending-chip {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--input-toolbar-bg);
+}
+.pending-chip img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  display: block;
+}
+.pending-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--content-fg);
+  max-width: 220px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.pending-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.pending-uploading {
+  font-size: 12px;
+  color: var(--content-muted);
+}

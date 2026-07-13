@@ -2,11 +2,11 @@ import "./Message.css";
 import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
-import { Pencil, Trash2, SmilePlus, MessageSquare } from "lucide-react";
+import { Pencil, Trash2, SmilePlus, MessageSquare, Paperclip, Download } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
 import { useState, useEffect } from "react";
 import { getCurrentUserId, authHeaders } from "../../../../../../utils/auth";
-import { toggleReaction } from "../../../../../../api/chat";
+import { toggleReaction, fileUrl } from "../../../../../../api/chat";
 import { useDialogs } from "../../../../../../components/DialogProvider";
 
 export default function Message({ message, stompClient, grouped, onOpenThread }) {
@@ -102,7 +102,8 @@ export default function Message({ message, stompClient, grouped, onOpenThread })
     );
   }
 
-  if (!currentContent || currentContent.trim() === "") return null;
+  const hasAttachments = message.attachments && message.attachments.length > 0;
+  if ((!currentContent || currentContent.trim() === "") && !hasAttachments) return null;
   // Show actions only for current user's messages
   const isMyMessage = message.senderId === getCurrentUserId();
   const timeStr =
@@ -159,11 +160,37 @@ export default function Message({ message, stompClient, grouped, onOpenThread })
               </button>
             </div>
           </div>
-        ) : (
+        ) : currentContent ? (
           <div className="message-text">{currentContent}</div>
+        ) : null}
+
+        {/* Uploaded attachments */}
+        {hasAttachments && (
+          <div className="msg-attachments">
+            {message.attachments.map((a) =>
+              (a.contentType || "").startsWith("image/") ? (
+                <a key={a.fileId} className="msg-image" href={fileUrl(a.fileId)} target="_blank" rel="noreferrer">
+                  <img src={fileUrl(a.fileId)} alt={a.name} />
+                </a>
+              ) : (
+                <a
+                  key={a.fileId}
+                  className="msg-file"
+                  href={fileUrl(a.fileId)}
+                  target="_blank"
+                  rel="noreferrer"
+                  download={a.name}
+                >
+                  <span className="msg-file-icon"><Paperclip size={16} /></span>
+                  <span className="msg-file-name">{a.name}</span>
+                  <Download size={15} className="msg-file-dl" />
+                </a>
+              ),
+            )}
+          </div>
         )}
 
-        {/* Attachments */}
+        {/* Legacy demo attachment */}
         {message.attachment && (
           <div className="message-attachment">
             <div className="attachment-icon">
