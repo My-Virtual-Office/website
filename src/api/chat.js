@@ -51,6 +51,25 @@ export async function getThreadMessages(threadId) {
   return d.content ?? d ?? [];
 }
 
+/** Pin a message. */
+export async function pinMessage(messageId) {
+  const res = await fetch(`/api/chat/messages/${messageId}/pin`, { method: "POST", headers: authHeaders() });
+  if (!res.ok) throw res;
+  return res.json();
+}
+/** Unpin a message. */
+export async function unpinMessage(messageId) {
+  const res = await fetch(`/api/chat/messages/${messageId}/pin`, { method: "DELETE", headers: authHeaders() });
+  if (!res.ok) throw res;
+  return res.json();
+}
+/** Pinned messages in a channel. */
+export async function getPins(channelId) {
+  const res = await fetch(`/api/chat/channels/${channelId}/pins`, { headers: authHeaders() });
+  if (!res.ok) throw res;
+  return res.json();
+}
+
 /** Toggle the caller's emoji reaction on a message. */
 export async function toggleReaction(messageId, emoji) {
   const res = await fetch(

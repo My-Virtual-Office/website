@@ -5,11 +5,13 @@ import {
   Info,
   Search,
   Users,
+  Pin,
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
 import { useState } from "react";
 import { authHeaders } from "../../../../../utils/auth";
+import { getPins } from "../../../../../api/chat";
 import { useDialogs } from "../../../../../components/DialogProvider";
 import ChannelSettingsModal from "../../ChannelSettingsModal/ChannelSettingsModal";
 export default function ChatHeader({
@@ -22,6 +24,20 @@ export default function ChatHeader({
   onChannelUpdated,
 }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [showPins, setShowPins] = useState(false);
+  const [pins, setPins] = useState([]);
+
+  const togglePins = async () => {
+    const next = !showPins;
+    setShowPins(next);
+    if (next && activeChannel?.id) {
+      try {
+        setPins(await getPins(activeChannel.id));
+      } catch {
+        setPins([]);
+      }
+    }
+  };
   let channelNameForDisplay = "Loading...";
   if (activeChannel !== null) {
     if (activeChannel.name !== undefined) {
@@ -137,6 +153,31 @@ export default function ChatHeader({
         >
           <Users size={18} />
         </button>
+
+        <div className="info-dropdown-container" style={{ position: "relative" }}>
+          <button
+            className={`header-btn ${showPins ? "active" : ""}`}
+            onClick={togglePins}
+            title="Pinned messages"
+          >
+            <Pin size={18} />
+          </button>
+          {showPins && (
+            <div className="dropdown-menu pins-menu">
+              <div className="pins-title">Pinned messages</div>
+              {pins.length === 0 ? (
+                <div className="pins-empty">No pinned messages yet</div>
+              ) : (
+                pins.map((m) => (
+                  <div key={m.id} className="pins-item">
+                    <span className="pins-sender">User {m.senderId}</span>
+                    <span className="pins-content">{m.content || "(attachment)"}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
 
         <div
           className="info-dropdown-container"

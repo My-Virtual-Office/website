@@ -57,8 +57,12 @@ export default function MessagesList({ activeChannel, stompClient, onOpenThread 
           if (event.action === "NEW_MESSAGE") {
             // Safely append new message without mutating state
             setMessages((prev) => [...prev, event.payload]);
-          } else if (event.action === "EDIT_MESSAGE" || event.action === "REACTION") {
-            // Replace the message with the updated payload (edited text or reactions)
+          } else if (
+            event.action === "EDIT_MESSAGE" ||
+            event.action === "REACTION" ||
+            event.action === "PIN"
+          ) {
+            // Replace the message with the updated payload (edit / reactions / pin)
             setMessages((prev) =>
               prev.map((msg) => (msg.id === event.payload.id ? event.payload : msg))
             );

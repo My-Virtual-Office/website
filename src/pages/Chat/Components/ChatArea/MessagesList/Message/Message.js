@@ -2,11 +2,11 @@ import "./Message.css";
 import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
-import { Pencil, Trash2, SmilePlus, MessageSquare, Paperclip, Download } from "lucide-react";
+import { Pencil, Trash2, SmilePlus, MessageSquare, Paperclip, Download, Pin } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
 import { useState, useEffect } from "react";
 import { getCurrentUserId, authHeaders } from "../../../../../../utils/auth";
-import { toggleReaction, fileUrl } from "../../../../../../api/chat";
+import { toggleReaction, fileUrl, pinMessage, unpinMessage } from "../../../../../../api/chat";
 import { useDialogs } from "../../../../../../components/DialogProvider";
 
 export default function Message({ message, stompClient, grouped, onOpenThread }) {
@@ -27,6 +27,15 @@ export default function Message({ message, stompClient, grouped, onOpenThread })
       await toggleReaction(message.id, emoji); // WS REACTION event updates the UI
     } catch {
       notify("Could not react", "error");
+    }
+  };
+
+  const handlePin = async () => {
+    try {
+      if (message.pinned) await unpinMessage(message.id);
+      else await pinMessage(message.id); // WS PIN event updates the UI
+    } catch {
+      notify("Could not pin", "error");
     }
   };
 
@@ -126,6 +135,9 @@ export default function Message({ message, stompClient, grouped, onOpenThread })
       </div>
 
       <div className="message-content">
+        {message.pinned && (
+          <div className="pinned-label"><Pin size={11} /> Pinned</div>
+        )}
         {/* Message header (hidden for grouped follow-up messages) */}
         {!grouped && (
           <div className="message-header">
@@ -243,6 +255,13 @@ export default function Message({ message, stompClient, grouped, onOpenThread })
               <MessageSquare size={15} />
             </button>
           )}
+          <button
+            className={`msg-action-btn ${message.pinned ? "pinned" : ""}`}
+            onClick={handlePin}
+            title={message.pinned ? "Unpin" : "Pin to channel"}
+          >
+            <Pin size={15} />
+          </button>
           {isMyMessage && (
             <>
               <button className="msg-action-btn" onClick={() => setIsEditing(true)} title="Edit message">
