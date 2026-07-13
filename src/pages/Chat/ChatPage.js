@@ -52,8 +52,18 @@ export default function ChatPage() {
           return;
         }
         setWorkspaces(list);
-        const active = list.find((w) => w.slug === workName) || list[0];
+        // Prefer ?work_name, then the last workspace the user visited, then the first.
+        const lastSlug = localStorage.getItem("vo-last-workspace");
+        const active =
+          list.find((w) => w.slug === workName) ||
+          list.find((w) => w.slug === lastSlug) ||
+          list[0];
         setWorkspaceId(active.id);
+        try {
+          localStorage.setItem("vo-last-workspace", active.slug);
+        } catch {
+          /* ignore */
+        }
         if (active.slug !== workName) {
           setSearchParams({ work_name: active.slug }, { replace: true });
         }
@@ -70,6 +80,11 @@ export default function ChatPage() {
     if (!ws || ws.id === workspaceId) return;
     setWorkspaceId(ws.id);
     setActiveChannel(null);
+    try {
+      localStorage.setItem("vo-last-workspace", ws.slug);
+    } catch {
+      /* ignore */
+    }
     setSearchParams({ work_name: ws.slug });
   };
 

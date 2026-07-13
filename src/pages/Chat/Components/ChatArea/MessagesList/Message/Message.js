@@ -76,17 +76,15 @@ export default function Message({ message, stompClient }) {
 
   // --- Render ---
 
-  // System messages
-  if (message.type === "system") {
+  // System messages (backend sends type "SYSTEM"; legacy dummy data used "system").
+  if (message.type === "SYSTEM" || message.type === "system") {
+    const text =
+      message.content ||
+      `${message.user || ""} ${message.action || ""}`.trim();
     return (
       <div className="system-message">
-        <div className="system-icon">
-          <PersonAddAltOutlinedIcon></PersonAddAltOutlinedIcon>
-        </div>
-        <span className="system-text">
-          <span className="system-user">{message.user}</span>
-          <span className="system-action">{message.action}</span>
-        </span>
+        <PersonAddAltOutlinedIcon className="system-icon-inline" fontSize="small" />
+        <span className="system-line">{text}</span>
       </div>
     );
   }

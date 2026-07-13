@@ -177,30 +177,21 @@
   color: var(--content-muted);
 }
 
-/* System messages */
+/* System messages — centered, muted, Slack-style join/announcement line */
 .system-message {
   padding: 6px 20px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  gap: 8px;
 }
-.system-icon {
+.system-icon-inline {
   color: var(--content-muted);
-  display: flex;
-  align-items: center;
+  font-size: 16px !important;
 }
-.system-text {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.system-user {
-  font-weight: 700;
-  font-size: 13px;
-  color: var(--content-strong);
-}
-.system-action {
+.system-line {
   font-weight: 400;
   font-size: 13px;
   color: var(--content-muted);
+  text-align: center;
 }
