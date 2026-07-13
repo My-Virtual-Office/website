@@ -190,11 +190,15 @@ export default function ChatPage() {
         <>
           <ChatArea
             activeChannel={activeChannel}
+            workspaceId={workspaceId}
             stompClient={stompClient}
             sidebarOpen={sidebarOpen}
             membersOpen={membersOpen}
             onToggleSidebar={() => setSidebarOpen((o) => !o)}
             onToggleMembers={() => setMembersOpen((o) => !o)}
+            onChannelUpdated={(ch) =>
+              setActiveChannel({ id: ch.id, name: ch.name })
+            }
           />
 
           {membersOpen && (

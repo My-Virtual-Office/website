@@ -11,13 +11,17 @@ import {
 import { useState } from "react";
 import { authHeaders } from "../../../../../utils/auth";
 import { useDialogs } from "../../../../../components/DialogProvider";
+import ChannelSettingsModal from "../../ChannelSettingsModal/ChannelSettingsModal";
 export default function ChatHeader({
   activeChannel,
+  workspaceId,
   sidebarOpen,
   membersOpen,
   onToggleSidebar,
   onToggleMembers,
+  onChannelUpdated,
 }) {
+  const [settingsOpen, setSettingsOpen] = useState(false);
   let channelNameForDisplay = "Loading...";
   if (activeChannel !== null) {
     if (activeChannel.name !== undefined) {
@@ -106,7 +110,10 @@ export default function ChatHeader({
           {sidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
         </button>
         <div className="channel-info">
-          <h3>
+          <h3
+            onClick={() => activeChannel?.id && setSettingsOpen(true)}
+            title="Channel settings"
+          >
             <Hash size={18} />
             <span>{channelNameForDisplay}</span>
           </h3>
@@ -189,6 +196,14 @@ export default function ChatHeader({
           <input type="text" placeholder="Search" />
         </div>
       </div>
+
+      <ChannelSettingsModal
+        channelId={activeChannel?.id}
+        workspaceId={workspaceId}
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onUpdated={(ch) => onChannelUpdated?.(ch)}
+      />
     </div>
   );
 }
