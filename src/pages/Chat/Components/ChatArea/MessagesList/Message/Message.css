@@ -83,8 +83,22 @@
   transition: opacity 0.1s;
   z-index: 2;
 }
-.message:hover .message-actions {
+.message:hover .message-actions,
+.message.menu-open .message-actions {
   opacity: 1;
+}
+/* Keep the row (and its toolbar/menu) active while the ... menu is open */
+.message.menu-open {
+  background: var(--hover-bg);
+}
+
+/* Unread messages — subtle tint so you can see where you left off */
+.message.unread {
+  background: color-mix(in srgb, var(--accent, #1264a3) 7%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent, #1264a3);
+}
+.message.unread:hover {
+  background: color-mix(in srgb, var(--accent, #1264a3) 11%, transparent);
 }
 
 /* Grouped (consecutive-author) messages: compact, no header, time-on-hover */

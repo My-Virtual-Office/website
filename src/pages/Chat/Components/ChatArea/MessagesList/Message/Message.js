@@ -51,7 +51,7 @@ function renderContent(text, onMention, onChannel) {
   return parts;
 }
 
-export default function Message({ message, stompClient, grouped, onOpenThread }) {
+export default function Message({ message, stompClient, grouped, onOpenThread, unread }) {
   const { onMention, onChannel, onMarkUnread } = useMentions();
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
@@ -197,7 +197,9 @@ export default function Message({ message, stompClient, grouped, onOpenThread })
       : "");
 
   return (
-    <div className={`message ${grouped ? "grouped" : ""}`}>
+    <div
+      className={`message ${grouped ? "grouped" : ""} ${showMenu ? "menu-open" : ""} ${unread ? "unread" : ""}`}
+    >
       <div className="message-avatar">
         {grouped ? (
           <span className="grouped-time">{timeStr}</span>

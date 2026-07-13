@@ -299,24 +299,12 @@ export default function ChatPage() {
     }
   };
 
-  // Opening a conversation clears its badge and marks it read on the server.
+  // Opening a conversation clears its sidebar badge immediately. The server-side
+  // mark-read is done by MessagesList after it captures the unread boundary.
   useEffect(() => {
     if (view !== "chat" || !activeChannel?.id) return;
     const id = activeChannel.id;
     setUnread((prev) => (prev[id] ? { ...prev, [id]: { count: 0, mention: false } } : prev));
-    (async () => {
-      try {
-        const res = await fetch(`/api/chat/channels/${id}/messages?page=1&limit=1`, {
-          headers: authHeaders(),
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        const latest = (data.content || [])[0];
-        if (latest?.id) await markRead(id, latest.id);
-      } catch {
-        /* ignore */
-      }
-    })();
   }, [activeChannel, view]);
 
   // Collapsible + resizable side panels (persisted).

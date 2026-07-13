@@ -29,6 +29,27 @@
   background: var(--content-bg);
 }
 
+/* "New" unread boundary */
+.unread-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 16px;
+}
+.unread-line {
+  flex: 1;
+  height: 1px;
+  background: var(--danger, #e01e5a);
+}
+.unread-label {
+  flex-shrink: 0;
+  color: var(--danger, #e01e5a);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .messages-list::-webkit-scrollbar {
   width: 10px;
 }
