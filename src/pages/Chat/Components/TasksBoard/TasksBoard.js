@@ -1,8 +1,8 @@
 import "./TasksBoard.css";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   Search, Plus, X, Trash2, Flag, CalendarDays, User, ChevronDown, ChevronRight,
-  Users, Settings2, Layers,
+  Users, Settings2, Layers, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import {
   createTask, getTasks, updateTask, deleteTask, getTaskByNumber,
@@ -16,30 +16,30 @@ import { useDialogs } from "../../../../components/DialogProvider";
 
 const startOfDay = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
 const DAY = 86400000;
+const dayKey = (d) => startOfDay(d).getTime();
+const todayKey = () => startOfDay(new Date()).getTime();
 
-function bucketOf(task) {
-  if (!task.dueDate) return "none";
-  const due = startOfDay(task.dueDate).getTime();
-  const today = startOfDay(new Date()).getTime();
-  if (due < today && task.status !== "COMPLETE") return "overdue";
-  if (due === today) return "today";
-  if (due === today + DAY) return "tomorrow";
-  return "later";
+// A day band's label: Today / Tomorrow / weekday / dated.
+function dayLabel(ms) {
+  const diff = Math.round((ms - todayKey()) / DAY);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  if (diff === -1) return "Yesterday";
+  const d = new Date(ms);
+  if (diff > 1 && diff < 7) return d.toLocaleDateString(undefined, { weekday: "long" });
+  return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 }
-const DATE_GROUPS = [
-  { key: "overdue", label: "Overdue", color: "#e01e5a" },
-  { key: "today", label: "Today", color: "#2bac76" },
-  { key: "tomorrow", label: "Tomorrow", color: "#5b8def" },
-  { key: "later", label: "Upcoming", color: "#8b5cf6" },
-  { key: "none", label: "No date", color: "#9aa0a6" },
-];
-
-// ClickUp-style relative due date shown on cards.
+function dayColor(ms) {
+  const diff = Math.round((ms - todayKey()) / DAY);
+  if (diff < 0) return "#9aa0a6";
+  if (diff === 0) return "#2bac76";
+  if (diff === 1) return "#5b8def";
+  return "#8b5cf6";
+}
+// Card's relative due chip.
 function relDue(iso) {
   if (!iso) return "";
-  const d = startOfDay(iso).getTime();
-  const today = startOfDay(new Date()).getTime();
-  const diff = Math.round((d - today) / DAY);
+  const diff = Math.round((dayKey(iso) - todayKey()) / DAY);
   if (diff === 0) return "Today";
   if (diff === -1) return "Yesterday";
   if (diff === 1) return "Tomorrow";
@@ -53,27 +53,40 @@ const localDT = (iso) => {
   const p = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 };
+// Noon on a given day (stable due time when rescheduling by drag/quick-add).
+const noonISO = (ms) => new Date(ms + 12 * 3600000).toISOString();
+
+const persist = (k, def) => { try { const v = localStorage.getItem(k); return v == null ? def : JSON.parse(v); } catch { return def; } };
+const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* ignore */ } };
 
 export default function TasksBoard({ workspaceId, focus }) {
   const { confirm, notify } = useDialogs();
   const [spaces, setSpaces] = useState([]);
-  const [activeSpace, setActiveSpace] = useState(null); // space id
+  const [activeSpace, setActiveSpace] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [board, setBoard] = useState("date"); // "date" | "assignee"
   const [q, setQ] = useState("");
   const [mineOnly, setMineOnly] = useState(false);
-  const [members, setMembers] = useState([]); // [{userId, name}]
+  const [members, setMembers] = useState([]);
   const [collapsed, setCollapsed] = useState(() => new Set());
-  const [editing, setEditing] = useState(null); // task or {new:true, status, dueBucket}
-  const [spaceModal, setSpaceModal] = useState(null); // {new:true} | space
+  const [editing, setEditing] = useState(null);
+  const [spaceModal, setSpaceModal] = useState(null);
+  const [daysAhead, setDaysAhead] = useState(10); // infinite scroll horizon (grows on scroll)
+  const [railOpen, setRailOpen] = useState(() => persist("vo-tb-rail-open", true));
+  const [railW, setRailW] = useState(() => persist("vo-tb-rail-w", 232));
+  const [dragId, setDragId] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false); // only admins/owners can create spaces
+  const gridRef = useRef(null);
   const me = getCurrentUserId();
+
+  useEffect(() => save("vo-tb-rail-open", railOpen), [railOpen]);
+  useEffect(() => save("vo-tb-rail-w", railW), [railW]);
 
   const nameOf = useCallback(
     (uid) => members.find((m) => m.userId === uid)?.name || (uid ? `User ${uid}` : "Unassigned"),
     [members],
   );
 
-  // Workspace members (names) — for assignee dropdowns + the space member picker.
   useEffect(() => {
     if (!workspaceId) return;
     (async () => {
@@ -81,6 +94,8 @@ export default function TasksBoard({ workspaceId, focus }) {
         const [desks, users] = await Promise.all([getMembers(workspaceId), getAllUsers().catch(() => [])]);
         const byId = {};
         users.forEach((u) => (byId[u.id] = `${u.firstName || ""} ${u.lastName || ""}`.trim()));
+        const myDesk = (desks || []).find((d) => d.userId === me);
+        setIsAdmin(["ADMIN", "OWNER"].includes(myDesk?.role));
         setMembers(
           (desks || []).filter((d) => d.userId != null).map((d) => ({
             userId: d.userId, name: byId[d.userId] || d.fullName || `User ${d.userId}`,
@@ -88,7 +103,7 @@ export default function TasksBoard({ workspaceId, focus }) {
         );
       } catch { /* names best-effort */ }
     })();
-  }, [workspaceId]);
+  }, [workspaceId, me]);
 
   const loadSpaces = useCallback(async () => {
     if (!workspaceId) return [];
@@ -109,7 +124,6 @@ export default function TasksBoard({ workspaceId, focus }) {
 
   useEffect(() => { loadTasks(); }, [loadTasks]);
 
-  // When opened from a #<number> chat mention, jump to the task's space + highlight it.
   useEffect(() => {
     if (!focus?.n || !workspaceId) return;
     (async () => {
@@ -130,10 +144,12 @@ export default function TasksBoard({ workspaceId, focus }) {
     });
   }, [tasks, q, mineOnly, me]);
 
-  const move = async (task, status) => {
-    if (task.status === status) return;
-    setTasks((ts) => ts.map((t) => (t.id === task.id ? { ...t, status } : t)));
-    try { await updateTask(task.id, { status }); } catch { notify("Could not move task", "error"); loadTasks(); }
+  // Patch a task (status and/or dueDate) with optimistic update.
+  const patchTask = async (task, patch) => {
+    const changed = Object.keys(patch).some((k) => task[k] !== patch[k]);
+    if (!changed) return;
+    setTasks((ts) => ts.map((t) => (t.id === task.id ? { ...t, ...patch } : t)));
+    try { await updateTask(task.id, patch); } catch { notify("Could not update task", "error"); loadTasks(); }
   };
 
   const remove = async (task) => {
@@ -145,19 +161,47 @@ export default function TasksBoard({ workspaceId, focus }) {
   const toggleBand = (key) =>
     setCollapsed((prev) => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
 
-  // Swimlanes: date buckets or assignees.
+  // Swimlanes: infinite day bands (date view) or assignees.
   const lanes = useMemo(() => {
     if (board === "assignee") {
       const ids = [...new Set(visible.map((t) => t.assigneeUserId ?? 0))];
       const known = members.map((m) => m.userId).filter((id) => ids.includes(id));
       const ordered = [...new Set([...known, ...ids])];
       return ordered.map((id) => ({
-        key: `a${id}`, label: id ? nameOf(id) : "Unassigned", color: "#5b8def",
+        key: `a${id}`, label: id ? nameOf(id) : "Unassigned", color: "#5b8def", dropDue: undefined,
+        assigneeUserId: id || null,
         match: (t) => (t.assigneeUserId ?? 0) === id,
       }));
     }
-    return DATE_GROUPS.map((g) => ({ ...g, match: (t) => bucketOf(t) === g.key }));
-  }, [board, visible, members, nameOf]);
+    const today = todayKey();
+    const overdue = {
+      key: "overdue", label: "Overdue", color: "#e01e5a", dropDue: undefined,
+      match: (t) => t.dueDate && dayKey(t.dueDate) < today && t.status !== "COMPLETE",
+    };
+    // Day set: a rolling window (today..+daysAhead) plus any day that actually has a (non-overdue) task.
+    const daySet = new Set();
+    for (let i = 0; i <= daysAhead; i++) daySet.add(today + i * DAY);
+    visible.forEach((t) => {
+      if (!t.dueDate) return;
+      const k = dayKey(t.dueDate);
+      const isOverdue = k < today && t.status !== "COMPLETE";
+      if (!isOverdue) daySet.add(k);
+    });
+    const dayLanes = [...daySet].sort((a, b) => a - b).map((k) => ({
+      key: `d${k}`, label: dayLabel(k), color: dayColor(k), dropDue: noonISO(k),
+      match: (t) => t.dueDate && dayKey(t.dueDate) === k && !(dayKey(t.dueDate) < today && t.status !== "COMPLETE"),
+    }));
+    const none = { key: "none", label: "No date", color: "#9aa0a6", dropDue: null, match: (t) => !t.dueDate };
+    return [overdue, ...dayLanes, none];
+  }, [board, visible, members, nameOf, daysAhead]);
+
+  // Grow the horizon as the user scrolls toward the bottom (infinite scroll).
+  const onScroll = (e) => {
+    const el = e.currentTarget;
+    if (board === "date" && el.scrollTop + el.clientHeight >= el.scrollHeight - 320 && daysAhead < 400) {
+      setDaysAhead((d) => d + 10);
+    }
+  };
 
   const totals = useMemo(() => {
     const m = { TODO: 0, IN_PROGRESS: 0, COMPLETE: 0 };
@@ -165,19 +209,31 @@ export default function TasksBoard({ workspaceId, focus }) {
     return m;
   }, [visible]);
 
+  // Rail resize (drag the divider).
+  const onRailHandleDown = (e) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = railW;
+    const move = (ev) => setRailW(Math.max(180, Math.min(380, startW + (ev.clientX - startX))));
+    const up = () => { document.removeEventListener("mousemove", move); document.removeEventListener("mouseup", up); };
+    document.addEventListener("mousemove", move);
+    document.addEventListener("mouseup", up);
+  };
+
   const activeSpaceObj = spaces.find((s) => s.id === activeSpace);
 
   const Card = ({ t }) => (
     <div
-      className={`tb-card ${q && `#${t.taskNumber}` === q ? "focused" : ""}`}
+      className={`tb-card ${q && `#${t.taskNumber}` === q ? "focused" : ""} ${dragId === t.id ? "dragging" : ""}`}
       draggable
-      onDragStart={(e) => e.dataTransfer.setData("text/task", String(t.id))}
+      onDragStart={(e) => { e.dataTransfer.setData("text/task", String(t.id)); setDragId(t.id); }}
+      onDragEnd={() => setDragId(null)}
       onClick={() => setEditing(t)}
     >
       <div className="tb-card-title">{t.title}</div>
       <div className="tb-card-meta">
         {t.dueDate && (
-          <span className={`tb-chip tb-due ${bucketOf(t) === "overdue" ? "overdue" : ""}`}>
+          <span className={`tb-chip tb-due ${dayKey(t.dueDate) < todayKey() && t.status !== "COMPLETE" ? "overdue" : ""}`}>
             <CalendarDays size={11} /> {relDue(t.dueDate)}
           </span>
         )}
@@ -187,9 +243,7 @@ export default function TasksBoard({ workspaceId, focus }) {
           </span>
         )}
         {t.assigneeUserId && (
-          <span className="tb-chip tb-assignee" title={nameOf(t.assigneeUserId)}>
-            {initials(nameOf(t.assigneeUserId))}
-          </span>
+          <span className="tb-chip tb-assignee" title={nameOf(t.assigneeUserId)}>{initials(nameOf(t.assigneeUserId))}</span>
         )}
         <span className="tb-num">#{t.taskNumber}</span>
       </div>
@@ -198,35 +252,41 @@ export default function TasksBoard({ workspaceId, focus }) {
 
   return (
     <div className="tasks-board">
-      {/* ── Spaces rail ── */}
-      <aside className="tb-spaces">
-        <div className="tb-spaces-head"><Layers size={15} /> Spaces</div>
-        <div className="tb-spaces-list">
-          {spaces.map((s) => (
-            <button
-              key={s.id}
-              className={`tb-space ${s.id === activeSpace ? "active" : ""}`}
-              onClick={() => setActiveSpace(s.id)}
-            >
-              <span className="tb-space-icon" style={{ background: spaceColor(s.id) }}>
-                {s.name.slice(0, 1).toUpperCase()}
-              </span>
-              <span className="tb-space-name">{s.name}</span>
-              <span className="tb-space-count">{s.taskCount}</span>
-              <span
-                className="tb-space-cog"
-                title="Space settings"
-                onClick={(e) => { e.stopPropagation(); setSpaceModal(s); }}
-              >
-                <Settings2 size={13} />
-              </span>
-            </button>
-          ))}
-        </div>
-        <button className="tb-space-new" onClick={() => setSpaceModal({ new: true })}>
-          <Plus size={15} /> New Space
+      {/* ── Spaces rail (resizable + collapsible) ── */}
+      {railOpen ? (
+        <>
+          <aside className="tb-spaces" style={{ width: railW }}>
+            <div className="tb-spaces-head">
+              <span><Layers size={15} /> Spaces</span>
+              <button className="tb-rail-toggle" title="Hide spaces" onClick={() => setRailOpen(false)}>
+                <PanelLeftClose size={16} />
+              </button>
+            </div>
+            <div className="tb-spaces-list">
+              {spaces.map((s) => (
+                <button key={s.id} className={`tb-space ${s.id === activeSpace ? "active" : ""}`} onClick={() => setActiveSpace(s.id)}>
+                  <span className="tb-space-icon" style={{ background: spaceColor(s.id) }}>{s.name.slice(0, 1).toUpperCase()}</span>
+                  <span className="tb-space-name">{s.name}</span>
+                  <span className="tb-space-count">{s.taskCount}</span>
+                  <span className="tb-space-cog" title="Space settings" onClick={(e) => { e.stopPropagation(); setSpaceModal(s); }}>
+                    <Settings2 size={13} />
+                  </span>
+                </button>
+              ))}
+            </div>
+            {isAdmin && (
+              <button className="tb-space-new" onClick={() => setSpaceModal({ new: true })}>
+                <Plus size={15} /> New Space
+              </button>
+            )}
+          </aside>
+          <div className="tb-rail-resize" onMouseDown={onRailHandleDown} title="Drag to resize" />
+        </>
+      ) : (
+        <button className="tb-rail-reopen" title="Show spaces" onClick={() => setRailOpen(true)}>
+          <PanelLeftOpen size={16} />
         </button>
-      </aside>
+      )}
 
       {/* ── Board ── */}
       <div className="tb-main">
@@ -250,12 +310,11 @@ export default function TasksBoard({ workspaceId, focus }) {
         </div>
 
         <div className="tb-boardswitch">
-          <button className={board === "date" ? "on" : ""} onClick={() => setBoard("date")}><CalendarDays size={14} /> Today · Tomorrow · Next</button>
+          <button className={board === "date" ? "on" : ""} onClick={() => setBoard("date")}><CalendarDays size={14} /> By day</button>
           <button className={board === "assignee" ? "on" : ""} onClick={() => setBoard("assignee")}><User size={14} /> Tasks per person</button>
         </div>
 
-        <div className="tb-grid">
-          {/* Sticky status column headers */}
+        <div className="tb-grid" ref={gridRef} onScroll={onScroll}>
           <div className="tb-statusrow">
             {TASK_STATUSES.map((status) => (
               <div className="tb-statushead" key={status}>
@@ -287,23 +346,29 @@ export default function TasksBoard({ workspaceId, focus }) {
                         <div
                           className="tb-col"
                           key={status}
-                          onDragOver={(e) => e.preventDefault()}
+                          onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("drop"); }}
+                          onDragLeave={(e) => e.currentTarget.classList.remove("drop")}
                           onDrop={(e) => {
+                            e.currentTarget.classList.remove("drop");
                             const id = Number(e.dataTransfer.getData("text/task"));
                             const t = tasks.find((x) => x.id === id);
-                            if (t) move(t, status);
+                            if (!t) return;
+                            const patch = { status };
+                            // Dropping into a day/assignee band reschedules / reassigns too.
+                            if (lane.dropDue !== undefined) patch.dueDate = lane.dropDue;
+                            if (board === "assignee") patch.assigneeUserId = lane.assigneeUserId;
+                            patchTask(t, patch);
                           }}
                         >
                           {colTasks.map((t) => <Card key={t.id} t={t} />)}
-                          {/* Add task only in the TO DO column (per spec). */}
                           {status === "TODO" && (
                             <button
                               className="tb-quickadd"
                               onClick={() =>
                                 setEditing({
                                   new: true, status: "TODO", spaceId: activeSpace,
-                                  dueBucket: board === "date" ? lane.key : undefined,
-                                  assigneeUserId: board === "assignee" ? Number(lane.key.slice(1)) || null : undefined,
+                                  dueDatePrefill: board === "date" ? lane.dropDue : undefined,
+                                  assigneeUserId: board === "assignee" ? lane.assigneeUserId : undefined,
                                 })
                               }
                             >
@@ -367,10 +432,7 @@ function TaskModal({ task, workspaceId, spaceId, members, onClose, onSaved, onDe
   const [priority, setPriority] = useState(isNew ? "NORMAL" : task.priority || "NORMAL");
   const [assignee, setAssignee] = useState(isNew ? (task.assigneeUserId ?? "") : task.assigneeUserId ?? "");
   const [reminder, setReminder] = useState(isNew ? "" : (task.reminderMinutes ?? "") + "");
-  const initialDue = isNew
-    ? (task.dueBucket === "today" ? localDT(new Date())
-      : task.dueBucket === "tomorrow" ? localDT(new Date(Date.now() + DAY)) : "")
-    : localDT(task.dueDate);
+  const initialDue = isNew ? (task.dueDatePrefill ? localDT(task.dueDatePrefill) : "") : localDT(task.dueDate);
   const [due, setDue] = useState(initialDue);
   const [saving, setSaving] = useState(false);
 
@@ -460,18 +522,13 @@ function SpaceModal({ space, workspaceId, members, me, onClose, onSaved, onDelet
 
   const toggle = (uid) => setPicked((prev) => { const n = new Set(prev); n.has(uid) ? n.delete(uid) : n.add(uid); return n; });
 
-  const save = async () => {
+  const submit = async () => {
     if (!name.trim()) return notify("Give the space a name", "warning");
     setSaving(true);
     try {
       const memberUserIds = [...picked];
-      if (isNew) {
-        const created = await createSpace({ workspaceId, name: name.trim(), memberUserIds });
-        onSaved(created.id);
-      } else {
-        await updateSpace(space.id, { name: name.trim(), memberUserIds });
-        onSaved(space.id);
-      }
+      if (isNew) { const created = await createSpace({ workspaceId, name: name.trim(), memberUserIds }); onSaved(created.id); }
+      else { await updateSpace(space.id, { name: name.trim(), memberUserIds }); onSaved(space.id); }
     } catch (e) {
       notify(e?.response?.data?.message || "Could not save space", "error");
       setSaving(false);
@@ -480,8 +537,7 @@ function SpaceModal({ space, workspaceId, members, me, onClose, onSaved, onDelet
 
   const remove = async () => {
     if (!(await confirm({ title: "Delete space", message: `Delete “${space.name}” and all its tasks?`, confirmText: "Delete", tone: "danger" }))) return;
-    try { await deleteSpace(space.id); onDeleted(); }
-    catch { notify("Could not delete space", "error"); }
+    try { await deleteSpace(space.id); onDeleted(); } catch { notify("Could not delete space", "error"); }
   };
 
   return (
@@ -512,7 +568,7 @@ function SpaceModal({ space, workspaceId, members, me, onClose, onSaved, onDelet
           {!isNew && isCreator && <button className="tb-del" onClick={remove}><Trash2 size={15} /> Delete</button>}
           <div className="tb-foot-right">
             <button className="tb-cancel" onClick={onClose}>Cancel</button>
-            <button className="tb-save" onClick={save} disabled={saving}>{isNew ? "Create Space" : "Save"}</button>
+            <button className="tb-save" onClick={submit} disabled={saving}>{isNew ? "Create Space" : "Save"}</button>
           </div>
         </div>
       </div>
