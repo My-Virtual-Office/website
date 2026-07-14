@@ -394,6 +394,37 @@
   font-size: 18px;
 }
 
+/* Invite result (shareable link) */
+.invite-result p {
+  font-size: 13px;
+  color: var(--content-muted);
+  margin: 0 0 8px;
+}
+.invite-link {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.invite-link input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--input-fg);
+  font-size: 12px;
+}
+.invite-link button {
+  border: 1px solid var(--border);
+  background: var(--hover-bg);
+  color: var(--content-fg);
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+}
+
 .members-content::-webkit-scrollbar {
   width: 8px;
 }

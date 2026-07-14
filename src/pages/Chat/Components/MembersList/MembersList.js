@@ -1,18 +1,20 @@
 import "./MembersList.css";
 import { useState, useEffect, useCallback } from "react";
 import {
-  UserPlus, Users, Hash, MoreVertical, Plus, Pencil, Trash2,
+  UserPlus, Users, Hash, MoreVertical, Plus, Pencil, Trash2, Copy, Check,
 } from "lucide-react";
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Button,
 } from "@mui/material";
 import {
   getMembers, getMyDesk, getTeams, updateMembership,
-  createTeam, updateTeam, deleteTeam,
+  createTeam, updateTeam, deleteTeam, createInvitation,
 } from "../../../../api/workspace";
 import { statusColor, statusText } from "../../statusMeta";
 import { getAllUsers } from "../../../../api/user";
 import { useDialogs } from "../../../../components/DialogProvider";
+
+const INVITE_ROLES = ["MEMBER", "ADMIN", "GUEST"];
 
 // OWNER is intentionally not assignable here — ownership transfer is a separate flow.
 const ROLES = ["GUEST", "MEMBER", "ADMIN"];
@@ -28,6 +30,29 @@ export default function MembersList({ workspaceId }) {
 
   const [manage, setManage] = useState(null); // {desk, role, title, teamId}
   const [teamModal, setTeamModal] = useState(null); // {id?, name, description}
+  const [invite, setInvite] = useState(null); // {email, role} | null
+  const [inviteLink, setInviteLink] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const sendInvite = async () => {
+    try {
+      const res = await createInvitation(workspaceId, { email: invite.email, role: invite.role });
+      setInviteLink(`${window.location.origin}/onboarding?token=${res.token}`);
+      setCopied(false);
+      notify("Invitation created — share the link", "success");
+    } catch (e) {
+      notify(e?.response?.data?.message || "Could not create invitation (admin only)", "error");
+    }
+  };
+
+  const copyInviteLink = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setCopied(true);
+    } catch {
+      /* ignore */
+    }
+  };
 
   const load = useCallback(async () => {
     if (!workspaceId) return;
@@ -220,12 +245,56 @@ export default function MembersList({ workspaceId }) {
         </div>
 
         <div className="invite-section">
-          <button className="invite-btn">
+          <button
+            className="invite-btn"
+            onClick={() => { setInvite({ email: "", role: "MEMBER" }); setInviteLink(""); }}
+          >
             <UserPlus size={17} />
             <span>Invite Member</span>
           </button>
         </div>
       </div>
+
+      {/* Invite modal */}
+      <Dialog open={!!invite} onClose={() => setInvite(null)}
+        slotProps={{ paper: { sx: { borderRadius: 3, width: 420 } } }}>
+        <DialogTitle sx={{ fontWeight: 700 }}>Invite to workspace</DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: "8px !important" }}>
+          {!inviteLink ? (
+            <>
+              <TextField autoFocus size="small" type="email" label="Email"
+                placeholder="person@example.com"
+                value={invite?.email || ""}
+                onChange={(e) => setInvite((s) => ({ ...s, email: e.target.value }))} />
+              <TextField select size="small" label="Role" value={invite?.role || "MEMBER"}
+                onChange={(e) => setInvite((s) => ({ ...s, role: e.target.value }))}>
+                {INVITE_ROLES.map((r) => <MenuItem key={r} value={r}>{r}</MenuItem>)}
+              </TextField>
+            </>
+          ) : (
+            <div className="invite-result">
+              <p>Share this link — they’ll join via <b>Onboarding → Join</b>:</p>
+              <div className="invite-link">
+                <input readOnly value={inviteLink} onFocus={(e) => e.target.select()} />
+                <button onClick={copyInviteLink} title="Copy">
+                  {copied ? <Check size={16} /> : <Copy size={16} />}
+                </button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setInvite(null)} sx={{ textTransform: "none", color: "#64748b" }}>
+            {inviteLink ? "Done" : "Cancel"}
+          </Button>
+          {!inviteLink && (
+            <Button variant="contained" disableElevation disabled={!invite?.email?.trim()} onClick={sendInvite}
+              sx={{ textTransform: "none", borderRadius: 2, bgcolor: "#5048e5", "&:hover": { bgcolor: "#403bc4" } }}>
+              Create invite
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
 
       {/* Manage member (admin) */}
       <Dialog open={!!manage} onClose={() => setManage(null)}
