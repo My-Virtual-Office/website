@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem,
   Button, Select, FormControl, InputLabel, Checkbox, ListItemText,
-  OutlinedInput, Box, Chip,
+  Box, Chip,
 } from "@mui/material";
 import { getMembers, getTeams } from "../../../../api/workspace";
 import { getAllUsers } from "../../../../api/user";
@@ -70,7 +70,7 @@ export default function ChannelSettingsModal({ channelId, workspaceId, open, onC
     }
   };
 
-  const multiProps = { multiple: true, input: <OutlinedInput />, MenuProps: { PaperProps: { style: { maxHeight: 260 } } } };
+  const multiProps = { multiple: true, MenuProps: { PaperProps: { style: { maxHeight: 260 } } } };
 
   return (
     <Dialog open={open} onClose={onClose} slotProps={{ paper: { sx: { borderRadius: 3, width: 460 } } }}>

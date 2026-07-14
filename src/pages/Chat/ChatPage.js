@@ -452,7 +452,8 @@ export default function ChatPage() {
         members={dirMembers}
         actions={{
           openChannel: (c) => selectChannel({ id: c.id, name: c.name }),
-          openPerson: (m) => setProfileMember(m),
+          // Switch to the chat view so the profile side-panel (only rendered there) shows.
+          openPerson: (m) => { setView("chat"); setProfileMember(m); },
           openTask: handleTaskClick,
           openTasks: () => setView("tasks"),
           openPeople: () => setView("contacts"),

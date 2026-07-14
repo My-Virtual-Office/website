@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem,
   Button, Select, FormControl, InputLabel, Checkbox, ListItemText,
-  OutlinedInput, Box, Chip,
+  Box, Chip,
 } from "@mui/material";
 import { getMembers, getTeams } from "../../../../api/workspace";
 import { getAllUsers } from "../../../../api/user";
@@ -91,7 +91,6 @@ export default function CreateChannelModal({ workspaceId, open, onClose, onCreat
 
   const multiProps = {
     multiple: true,
-    input: <OutlinedInput />,
     MenuProps: { PaperProps: { style: { maxHeight: 260 } } },
   };
 

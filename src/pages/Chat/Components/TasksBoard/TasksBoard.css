@@ -222,7 +222,7 @@
   margin-bottom: 10px;
 }
 .tb-col {
-  min-height: 70vh; /* each day band is a tall, comfortable drop zone (~70% of screen) */
+  min-height: 50vh; /* each day band is a comfortable drop zone (~50% of screen) */
   padding: 6px;
   border-radius: 12px;
   display: flex; flex-direction: column; gap: 10px;
@@ -331,3 +331,33 @@
 }
 
 .tb-spaces-head-btns { display: flex; align-items: center; gap: 2px; }
+
+/* Space access: People | Teams segmented toggle */
+.tb-access-tabs {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+.tb-access-tabs button {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  border: none; background: transparent;
+  color: var(--content-muted);
+  font-weight: 700; font-size: 12.5px;
+  padding: 6px; border-radius: 7px; cursor: pointer;
+}
+.tb-access-tabs button.on {
+  background: var(--panel-bg);
+  color: var(--content-strong);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16);
+}
+.tb-team-count {
+  margin-left: auto;
+  font-size: 11px; font-weight: 700;
+  color: var(--content-muted);
+  background: var(--hover-bg);
+  border-radius: 999px; padding: 0 8px;
+}

@@ -9,7 +9,7 @@ import {
   getSpaces, createSpace, updateSpace, deleteSpace,
   TASK_STATUSES, STATUS_LABEL, STATUS_COLOR, PRIORITY_COLOR,
 } from "../../../../api/tasks";
-import { getMembers, getMyDesk } from "../../../../api/workspace";
+import { getMembers, getMyDesk, getTeams } from "../../../../api/workspace";
 import { getAllUsers } from "../../../../api/user";
 import { getCurrentUserId } from "../../../../utils/auth";
 import { useDialogs } from "../../../../components/DialogProvider";
@@ -68,6 +68,7 @@ export default function TasksBoard({ workspaceId, focus }) {
   const [q, setQ] = useState("");
   const [mineOnly, setMineOnly] = useState(false);
   const [members, setMembers] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [collapsed, setCollapsed] = useState(() => new Set());
   const [editing, setEditing] = useState(null);
   const [spaceModal, setSpaceModal] = useState(null);
@@ -90,18 +91,20 @@ export default function TasksBoard({ workspaceId, focus }) {
     if (!workspaceId) return;
     (async () => {
       try {
-        const [desks, users, myDesk] = await Promise.all([
+        const [desks, users, myDesk, teamList] = await Promise.all([
           getMembers(workspaceId),
           getAllUsers().catch(() => []),
           getMyDesk(workspaceId).catch(() => null),
+          getTeams(workspaceId).catch(() => []),
         ]);
         const byId = {};
         users.forEach((u) => (byId[u.id] = `${u.firstName || ""} ${u.lastName || ""}`.trim()));
         const role = myDesk?.role || (desks || []).find((d) => String(d.userId) === String(me))?.role;
         setIsAdmin(["ADMIN", "OWNER"].includes(role));
+        setTeams(Array.isArray(teamList) ? teamList : []);
         setMembers(
           (desks || []).filter((d) => d.userId != null).map((d) => ({
-            userId: d.userId, name: byId[d.userId] || d.fullName || `User ${d.userId}`,
+            userId: d.userId, name: byId[d.userId] || d.fullName || `User ${d.userId}`, teamId: d.teamId,
           })),
         );
       } catch { /* names best-effort */ }
@@ -413,6 +416,7 @@ export default function TasksBoard({ workspaceId, focus }) {
       {spaceModal && (
         <SpaceModal
           space={spaceModal}
+          teams={teams}
           workspaceId={workspaceId}
           members={members}
           me={me}
@@ -524,15 +528,32 @@ function TaskModal({ task, workspaceId, spaceId, members, onClose, onSaved, onDe
   );
 }
 
-function SpaceModal({ space, workspaceId, members, me, onClose, onSaved, onDeleted }) {
+function SpaceModal({ space, teams = [], workspaceId, members, me, onClose, onSaved, onDeleted }) {
   const { confirm, notify } = useDialogs();
   const isNew = !!space.new;
   const [name, setName] = useState(isNew ? "" : space.name);
   const [picked, setPicked] = useState(() => new Set((space.memberUserIds || []).filter((id) => id !== me)));
+  const [mode, setMode] = useState("people"); // "people" | "teams"
   const [saving, setSaving] = useState(false);
   const isCreator = !isNew && space.createdBy === me;
 
   const toggle = (uid) => setPicked((prev) => { const n = new Set(prev); n.has(uid) ? n.delete(uid) : n.add(uid); return n; });
+
+  // Members of a team (excluding me, who always has access).
+  const teamMemberIds = (teamId) =>
+    members.filter((m) => m.teamId === teamId && m.userId !== me).map((m) => m.userId);
+  const teamFullyPicked = (teamId) => {
+    const ids = teamMemberIds(teamId);
+    return ids.length > 0 && ids.every((id) => picked.has(id));
+  };
+  const toggleTeam = (teamId) =>
+    setPicked((prev) => {
+      const n = new Set(prev);
+      const ids = teamMemberIds(teamId);
+      const all = ids.every((id) => n.has(id));
+      ids.forEach((id) => (all ? n.delete(id) : n.add(id)));
+      return n;
+    });
 
   const submit = async () => {
     if (!name.trim()) return notify("Give the space a name", "warning");
@@ -562,19 +583,45 @@ function SpaceModal({ space, workspaceId, members, me, onClose, onSaved, onDelet
         <div className="tb-modal-body">
           <input className="tb-input tb-title-input" placeholder="Space name (e.g. Engineering)" value={name} autoFocus onChange={(e) => setName(e.target.value)} />
           <div className="tb-members-head"><Users size={14} /> Who can access this space</div>
-          <div className="tb-members-hint">You always have access. Pick teammates to add.</div>
-          <div className="tb-members">
-            {members.filter((m) => m.userId !== me).map((m) => (
-              <label key={m.userId} className={`tb-member ${picked.has(m.userId) ? "on" : ""}`}>
-                <input type="checkbox" checked={picked.has(m.userId)} onChange={() => toggle(m.userId)} />
-                <span className="tb-member-av">{initials(m.name)}</span>
-                {m.name}
-              </label>
-            ))}
-            {members.filter((m) => m.userId !== me).length === 0 && (
-              <div className="tb-members-empty">No other members in this workspace yet.</div>
-            )}
+          <div className="tb-members-hint">
+            You always have access. Add people, or a whole team ({picked.size} added).
           </div>
+          <div className="tb-access-tabs">
+            <button className={mode === "people" ? "on" : ""} onClick={() => setMode("people")}>
+              <User size={13} /> People
+            </button>
+            <button className={mode === "teams" ? "on" : ""} onClick={() => setMode("teams")}>
+              <Layers size={13} /> Teams
+            </button>
+          </div>
+          {mode === "people" ? (
+            <div className="tb-members">
+              {members.filter((m) => m.userId !== me).map((m) => (
+                <label key={m.userId} className={`tb-member ${picked.has(m.userId) ? "on" : ""}`}>
+                  <input type="checkbox" checked={picked.has(m.userId)} onChange={() => toggle(m.userId)} />
+                  <span className="tb-member-av">{initials(m.name)}</span>
+                  {m.name}
+                </label>
+              ))}
+              {members.filter((m) => m.userId !== me).length === 0 && (
+                <div className="tb-members-empty">No other members in this workspace yet.</div>
+              )}
+            </div>
+          ) : (
+            <div className="tb-members">
+              {teams.map((t) => {
+                const count = teamMemberIds(t.id).length;
+                return (
+                  <label key={t.id} className={`tb-member ${teamFullyPicked(t.id) ? "on" : ""}`}>
+                    <input type="checkbox" checked={teamFullyPicked(t.id)} onChange={() => toggleTeam(t.id)} />
+                    <span className="tb-member-av"><Layers size={13} /></span>
+                    {t.name} <span className="tb-team-count">{count}</span>
+                  </label>
+                );
+              })}
+              {teams.length === 0 && <div className="tb-members-empty">No teams in this workspace yet.</div>}
+            </div>
+          )}
         </div>
         <div className="tb-modal-foot">
           {!isNew && isCreator && <button className="tb-del" onClick={remove}><Trash2 size={15} /> Delete</button>}
