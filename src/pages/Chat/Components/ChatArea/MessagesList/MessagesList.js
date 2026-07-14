@@ -180,6 +180,12 @@ export default function MessagesList({ activeChannel, stompClient, dmPartner, on
     ? messages.findIndex((m) => m.id === firstUnreadId)
     : -1;
 
+  // Keep the view pinned to the newest message (e.g. right after you send one).
+  const bottomRef = useRef(null);
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ block: "end" });
+  }, [messages.length]);
+
   return (
     <div className="messages-list">
       {activeChannel?.type === "DIRECT" && (
@@ -225,6 +231,7 @@ export default function MessagesList({ activeChannel, stompClient, dmPartner, on
           </Fragment>
         );
       })}
+      <div ref={bottomRef} />
     </div>
   );
 }
