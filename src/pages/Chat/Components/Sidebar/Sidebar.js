@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { getCurrentUser } from "../../../../api/user";
 import SettingsModal from "../SettingsModal/SettingsModal";
 import CreateChannelModal from "../CreateChannelModal/CreateChannelModal";
-import MeetingsModal from "../MeetingsModal/MeetingsModal";
 import DmPickerModal from "../DmPickerModal/DmPickerModal";
 import StatusMenu from "../StatusMenu/StatusMenu";
 import { getUserPhoto } from "../../../../api/user";
@@ -21,6 +20,7 @@ export default function Sidebar({
   unread = {},
   onOpenContacts,
   onOpenTasks,
+  onOpenMeetings,
 }) {
   // Channels state
   const [channels, setChannels] = useState([]);
@@ -41,7 +41,6 @@ export default function Sidebar({
   // My desk in this workspace (carries my presence status) + status picker.
   const [myDesk, setMyDesk] = useState(null);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
-  const [showMeetings, setShowMeetings] = useState(false);
   const [showDmPicker, setShowDmPicker] = useState(false);
 
   useEffect(() => {
@@ -217,7 +216,10 @@ export default function Sidebar({
               <ListTodo size={18} />
               <span>Tasks</span>
             </div>
-            <div className="drafts" onClick={() => setShowMeetings(true)}>
+            <div
+              className={`drafts ${activeView === "meetings" ? "active-link" : ""}`}
+              onClick={onOpenMeetings}
+            >
               <CalendarDays size={18} />
               <span>Meetings</span>
             </div>
@@ -408,12 +410,6 @@ export default function Sidebar({
           setChannels((c) => [...c, ch]);
           setActiveChannel({ id: ch.id, name: ch.name });
         }}
-      />
-
-      <MeetingsModal
-        workspaceId={workspaceId}
-        open={showMeetings}
-        onClose={() => setShowMeetings(false)}
       />
 
       <DmPickerModal

@@ -8,6 +8,8 @@ export default function ChatArea({
   stompClient,
   sidebarOpen,
   membersOpen,
+  dmPartner,
+  onViewProfile,
   onToggleSidebar,
   onToggleMembers,
   onChannelUpdated,
@@ -27,6 +29,8 @@ export default function ChatArea({
       <MessagesList
         activeChannel={activeChannel}
         stompClient={stompClient}
+        dmPartner={dmPartner}
+        onViewProfile={onViewProfile}
         onOpenThread={onOpenThread}
       />
       <MessageInput

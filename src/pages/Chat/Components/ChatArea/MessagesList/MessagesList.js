@@ -4,6 +4,33 @@ import { useState, useEffect, Fragment } from "react";
 import { authHeaders } from "../../../../../utils/auth";
 import { getUnread, markRead } from "../../../../../api/chat";
 
+const initials = (name) =>
+  (name || "?").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
+
+// Slack-style intro shown at the top of a DM: avatar, name, and a nudge to view the profile.
+function DmIntro({ partner, channelName, onViewProfile }) {
+  const name = partner?.name || channelName || "this person";
+  return (
+    <div className="dm-intro">
+      <div className="dm-intro-av">
+        {partner?.avatar ? <img src={partner.avatar} alt={name} /> : <span>{initials(name)}</span>}
+        {partner?.online != null && <span className={`dm-intro-dot ${partner.online ? "on" : ""}`} />}
+      </div>
+      <div className="dm-intro-name">
+        {name}
+        {partner?.online && <span className="dm-intro-presence" />}
+      </div>
+      {partner?.title && <div className="dm-intro-title">{partner.title}</div>}
+      <div className="dm-intro-text">
+        This conversation is just between <b>@{name}</b> and you. Check out their profile to learn more about them.
+      </div>
+      {onViewProfile && (
+        <button className="dm-intro-btn" onClick={onViewProfile}>View Profile</button>
+      )}
+    </div>
+  );
+}
+
 const sameDay = (a, b) => a.toDateString() === b.toDateString();
 const dayLabel = (d) => {
   const today = new Date();
@@ -14,7 +41,7 @@ const dayLabel = (d) => {
   return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
 };
 
-export default function MessagesList({ activeChannel, stompClient, onOpenThread }) {
+export default function MessagesList({ activeChannel, stompClient, dmPartner, onViewProfile, onOpenThread }) {
   const [messages, setMessages] = useState([]);
   // Id of the first unread message — where the "New" divider is drawn.
   const [firstUnreadId, setFirstUnreadId] = useState(null);
@@ -111,6 +138,9 @@ export default function MessagesList({ activeChannel, stompClient, onOpenThread 
 
   return (
     <div className="messages-list">
+      {activeChannel?.type === "DIRECT" && (
+        <DmIntro partner={dmPartner} channelName={activeChannel?.name} onViewProfile={onViewProfile} />
+      )}
       {messages.map((message, i) => {
         const cur = new Date(message.createdAt || Date.now());
         const prev = messages[i - 1];

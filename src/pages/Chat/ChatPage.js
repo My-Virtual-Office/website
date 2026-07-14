@@ -12,6 +12,7 @@ import ThreadPanel from "./Components/ThreadPanel/ThreadPanel";
 import ProfilePanel from "./Components/ProfilePanel/ProfilePanel";
 import NotificationCenter from "./Components/NotificationCenter/NotificationCenter";
 import TasksBoard from "./Components/TasksBoard/TasksBoard";
+import MeetingsModal from "./Components/MeetingsModal/MeetingsModal";
 import CommandPalette from "./Components/CommandPalette/CommandPalette";
 import ResizeHandle from "../../components/ResizeHandle";
 import { MentionContext } from "./mentionContext";
@@ -62,6 +63,12 @@ export default function ChatPage() {
   const [dirChannels, setDirChannels] = useState([]);
   const [profileMember, setProfileMember] = useState(null);
   const [focusTask, setFocusTask] = useState(null); // task # to focus in the board
+
+  // The other person in a DM (for the Slack-style conversation intro + View Profile).
+  const dmPartner =
+    activeChannel?.type === "DIRECT"
+      ? dirMembers.find((m) => m.name === activeChannel.name) || null
+      : null;
   const [cmdkOpen, setCmdkOpen] = useState(false);
 
   // Ctrl/Cmd+K command palette.
@@ -444,6 +451,7 @@ export default function ChatPage() {
               unread={unread}
               onOpenContacts={() => setView("contacts")}
               onOpenTasks={() => setView("tasks")}
+              onOpenMeetings={() => setView("meetings")}
             />
           </div>
           <ResizeHandle
@@ -460,6 +468,8 @@ export default function ChatPage() {
         <ContactsDirectory workspaceId={workspaceId} />
       ) : view === "tasks" ? (
         <TasksBoard workspaceId={workspaceId} focus={focusTask} />
+      ) : view === "meetings" ? (
+        <MeetingsModal workspaceId={workspaceId} inline />
       ) : (
         <>
           <ChatArea
@@ -468,6 +478,8 @@ export default function ChatPage() {
             stompClient={stompClient}
             sidebarOpen={sidebarOpen}
             membersOpen={membersOpen}
+            dmPartner={dmPartner}
+            onViewProfile={() => dmPartner && setProfileMember(dmPartner)}
             onToggleSidebar={() => setSidebarOpen((o) => !o)}
             onToggleMembers={() => setMembersOpen((o) => !o)}
             onChannelUpdated={(ch) =>

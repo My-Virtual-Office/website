@@ -61,3 +61,59 @@
 .messages-list::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* ── Slack-style DM conversation intro ── */
+.dm-intro {
+  padding: 28px 24px 18px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.dm-intro-av {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--content-strong);
+  font-size: 26px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+.dm-intro-av img { width: 100%; height: 100%; object-fit: cover; }
+.dm-intro-dot {
+  position: absolute;
+  right: -3px; bottom: -3px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: 3px solid var(--content-bg);
+  background: var(--content-muted);
+}
+.dm-intro-dot.on { background: #2bac76; }
+.dm-intro-name {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--content-strong);
+}
+.dm-intro-presence { width: 9px; height: 9px; border-radius: 50%; background: #2bac76; }
+.dm-intro-title { font-size: 14px; color: var(--content-muted); margin-top: 2px; }
+.dm-intro-text { font-size: 14px; color: var(--content-fg); margin-top: 10px; max-width: 620px; line-height: 1.5; }
+.dm-intro-text b { color: var(--link); font-weight: 600; }
+.dm-intro-btn {
+  margin-top: 14px;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  color: var(--content-strong);
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+.dm-intro-btn:hover { background: var(--hover-bg); }

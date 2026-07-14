@@ -507,3 +507,46 @@
     border-top: 1px solid var(--border);
   }
 }
+
+/* ── Full-screen (inline) Meetings view ── */
+.meet-page {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--content-bg);
+  overflow: hidden;
+}
+.meet-page .meet-head {
+  height: 56px;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--border);
+}
+.meet-page .meet-weekwrap { flex: 1; min-height: 0; }
+.meet-page .meet-weekmain { min-height: 0; }
+.meet-page .wk-body { max-height: none; flex: 1; }
+.meet-page .meet-side { overflow-y: auto; }
+
+/* List view: a "Create event" bar above the upcoming list */
+.meet-listwrap { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+.meet-page .meet-listwrap .meet-list { border-bottom: none; }
+.meet-listbar {
+  display: flex;
+  padding: 14px 18px 4px;
+}
+.meet-create {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border: none;
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+.meet-create:hover { background: var(--accent-hover); }
+.meet-page .meet-form { border-bottom: 1px solid var(--border); max-width: 640px; }

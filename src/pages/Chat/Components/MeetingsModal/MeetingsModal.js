@@ -47,8 +47,9 @@ const fmt = (iso) =>
     minute: "2-digit",
   });
 
-export default function MeetingsModal({ workspaceId, open, onClose }) {
+export default function MeetingsModal({ workspaceId, open, onClose, inline = false }) {
   const { notify } = useDialogs();
+  const shown = inline || open; // inline mode is always "open"
   const [events, setEvents] = useState([]);
   const [title, setTitle] = useState("");
   const [start, setStart] = useState(localInput(5));
@@ -60,11 +61,12 @@ export default function MeetingsModal({ workspaceId, open, onClose }) {
   const [saving, setSaving] = useState(false);
   const [view, setView] = useState("week"); // "week" | "list"
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
+  const [showForm, setShowForm] = useState(false); // List view: toggled by "Create event"
   const me = getCurrentUserId();
 
   // Load workspace members (with emails) for the attendee picker.
   useEffect(() => {
-    if (!open || !workspaceId) return;
+    if ((!inline && !open) || !workspaceId) return;
     (async () => {
       try {
         const [desks, users] = await Promise.all([
@@ -88,7 +90,7 @@ export default function MeetingsModal({ workspaceId, open, onClose }) {
         setPeople([]);
       }
     })();
-  }, [open, workspaceId, me]);
+  }, [inline, open, workspaceId, me]);
 
   const toggleAttendee = (userId) =>
     setAttendeeIds((prev) => {
@@ -110,8 +112,8 @@ export default function MeetingsModal({ workspaceId, open, onClose }) {
   }, [workspaceId, weekStart]);
 
   useEffect(() => {
-    if (open) load();
-  }, [open, load]);
+    if (shown) load();
+  }, [inline, open, shown, load]);
 
   // Grid drag-create → prefill the form's start/end with the picked slot.
   const onPickSlot = (startDate, endDate) => {
@@ -125,7 +127,7 @@ export default function MeetingsModal({ workspaceId, open, onClose }) {
       return n;
     });
 
-  if (!open) return null;
+  if (!shown) return null;
 
   // The grid highlights whatever slot the form currently describes.
   const selectedSlot = (() => {
@@ -262,58 +264,74 @@ export default function MeetingsModal({ workspaceId, open, onClose }) {
     </div>
   );
 
-  return (
-    <div className="meet-overlay" onClick={onClose}>
-      <div className={`meet-modal ${view === "week" ? "wide" : ""}`} onClick={(e) => e.stopPropagation()}>
-        <div className="meet-head">
-          <span className="meet-title">
-            <Calendar size={18} /> Meetings
-          </span>
-          <div className="meet-viewtoggle">
-            <button className={view === "week" ? "on" : ""} onClick={() => setView("week")}>
-              <LayoutGrid size={14} /> Week
-            </button>
-            <button className={view === "list" ? "on" : ""} onClick={() => setView("list")}>
-              <List size={14} /> List
-            </button>
-          </div>
+  const content = (
+    <>
+      <div className="meet-head">
+        <span className="meet-title">
+          <Calendar size={18} /> Meetings
+        </span>
+        <div className="meet-viewtoggle">
+          <button className={view === "week" ? "on" : ""} onClick={() => setView("week")}>
+            <LayoutGrid size={14} /> Week
+          </button>
+          <button className={view === "list" ? "on" : ""} onClick={() => setView("list")}>
+            <List size={14} /> List
+          </button>
+        </div>
+        {!inline && (
           <button className="meet-close" onClick={onClose} aria-label="Close">
             <X size={18} />
           </button>
-        </div>
-
-        {view === "week" ? (
-          <div className="meet-weekwrap">
-            <div className="meet-weekmain">
-              <div className="meet-weeknav">
-                <button onClick={() => shiftWeek(-7)} title="Previous week">
-                  <ChevronLeft size={16} />
-                </button>
-                <button className="today" onClick={() => setWeekStart(startOfWeek(new Date()))}>
-                  Today
-                </button>
-                <button onClick={() => shiftWeek(7)} title="Next week">
-                  <ChevronRight size={16} />
-                </button>
-                <span className="meet-weeklabel">{weekLabel(weekStart)}</span>
-                <span className="meet-weekhint">Drag on the grid to pick a time</span>
-              </div>
-              <WeekGrid
-                weekStart={weekStart}
-                events={events}
-                onPick={onPickSlot}
-                selected={selectedSlot}
-                onDelete={remove}
-              />
-            </div>
-            <div className="meet-side">{formPanel}</div>
-          </div>
-        ) : (
-          <>
-            {formPanel}
-            {listPanel}
-          </>
         )}
+      </div>
+
+      {view === "week" ? (
+        <div className="meet-weekwrap">
+          <div className="meet-weekmain">
+            <div className="meet-weeknav">
+              <button onClick={() => shiftWeek(-7)} title="Previous week">
+                <ChevronLeft size={16} />
+              </button>
+              <button className="today" onClick={() => setWeekStart(startOfWeek(new Date()))}>
+                Today
+              </button>
+              <button onClick={() => shiftWeek(7)} title="Next week">
+                <ChevronRight size={16} />
+              </button>
+              <span className="meet-weeklabel">{weekLabel(weekStart)}</span>
+              <span className="meet-weekhint">Drag on the grid to pick a time</span>
+            </div>
+            <WeekGrid
+              weekStart={weekStart}
+              events={events}
+              onPick={onPickSlot}
+              selected={selectedSlot}
+              onDelete={remove}
+            />
+          </div>
+          <div className="meet-side">{formPanel}</div>
+        </div>
+      ) : (
+        <div className="meet-listwrap">
+          <div className="meet-listbar">
+            <button className="meet-create" onClick={() => setShowForm((s) => !s)}>
+              {showForm ? <X size={15} /> : <Plus size={15} />} {showForm ? "Close" : "Create event"}
+            </button>
+          </div>
+          {showForm && formPanel}
+          {listPanel}
+        </div>
+      )}
+    </>
+  );
+
+  if (inline) {
+    return <div className="meet-page">{content}</div>;
+  }
+  return (
+    <div className="meet-overlay" onClick={onClose}>
+      <div className={`meet-modal ${view === "week" ? "wide" : ""}`} onClick={(e) => e.stopPropagation()}>
+        {content}
       </div>
     </div>
   );
