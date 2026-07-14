@@ -1,9 +1,9 @@
 import "./MessageInput.css";
-import { Plus, Smile, SendHorizontal, X, Paperclip, Hash, AtSign } from "lucide-react";
+import { Plus, Smile, SendHorizontal, X, Paperclip, Hash, AtSign, Clock } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
 import { useState, useRef, useEffect } from "react";
 import { useDialogs } from "../../../../../components/DialogProvider";
-import { uploadAttachment, fileUrl, getChannels } from "../../../../../api/chat";
+import { uploadAttachment, fileUrl, getChannels, scheduleMessage } from "../../../../../api/chat";
 import { getMembers } from "../../../../../api/workspace";
 import { getAllUsers } from "../../../../../api/user";
 
@@ -27,9 +27,38 @@ export default function MessageInput({ activeChannel, workspaceId, stompClient }
   const [channels, setChannels] = useState([]);
   const [recordedMentions, setRecordedMentions] = useState([]);
   const [menu, setMenu] = useState(null); // { kind, query, tokenStart, matches, index }
+  const [showSchedule, setShowSchedule] = useState(false);
+  const [scheduleAt, setScheduleAt] = useState("");
   const fileRef = useRef(null);
   const inputRef = useRef(null);
   const { notify } = useDialogs();
+
+  const openSchedule = () => {
+    if (!message.trim()) return notify("Type a message to schedule", "warning");
+    const d = new Date(Date.now() + 60 * 60000); // default: 1 hour from now
+    const pad = (n) => String(n).padStart(2, "0");
+    setScheduleAt(
+      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(
+        d.getMinutes(),
+      )}`,
+    );
+    setShowSchedule(true);
+  };
+
+  const handleSchedule = async () => {
+    if (!message.trim() || !activeChannel?.id) return notify("Type a message first", "warning");
+    if (!scheduleAt) return notify("Pick a date & time", "warning");
+    const iso = new Date(scheduleAt).toISOString();
+    if (new Date(iso) <= new Date()) return notify("Pick a future time", "warning");
+    try {
+      await scheduleMessage(activeChannel.id, message, iso);
+      setMessage("");
+      setShowSchedule(false);
+      notify(`Message scheduled for ${new Date(iso).toLocaleString()}`, "success");
+    } catch {
+      notify("Could not schedule message", "error");
+    }
+  };
 
   // Load workspace members + channels for @/# autocomplete.
   useEffect(() => {
@@ -285,10 +314,39 @@ export default function MessageInput({ activeChannel, workspaceId, stompClient }
             </button>
           </div>
 
-          <button className="send-btn" onClick={handleSendMessage} disabled={uploading}>
-            Send
-            <SendHorizontal size={15} />
-          </button>
+          <div className="send-cluster">
+            <button
+              className="input-btn schedule-btn"
+              aria-label="Schedule send"
+              title="Schedule send"
+              onClick={openSchedule}
+            >
+              <Clock size={18} />
+            </button>
+            <button className="send-btn" onClick={handleSendMessage} disabled={uploading}>
+              Send
+              <SendHorizontal size={15} />
+            </button>
+
+            {showSchedule && (
+              <div className="schedule-pop">
+                <div className="schedule-pop-title">Schedule message</div>
+                <input
+                  type="datetime-local"
+                  value={scheduleAt}
+                  onChange={(e) => setScheduleAt(e.target.value)}
+                />
+                <div className="schedule-pop-actions">
+                  <button className="schedule-cancel" onClick={() => setShowSchedule(false)}>
+                    Cancel
+                  </button>
+                  <button className="schedule-confirm" onClick={handleSchedule}>
+                    Schedule
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

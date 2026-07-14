@@ -51,6 +51,17 @@ export async function markUnread(channelId, messageId) {
   if (!res.ok) throw res;
 }
 
+/** Queue a message to be delivered to a channel at a future time (ISO instant). */
+export async function scheduleMessage(channelId, content, scheduledAt) {
+  const res = await fetch(`/api/chat/channels/${channelId}/scheduled`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ content, scheduledAt }),
+  });
+  if (!res.ok) throw res;
+  return res.json();
+}
+
 /** Open (or create) a 1:1 direct-message channel with another user. */
 export async function getOrCreateDm(targetUserId) {
   const res = await fetch(`/api/chat/dm`, {
