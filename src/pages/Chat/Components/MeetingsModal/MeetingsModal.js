@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   X, Plus, Trash2, Calendar, Clock, Bell, Users, ChevronLeft, ChevronRight, List, LayoutGrid,
 } from "lucide-react";
-import { createEvent, getEvents, deleteEvent } from "../../../../api/calendar";
+import { createEvent, updateEvent, getEvents, deleteEvent } from "../../../../api/calendar";
 import { getMembers } from "../../../../api/workspace";
 import { getAllUsers } from "../../../../api/user";
 import { getCurrentUserId } from "../../../../utils/auth";
@@ -62,6 +62,7 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
   const [view, setView] = useState("week"); // "week" | "list"
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
   const [quickOpen, setQuickOpen] = useState(false); // Google-Calendar-style create popup
+  const [editing, setEditing] = useState(null); // event being edited (null = creating)
   const me = getCurrentUserId();
 
   // Load workspace members (with emails) for the attendee picker.
@@ -117,10 +118,26 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
 
   // Grid drag-create → prefill start/end and pop the Google-Calendar-style create window.
   const onPickSlot = (startDate, endDate) => {
+    setEditing(null);
+    setTitle("");
+    setAttendeeIds(new Set());
     setStart(toLocalInput(startDate));
     setEnd(toLocalInput(endDate));
     setQuickOpen(true);
   };
+
+  // Click an existing event → open the popup pre-filled to edit it.
+  const openEdit = (ev) => {
+    setEditing(ev);
+    setTitle(ev.title || "");
+    setStart(toLocalInput(new Date(ev.startTime)));
+    setEnd(toLocalInput(new Date(ev.endTime)));
+    setBusy(ev.busy !== false);
+    setReminder(ev.reminderMinutes != null ? String(ev.reminderMinutes) : "");
+    setAttendeeIds(new Set(ev.attendeeUserIds || []));
+    setQuickOpen(true);
+  };
+  const closeQuick = () => { setQuickOpen(false); setEditing(null); };
   const shiftWeek = (days) =>
     setWeekStart((ws) => {
       const n = new Date(ws);
@@ -145,27 +162,34 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
       const attendees = people
         .filter((p) => attendeeIds.has(p.userId))
         .map((p) => ({ userId: p.userId, email: p.email || null }));
-      await createEvent({
-        workspaceId,
+      const body = {
         title: title.trim(),
         startTime: new Date(start).toISOString(),
         endTime: new Date(end).toISOString(),
         busy,
         reminderMinutes: reminder ? Number(reminder) : null,
         attendees,
-      });
+      };
+      if (editing) {
+        await updateEvent(editing.id, body);
+      } else {
+        await createEvent({ workspaceId, ...body });
+      }
       setTitle("");
       setAttendeeIds(new Set());
       setQuickOpen(false);
+      setEditing(null);
       await load();
       notify(
-        attendees.length
-          ? `Meeting added — invited ${attendees.length} ${attendees.length === 1 ? "person" : "people"}`
-          : "Meeting added — your status auto-updates during it",
+        editing
+          ? "Meeting updated"
+          : attendees.length
+            ? `Meeting added — invited ${attendees.length} ${attendees.length === 1 ? "person" : "people"}`
+            : "Meeting added — your status auto-updates during it",
         "success",
       );
     } catch (e) {
-      notify(e?.response?.data?.message || "Could not create meeting", "error");
+      notify(e?.response?.data?.message || (editing ? "Could not update — owner or admin only" : "Could not create meeting"), "error");
     } finally {
       setSaving(false);
     }
@@ -233,7 +257,7 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
             Set me to “In a meeting” during this event
           </label>
           <button className="meet-add" onClick={add} disabled={saving}>
-            <Plus size={16} /> Add meeting
+            <Plus size={16} /> {editing ? "Save changes" : "Add meeting"}
           </button>
         </div>
   );
@@ -308,6 +332,7 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
             onPick={onPickSlot}
             selected={selectedSlot}
             onDelete={remove}
+            onEventClick={openEdit}
           />
         </div>
       ) : (
@@ -323,11 +348,11 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
 
       {/* Google-Calendar-style create window (drag on grid or "Create event") */}
       {quickOpen && (
-        <div className="meet-quick-overlay" onClick={() => setQuickOpen(false)}>
+        <div className="meet-quick-overlay" onClick={closeQuick}>
           <div className="meet-quick" onClick={(e) => e.stopPropagation()}>
             <div className="meet-quick-head">
-              <span>New event</span>
-              <button className="meet-close" onClick={() => setQuickOpen(false)} aria-label="Close">
+              <span>{editing ? "Edit event" : "New event"}</span>
+              <button className="meet-close" onClick={closeQuick} aria-label="Close">
                 <X size={18} />
               </button>
             </div>

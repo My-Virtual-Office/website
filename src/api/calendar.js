@@ -39,7 +39,21 @@ export async function getCurrentEvent(workspaceId) {
   return res.status === 204 ? null : res.data;
 }
 
-/** Delete one of my events. */
+/** Update an event (author or workspace admin). */
+export async function updateEvent(id, { title, description, startTime, endTime, busy, reminderMinutes, attendees }) {
+  const res = await axiosInstance.put(`/api/calendar/events/${id}`, {
+    title,
+    description: description || null,
+    startTime,
+    endTime,
+    busy: busy !== false,
+    reminderMinutes: reminderMinutes ?? null,
+    attendees: attendees ?? [],
+  });
+  return res.data;
+}
+
+/** Delete an event (author or workspace admin). */
 export async function deleteEvent(id) {
   await axiosInstance.delete(`/api/calendar/events/${id}`);
 }

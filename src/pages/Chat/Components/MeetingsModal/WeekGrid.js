@@ -68,7 +68,7 @@ function layoutColumns(dayEvents) {
  * Google-Calendar-style week grid. Drag on a day column to pick a meeting's start→end;
  * existing events render as positioned, side-by-side blocks. `onPick(start, end)` fires on release.
  */
-export default function WeekGrid({ weekStart, events, onPick, selected, onDelete }) {
+export default function WeekGrid({ weekStart, events, onPick, selected, onDelete, onEventClick }) {
   const [drag, setDrag] = useState(null); // { dayIdx, startMin, endMin }
   const colRefs = useRef([]);
   const bodyRef = useRef(null);
@@ -204,7 +204,8 @@ export default function WeekGrid({ weekStart, events, onPick, selected, onDelete
                     className={`wk-ev ${ev.busy ? "busy" : "free"} ${compact ? "compact" : ""}`}
                     style={{ top, height, left, width }}
                     onMouseDown={(stop) => stop.stopPropagation()}
-                    title={`${ev.title} · ${s.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
+                    onClick={() => onEventClick?.(ev)}
+                    title={`${ev.title} · ${s.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} — click to edit`}
                   >
                     <span className="wk-ev-t">{ev.title}</span>
                     <span className="wk-ev-time">
