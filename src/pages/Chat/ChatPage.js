@@ -3,7 +3,8 @@ import "./ChatPage.css";
 import WorkspaceSidebar from "./Components/WorkspaceSidebar/WorkspaceSidebar";
 import Sidebar from "./Components/Sidebar/Sidebar";
 import ChatArea from "./Components/ChatArea/ChatArea";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { Menu } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Client } from "@stomp/stompjs";
 import MembersList from "./Components/MembersList/MembersList";
@@ -31,6 +32,11 @@ import {
 import { getAllUsers } from "../../api/user";
 
 const norm = (s) => (s || "").replace(/\s+/g, "").toLowerCase();
+
+// Mobile layout uses off-canvas drawers instead of side-by-side panels.
+const MOBILE_QUERY = "(max-width: 820px)";
+const isMobileView = () =>
+  typeof window !== "undefined" && window.matchMedia(MOBILE_QUERY).matches;
 
 /** useState that persists to localStorage under `key`. */
 function usePersistentState(key, initial) {
@@ -138,6 +144,8 @@ export default function ChatPage() {
     setActiveChannel(ch);
     setView("chat");
     setActiveThread(null);
+    // On phones the sidebar is an overlay drawer — close it once a channel is picked.
+    if (isMobileView()) setSidebarOpen(false);
   };
 
   // Open (or create) the thread rooted at a message, showing it in the right panel.
@@ -382,6 +390,25 @@ export default function ChatPage() {
   const [sidebarWidth, setSidebarWidth] = usePersistentState("vo-sidebar-w", 260);
   const [membersWidth, setMembersWidth] = usePersistentState("vo-members-w", 240);
 
+  // Start with both drawers closed on phones (the persisted desktop defaults are
+  // "open", which would cover the whole screen on a narrow layout). useLayoutEffect
+  // applies this before paint so there's no flash of an open drawer.
+  useLayoutEffect(() => {
+    if (isMobileView()) {
+      setSidebarOpen(false);
+      setMembersOpen(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Close the right-hand panel group (members / thread / profile) — used by the
+  // mobile backdrop and to keep only one primary panel visible on phones.
+  const closeRightPanels = () => {
+    setMembersOpen(false);
+    setActiveThread(null);
+    setProfileMember(null);
+  };
+
   useEffect(() => {
     let client; // 1. Local variable holds the reference
 
@@ -461,36 +488,49 @@ export default function ChatPage() {
           openOffice,
         }}
       />
-      <WorkspaceSidebar
-        workspaces={workspaces}
-        activeId={workspaceId}
-        onSwitch={switchWorkspace}
-      />
+      {/* Workspace rail + channel sidebar. On desktop this is transparent to
+          layout (display:contents); on phones it becomes an off-canvas drawer. */}
+      <div className={`left-nav ${sidebarOpen ? "drawer-open" : ""}`}>
+        <WorkspaceSidebar
+          workspaces={workspaces}
+          activeId={workspaceId}
+          onSwitch={switchWorkspace}
+        />
 
-      {sidebarOpen && (
-        <>
-          <div className="side-panel" style={{ width: sidebarWidth }}>
-            <Sidebar
-              activeChannel={activeChannel}
-              setActiveChannel={selectChannel}
-              workspaceId={workspaceId}
-              activeView={view}
-              unread={unread}
-              onOpenContacts={() => setView("contacts")}
-              onOpenTasks={() => setView("tasks")}
-              onOpenMeetings={() => setView("meetings")}
-              onOpenDesk={() => setView("mydesk")}
-              onOpenSearch={() => setCmdkOpen(true)}
+        {sidebarOpen && (
+          <>
+            <div className="side-panel" style={{ width: sidebarWidth }}>
+              <Sidebar
+                activeChannel={activeChannel}
+                setActiveChannel={selectChannel}
+                workspaceId={workspaceId}
+                activeView={view}
+                unread={unread}
+                onOpenContacts={() => { setView("contacts"); if (isMobileView()) setSidebarOpen(false); }}
+                onOpenTasks={() => { setView("tasks"); if (isMobileView()) setSidebarOpen(false); }}
+                onOpenMeetings={() => { setView("meetings"); if (isMobileView()) setSidebarOpen(false); }}
+                onOpenDesk={() => { setView("mydesk"); if (isMobileView()) setSidebarOpen(false); }}
+                onOpenSearch={() => setCmdkOpen(true)}
+              />
+            </div>
+            <ResizeHandle
+              width={sidebarWidth}
+              setWidth={setSidebarWidth}
+              min={200}
+              max={420}
+              direction={1}
             />
-          </div>
-          <ResizeHandle
-            width={sidebarWidth}
-            setWidth={setSidebarWidth}
-            min={200}
-            max={420}
-            direction={1}
-          />
-        </>
+          </>
+        )}
+      </div>
+
+      {/* Dim backdrop behind the left drawer (mobile only, hidden via CSS on desktop). */}
+      {sidebarOpen && (
+        <div
+          className="drawer-backdrop"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
       )}
 
       {view === "contacts" ? (
@@ -520,6 +560,15 @@ export default function ChatPage() {
             }
             onOpenThread={openThread}
           />
+
+          {/* Dim backdrop behind the right drawer (members / thread / profile) — mobile only. */}
+          {(profileMember || activeThread || membersOpen) && (
+            <div
+              className="drawer-backdrop drawer-backdrop-right"
+              onClick={closeRightPanels}
+              aria-hidden="true"
+            />
+          )}
 
           {profileMember ? (
             <>
@@ -570,6 +619,19 @@ export default function ChatPage() {
             </>
           ) : null}
         </>
+      )}
+
+      {/* Floating "open navigation" button for the non-chat views (which have no
+          header hamburger). Mobile only; hidden while the drawer is already open. */}
+      {view !== "chat" && !sidebarOpen && (
+        <button
+          className="mobile-nav-fab"
+          onClick={() => setSidebarOpen(true)}
+          aria-label="Open navigation"
+          title="Menu"
+        >
+          <Menu size={24} />
+        </button>
       )}
     </div>
     </MentionContext.Provider>

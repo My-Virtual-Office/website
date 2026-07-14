@@ -602,3 +602,24 @@
 .meet-quick .meet-form { border-bottom: none; max-width: none; }
 /* Full-width week grid now that the side form is a popup */
 .meet-page .meet-weekmain { flex: 1; min-width: 0; }
+
+/* ── Inline Meetings view on phones ── */
+@media (max-width: 820px) {
+  .meet-page .meet-head {
+    height: auto;
+    min-height: 52px;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .meet-page .meet-title { font-size: 15px; }
+  .meet-page .meet-form { max-width: none; }
+  .meet-page .meet-listwrap { padding-bottom: 88px; }
+
+  /* The 7-day grid is too wide for a phone — scroll it horizontally inside the
+     week pane (header row + day columns move together); the page never scrolls.
+     overflow-y is pinned to hidden so the grid's own vertical scroll still works. */
+  .meet-page .meet-weekmain { overflow-x: auto; overflow-y: hidden; }
+  .meet-page .wk { min-width: 640px; flex: 1; min-height: 0; }
+  .meet-weekhint { display: none; }
+}

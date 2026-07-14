@@ -221,6 +221,16 @@
   .desk-grid { grid-template-columns: 1fr; }
 }
 
+@media (max-width: 640px) {
+  .desk { padding: 16px 14px 96px; } /* bottom room for the floating nav button */
+  .desk-head { flex-direction: column; align-items: stretch; gap: 10px; }
+  .desk-head h1 { font-size: 22px; }
+  .desk-progress { align-items: stretch; min-width: 0; }
+  .desk-progress > span { align-self: flex-start; }
+  .desk-bar { width: 100%; }
+  .memory-grid { gap: 6px; }
+}
+
 /* ── Task status sections + detail modal ── */
 .desk-hcount { margin-left: 6px; font-size: 12px; font-weight: 700; color: var(--content-muted); background: var(--hover-bg); border-radius: 999px; padding: 1px 9px; }
 .desk-sections { display: flex; flex-direction: column; gap: 12px; }

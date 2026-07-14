@@ -227,7 +227,7 @@ export default function ChatHeader({
 
       {/* Right Side */}
       <div className="header-actions">
-        <button className="header-btn" aria-label="Call">
+        <button className="header-btn header-call" aria-label="Call">
           <Phone size={18} />
         </button>
         <button

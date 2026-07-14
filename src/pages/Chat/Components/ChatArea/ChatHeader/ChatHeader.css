@@ -356,9 +356,26 @@
   font-style: italic;
 }
 
+@media (max-width: 820px) {
+  /* Bigger, finger-friendly hit targets for the header controls. */
+  .header-btn {
+    padding: 9px;
+    min-width: 40px;
+    min-height: 40px;
+    justify-content: center;
+  }
+  .header-actions {
+    gap: 2px;
+  }
+  /* Keep dropdowns inside the viewport. */
+  .dropdown-menu {
+    max-width: calc(100vw - 20px);
+  }
+}
+
 @media (max-width: 768px) {
   .chat-header {
-    padding: 0 12px;
+    padding: 0 10px;
   }
   .channel-description,
   .margin {
@@ -373,10 +390,15 @@
   }
 }
 @media (max-width: 480px) {
-  .header-search {
+  .header-search,
+  .header-call {
     display: none;
   }
   .dropdown-menu {
-    right: -10px;
+    right: -8px;
+  }
+  .channel-info h3,
+  .channel-info h3 span {
+    font-size: 16px;
   }
 }

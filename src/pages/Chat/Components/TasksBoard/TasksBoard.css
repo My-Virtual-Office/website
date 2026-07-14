@@ -328,9 +328,28 @@
 .tb-members-empty { color: var(--content-muted); font-style: italic; padding: 12px; }
 
 @media (max-width: 820px) {
-  .tb-spaces { width: 64px; }
+  /* Collapse the spaces rail to icons (inline width would otherwise win). */
+  .tb-spaces { width: 60px !important; }
   .tb-spaces-head, .tb-space-name, .tb-space-count, .tb-space-new span { display: none; }
   .tb-space { justify-content: center; }
+  .tb-rail-resize { display: none; }
+
+  /* Header wraps; search shrinks so the toolbar never overflows. */
+  .tb-head { height: auto; min-height: 52px; flex-wrap: wrap; padding: 8px 12px; gap: 8px; }
+  .tb-title { font-size: 16px; }
+  .tb-search input { width: 96px; }
+  .tb-boardswitch { padding: 8px 12px; }
+
+  /* The kanban is wider than the phone — let it scroll horizontally inside the
+     grid (the page body never scrolls sideways). Status headers + day columns
+     share identical tracks so they stay aligned while scrolling. */
+  .tb-grid { overflow-x: auto; padding: 0 12px 88px; }
+  .tb-statusrow,
+  .tb-cols {
+    grid-template-columns: repeat(3, minmax(232px, 1fr));
+    gap: 12px;
+    min-width: 720px;
+  }
 }
 
 .tb-spaces-head-btns { display: flex; align-items: center; gap: 2px; }

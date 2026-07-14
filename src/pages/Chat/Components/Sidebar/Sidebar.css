@@ -413,3 +413,20 @@
 .dm-header span {
   letter-spacing: 0.5px;
 }
+
+/* Roomier, finger-friendly rows inside the mobile drawer. */
+@media (max-width: 820px) {
+  .channel-item,
+  .dm-item,
+  .sidebar-main .search,
+  .sidebar-main .drafts {
+    height: 42px;
+  }
+  .channels-header,
+  .direct-messages-header {
+    height: 34px;
+  }
+  .user-info {
+    padding: 12px;
+  }
+}
