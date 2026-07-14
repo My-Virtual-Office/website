@@ -1,11 +1,12 @@
 import "./ContactsDirectory.css";
 import { useState, useEffect, useCallback } from "react";
-import { Search, UserPlus, Users, Copy, Check } from "lucide-react";
+import { Search, UserPlus, Users, Copy, Check, Mail } from "lucide-react";
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Button,
 } from "@mui/material";
 import { getMembers, getTeams, getMyDesk, createInvitation } from "../../../../api/workspace";
 import { getAllUsers } from "../../../../api/user";
+import InvitationsModal from "../InvitationsModal/InvitationsModal";
 import { useDialogs } from "../../../../components/DialogProvider";
 
 const FILTERS = [
@@ -28,6 +29,7 @@ export default function ContactsDirectory({ workspaceId }) {
   const [invite, setInvite] = useState(null); // {email, role} | null
   const [inviteLink, setInviteLink] = useState("");
   const [copied, setCopied] = useState(false);
+  const [showInvites, setShowInvites] = useState(false);
 
   const load = useCallback(async () => {
     if (!workspaceId) return;
@@ -110,12 +112,17 @@ export default function ContactsDirectory({ workspaceId }) {
             <input placeholder="Search people" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
           {isAdmin && (
-            <button
-              className="contacts-invite"
-              onClick={() => { setInvite({ email: "", role: "MEMBER" }); setInviteLink(""); }}
-            >
-              <UserPlus size={15} /> Invite
-            </button>
+            <>
+              <button className="contacts-invite ghost" onClick={() => setShowInvites(true)}>
+                <Mail size={15} /> Invitations
+              </button>
+              <button
+                className="contacts-invite"
+                onClick={() => { setInvite({ email: "", role: "MEMBER" }); setInviteLink(""); }}
+              >
+                <UserPlus size={15} /> Invite
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -212,6 +219,12 @@ export default function ContactsDirectory({ workspaceId }) {
           )}
         </DialogActions>
       </Dialog>
+
+      <InvitationsModal
+        workspaceId={workspaceId}
+        open={showInvites}
+        onClose={() => setShowInvites(false)}
+      />
     </div>
   );
 }

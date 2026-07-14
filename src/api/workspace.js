@@ -72,6 +72,17 @@ export async function createInvitation(workspaceId, { email, role }) {
   return res.data;
 }
 
+/** ADMIN: all invitations for a workspace (any status). */
+export async function getInvitations(workspaceId) {
+  const res = await axiosInstance.get(`/api/workspace/${workspaceId}/invitations`);
+  return res.data ?? [];
+}
+
+/** ADMIN: revoke (deactivate) an invitation, invalidating its link. */
+export async function revokeInvitation(workspaceId, invitationId) {
+  await axiosInstance.delete(`/api/workspace/${workspaceId}/invitations/${invitationId}`);
+}
+
 /** Accept a workspace invitation by token → creates a MEMBER desk for the caller. */
 export async function acceptInvite(token) {
   const res = await axiosInstance.post(

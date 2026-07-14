@@ -64,6 +64,15 @@
 .contacts-invite:hover {
   background: var(--accent-hover);
 }
+.contacts-invite.ghost {
+  background: transparent;
+  color: var(--content-fg);
+  border: 1px solid var(--border);
+}
+.contacts-invite.ghost:hover {
+  background: var(--hover-bg);
+  border-color: var(--content-muted);
+}
 
 .contacts-filters {
   display: flex;
