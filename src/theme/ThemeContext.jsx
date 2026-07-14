@@ -24,25 +24,25 @@ export const THEMES = [
     id: "obsidian",
     label: "Obsidian",
     hint: "Near-black + violet",
-    swatch: { rail: "#0d0d12", sidebar: "#16161e", content: "#1a1a22" },
+    swatch: { rail: "#141414", sidebar: "#1b1b1b", content: "#1e1e1e" },
   },
   {
     id: "clickup",
     label: "ClickUp",
-    hint: "Bright & purple",
-    swatch: { rail: "#f7f6fd", sidebar: "#faf9ff", content: "#ffffff" },
+    hint: "Purple + bright",
+    swatch: { rail: "#201a3a", sidebar: "#2a2350", content: "#ffffff" },
   },
   {
     id: "nord",
     label: "Nord",
-    hint: "Arctic blue",
-    swatch: { rail: "#242933", sidebar: "#2e3440", content: "#2e3440" },
+    hint: "Arctic frost",
+    swatch: { rail: "#272c36", sidebar: "#2e3440", content: "#2e3440" },
   },
   {
     id: "dracula",
     label: "Dracula",
     hint: "Purple & cyan",
-    swatch: { rail: "#1e1f29", sidebar: "#21222c", content: "#282a36" },
+    swatch: { rail: "#21222c", sidebar: "#282a36", content: "#282a36" },
   },
   {
     id: "rose-pine",
@@ -60,7 +60,25 @@ export const THEMES = [
     id: "catppuccin",
     label: "Catppuccin",
     hint: "Soft pastel",
-    swatch: { rail: "#181825", sidebar: "#181825", content: "#1e1e2e" },
+    swatch: { rail: "#181825", sidebar: "#1e1e2e", content: "#1e1e2e" },
+  },
+  {
+    id: "tokyo-night",
+    label: "Tokyo Night",
+    hint: "Neon blue night",
+    swatch: { rail: "#16161e", sidebar: "#1a1b26", content: "#1a1b26" },
+  },
+  {
+    id: "one-dark",
+    label: "One Dark",
+    hint: "Atom classic",
+    swatch: { rail: "#21252b", sidebar: "#282c34", content: "#282c34" },
+  },
+  {
+    id: "github-dark",
+    label: "GitHub Dark",
+    hint: "Clean & modern",
+    swatch: { rail: "#010409", sidebar: "#0d1117", content: "#0d1117" },
   },
 ];
 
