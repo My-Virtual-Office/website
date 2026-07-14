@@ -11,6 +11,7 @@ export default function ChatArea({
   dmPartner,
   onViewProfile,
   onOpenSearch,
+  onNotificationNavigate,
   onToggleSidebar,
   onToggleMembers,
   onChannelUpdated,
@@ -24,6 +25,7 @@ export default function ChatArea({
         sidebarOpen={sidebarOpen}
         membersOpen={membersOpen}
         onOpenSearch={onOpenSearch}
+        onNotificationNavigate={onNotificationNavigate}
         onToggleSidebar={onToggleSidebar}
         onToggleMembers={onToggleMembers}
         onChannelUpdated={onChannelUpdated}

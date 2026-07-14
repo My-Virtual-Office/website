@@ -25,6 +25,7 @@ export default function ChatHeader({
   onToggleMembers,
   onChannelUpdated,
   onOpenSearch,
+  onNotificationNavigate,
 }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showPins, setShowPins] = useState(false);
@@ -245,7 +246,7 @@ export default function ChatHeader({
           <input type="text" placeholder="Search" readOnly onFocus={onOpenSearch} />
         </div>
 
-        <NotificationCenter inline />
+        <NotificationCenter inline onNavigate={onNotificationNavigate} />
       </div>
 
       <ChannelSettingsModal

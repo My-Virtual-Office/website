@@ -1,11 +1,13 @@
 import "./NotificationCenter.css";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Bell, X, Calendar, CheckCheck } from "lucide-react";
+import { Bell, X, Calendar, CheckCheck, AtSign, ListTodo } from "lucide-react";
 import { Client } from "@stomp/stompjs";
 import { getInbox, markAllRead, wsTicket } from "../../../../api/notifications";
 
 const iconFor = (type) => {
   if (type === "MEETING_REMINDER") return <Calendar size={16} />;
+  if (type === "MENTION") return <AtSign size={16} />;
+  if (type === "TASK_ASSIGNED" || type === "TASK_REMINDER") return <ListTodo size={16} />;
   return <Bell size={16} />;
 };
 const timeAgo = (iso) => {
@@ -16,7 +18,7 @@ const timeAgo = (iso) => {
   return new Date(iso).toLocaleDateString();
 };
 
-export default function NotificationCenter({ inline = false }) {
+export default function NotificationCenter({ inline = false, onNavigate }) {
   const [items, setItems] = useState([]);
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
@@ -125,16 +127,23 @@ export default function NotificationCenter({ inline = false }) {
             {items.length === 0 ? (
               <div className="notif-empty">You're all caught up.</div>
             ) : (
-              items.map((n) => (
-                <div key={n.id} className={`notif-item ${n.read ? "" : "unread"}`}>
-                  <span className="notif-icon">{iconFor(n.type)}</span>
-                  <div className="notif-body">
-                    <span className="notif-title">{n.title}</span>
-                    <span className="notif-text">{n.body}</span>
-                    <span className="notif-time">{timeAgo(n.createdAt)}</span>
+              items.map((n) => {
+                const clickable = onNavigate && n.data && n.data.refType;
+                return (
+                  <div
+                    key={n.id}
+                    className={`notif-item ${n.read ? "" : "unread"} ${clickable ? "clickable" : ""}`}
+                    onClick={clickable ? () => { onNavigate(n.data); setOpen(false); } : undefined}
+                  >
+                    <span className="notif-icon">{iconFor(n.type)}</span>
+                    <div className="notif-body">
+                      <span className="notif-title">{n.title}</span>
+                      <span className="notif-text">{n.body}</span>
+                      <span className="notif-time">{timeAgo(n.createdAt)}</span>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -143,7 +152,15 @@ export default function NotificationCenter({ inline = false }) {
       {/* Live pop-up toasts */}
       <div className="notif-toasts">
         {toasts.map((t) => (
-          <div key={t.id} className="notif-toast">
+          <div
+            key={t.id}
+            className={`notif-toast ${onNavigate && t.data?.refType ? "clickable" : ""}`}
+            onClick={
+              onNavigate && t.data?.refType
+                ? () => { onNavigate(t.data); setToasts((x) => x.filter((y) => y.id !== t.id)); }
+                : undefined
+            }
+          >
             <span className="notif-toast-icon">{iconFor(t.type)}</span>
             <div className="notif-toast-body">
               <span className="notif-toast-title">{t.title}</span>

@@ -193,3 +193,9 @@
     width: calc(100vw - 32px);
   }
 }
+
+/* Clickable notifications (redirect to task / channel) */
+.notif-item.clickable { cursor: pointer; }
+.notif-item.clickable:hover { background: var(--hover-bg); }
+.notif-toast.clickable { cursor: pointer; }
+.notif-toast.clickable:hover { filter: brightness(1.03); }

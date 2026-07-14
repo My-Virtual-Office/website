@@ -106,6 +106,27 @@ export default function ChatPage() {
     setView("tasks");
   };
 
+  // Click a notification → jump to its subject (task board or channel), switching workspace if the
+  // event happened in a different one. Powers global, cross-workspace notification redirects.
+  const handleNotificationNavigate = (data) => {
+    if (!data) return;
+    const targetWs = data.workspaceId != null ? Number(data.workspaceId) : null;
+    const go = () => {
+      if (data.refType === "task" && data.taskNumber != null) {
+        handleTaskClick(Number(data.taskNumber));
+      } else if (data.refType === "channel" && data.channelId) {
+        setView("chat");
+        selectChannel({ id: String(data.channelId), name: data.channelName || "channel" });
+      }
+    };
+    if (targetWs && targetWs !== workspaceId) {
+      switchWorkspace(targetWs);
+      setTimeout(go, 500); // let the new workspace's channels/tasks load first
+    } else {
+      go();
+    }
+  };
+
   // Unread badges: { [conversationId]: { count, mention } }.
   const [unread, setUnread] = useState({});
   const [convoIds, setConvoIds] = useState([]);
@@ -486,6 +507,7 @@ export default function ChatPage() {
             dmPartner={dmPartner}
             onViewProfile={() => (dmPartner ? setProfileMember(dmPartner) : setMembersOpen(true))}
             onOpenSearch={() => setCmdkOpen(true)}
+            onNotificationNavigate={handleNotificationNavigate}
             onToggleSidebar={() => setSidebarOpen((o) => !o)}
             onToggleMembers={() => setMembersOpen((o) => !o)}
             onChannelUpdated={(ch) =>
