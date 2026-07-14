@@ -327,28 +327,29 @@ export default function MessageInput({ activeChannel, workspaceId, stompClient }
               Send
               <SendHorizontal size={15} />
             </button>
-
-            {showSchedule && (
-              <div className="schedule-pop">
-                <div className="schedule-pop-title">Schedule message</div>
-                <input
-                  type="datetime-local"
-                  value={scheduleAt}
-                  onChange={(e) => setScheduleAt(e.target.value)}
-                />
-                <div className="schedule-pop-actions">
-                  <button className="schedule-cancel" onClick={() => setShowSchedule(false)}>
-                    Cancel
-                  </button>
-                  <button className="schedule-confirm" onClick={handleSchedule}>
-                    Schedule
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
+
+      {/* Rendered at container level so it isn't clipped by the input's overflow:hidden */}
+      {showSchedule && (
+        <div className="schedule-pop">
+          <div className="schedule-pop-title">Schedule message</div>
+          <input
+            type="datetime-local"
+            value={scheduleAt}
+            onChange={(e) => setScheduleAt(e.target.value)}
+          />
+          <div className="schedule-pop-actions">
+            <button className="schedule-cancel" onClick={() => setShowSchedule(false)}>
+              Cancel
+            </button>
+            <button className="schedule-confirm" onClick={handleSchedule}>
+              Schedule
+            </button>
+          </div>
+        </div>
+      )}
 
       {showEmojiPicker && (
         <div className="emoji-picker-wrapper">

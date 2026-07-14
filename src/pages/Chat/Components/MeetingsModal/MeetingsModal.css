@@ -12,6 +12,7 @@
   max-width: calc(100vw - 32px);
   max-height: calc(100vh - 64px);
   overflow-y: auto;
+  overflow-x: hidden;
   background: var(--panel-bg);
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -55,6 +56,8 @@
 .meet-input,
 .meet-times input {
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 9px 11px;
   border-radius: 8px;
   border: 1px solid var(--input-border);
@@ -74,6 +77,7 @@
 }
 .meet-times label {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
