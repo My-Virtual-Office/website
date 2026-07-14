@@ -12,6 +12,7 @@ import ThreadPanel from "./Components/ThreadPanel/ThreadPanel";
 import ProfilePanel from "./Components/ProfilePanel/ProfilePanel";
 import NotificationCenter from "./Components/NotificationCenter/NotificationCenter";
 import TasksBoard from "./Components/TasksBoard/TasksBoard";
+import CommandPalette from "./Components/CommandPalette/CommandPalette";
 import ResizeHandle from "../../components/ResizeHandle";
 import { MentionContext } from "./mentionContext";
 import { authHeaders, getCurrentUserId } from "../../utils/auth";
@@ -61,6 +62,31 @@ export default function ChatPage() {
   const [dirChannels, setDirChannels] = useState([]);
   const [profileMember, setProfileMember] = useState(null);
   const [focusTask, setFocusTask] = useState(null); // task # to focus in the board
+  const [cmdkOpen, setCmdkOpen] = useState(false);
+
+  // Ctrl/Cmd+K command palette.
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) {
+        e.preventDefault();
+        setCmdkOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const openOffice = () => {
+    if (!workspaceId) return;
+    const token = localStorage.getItem("token");
+    window.open(
+      `${window.location.protocol}//${window.location.hostname}:5000/?token=${encodeURIComponent(
+        token || "",
+      )}&workspaceId=${workspaceId}`,
+      "_blank",
+      "noopener",
+    );
+  };
 
   // Clicking a #<number> in chat opens the tasks board focused on that task.
   const handleTaskClick = (number) => {
@@ -386,6 +412,21 @@ export default function ChatPage() {
     >
     <div className="chatPage">
       <NotificationCenter />
+      <CommandPalette
+        open={cmdkOpen}
+        onClose={() => setCmdkOpen(false)}
+        workspaceId={workspaceId}
+        channels={dirChannels}
+        members={dirMembers}
+        actions={{
+          openChannel: (c) => selectChannel({ id: c.id, name: c.name }),
+          openPerson: (m) => setProfileMember(m),
+          openTask: handleTaskClick,
+          openTasks: () => setView("tasks"),
+          openPeople: () => setView("contacts"),
+          openOffice,
+        }}
+      />
       <WorkspaceSidebar
         workspaces={workspaces}
         activeId={workspaceId}
