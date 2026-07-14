@@ -54,19 +54,20 @@
   padding: 11px 14px;
   border: none;
   border-radius: 10px;
-  background: linear-gradient(135deg, #5b8def 0%, #7c5cf0 100%);
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-fg);
   font-weight: 800;
   font-size: 14.5px;
   letter-spacing: 0.2px;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(92, 92, 240, 0.35);
-  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease, background 0.12s ease;
 }
 .virtual-office-btn:hover {
   transform: translateY(-1px);
   filter: brightness(1.05);
-  box-shadow: 0 6px 20px rgba(92, 92, 240, 0.45);
+  background: var(--accent-hover);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
 }
 .virtual-office-btn:active {
   transform: translateY(0);
@@ -406,7 +407,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
 }
 .virtual-office-btn {
-  box-shadow: 0 4px 14px rgba(92, 92, 240, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
 }
 .channels-header span,
 .dm-header span {

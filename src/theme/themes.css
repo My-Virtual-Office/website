@@ -173,7 +173,7 @@
   --sidebar-fg: #b9b9bb;
   --sidebar-fg-muted: #8a8a8a;
   --sidebar-hover: #262626;
-  --sidebar-active-bg: #6d59e6;
+  --sidebar-active-bg: #7f6df2;
   --sidebar-active-fg: #ffffff;
   --sidebar-border: #333333;
   --sidebar-unread: #ffffff;
@@ -195,8 +195,8 @@
   --input-toolbar-bg: #2b2b2b;
 
   /* Accents */
-  --accent: #6d59e6;
-  --accent-hover: #7f6df2;
+  --accent: #7f6df2;
+  --accent-hover: #8f80ff;
   --accent-fg: #ffffff;
   --link: #a58bff;
 
@@ -220,7 +220,7 @@
   --rail-bg: #201a3a; --rail-fg: #cfc8ee; --rail-icon-bg: #2a2350; --rail-active-ring: #ffffff;
   /* Channel sidebar */
   --sidebar-bg: #2a2350; --sidebar-heading: #ffffff; --sidebar-fg: #cfc8ee; --sidebar-fg-muted: #a99fd6;
-  --sidebar-hover: #221b45; --sidebar-active-bg: #6d59e6; --sidebar-active-fg: #ffffff;
+  --sidebar-hover: #221b45; --sidebar-active-bg: #7B68EE; --sidebar-active-fg: #ffffff;
   --sidebar-border: #3a3168; --sidebar-unread: #ffffff;
   /* Main content (messages / boards) */
   --content-bg: #ffffff; --content-fg: #1a1533; --content-strong: #1a1533; --content-muted: #5b5478;
@@ -228,7 +228,7 @@
   /* Composer / inputs */
   --input-bg: #ffffff; --input-border: #8f88b0; --input-fg: #1a1533; --input-muted: #5b5478; --input-toolbar-bg: #f6f4fd;
   /* Accents */
-  --accent: #6d59e6; --accent-hover: #5b46d6; --accent-fg: #ffffff; --link: #5b46d6;
+  --accent: #7B68EE; --accent-hover: #6a58e0; --accent-fg: #ffffff; --link: #6a58e0;
   /* Chrome */
   --badge-bg: #ece9f6; --badge-fg: #5b5478; --danger: #e0245e; --danger-hover: #c01a4e;
   /* Presence */
