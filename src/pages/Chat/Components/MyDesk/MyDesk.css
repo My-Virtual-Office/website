@@ -1,0 +1,166 @@
+.desk {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  background:
+    radial-gradient(1200px 500px at 20% -10%, color-mix(in srgb, var(--accent) 12%, transparent), transparent),
+    var(--content-bg);
+  padding: 22px 26px 40px;
+}
+
+.desk-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 16px;
+}
+.desk-head h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--content-strong);
+  letter-spacing: -0.3px;
+}
+.desk-date { font-size: 13.5px; color: var(--content-muted); font-weight: 600; }
+.desk-progress { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; min-width: 180px; }
+.desk-progress > span { font-size: 12.5px; font-weight: 700; color: var(--content-muted); }
+.desk-bar { width: 180px; height: 8px; border-radius: 999px; background: var(--hover-bg); overflow: hidden; }
+.desk-bar > div { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #2bac76, #5b8def); transition: width 0.3s ease; }
+
+.desk-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1.4fr;
+  grid-template-areas: "tasks wb" "tasks notes";
+  gap: 18px;
+  align-items: start;
+}
+.desk-tasks { grid-area: tasks; }
+.desk-wb { grid-area: wb; }
+.desk-notes { grid-area: notes; }
+
+.desk-card {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
+  padding: 16px;
+}
+.desk-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--content-strong);
+  margin-bottom: 12px;
+}
+.desk-card-head svg:first-child { color: var(--accent); }
+
+/* Tasks */
+.desk-add { display: flex; gap: 8px; margin-bottom: 12px; }
+.desk-add input {
+  flex: 1; min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 10px;
+  background: var(--input-bg);
+  color: var(--input-fg);
+  font-size: 14px;
+}
+.desk-add button {
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; border: none; border-radius: 10px;
+  background: var(--accent); color: var(--accent-fg); cursor: pointer;
+}
+.desk-add button:hover { background: var(--accent-hover); }
+.desk-task-list { display: flex; flex-direction: column; gap: 4px; }
+.desk-empty { color: var(--content-muted); font-style: italic; padding: 16px 4px; font-size: 13.5px; }
+.desk-task {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 8px; border-radius: 10px;
+  transition: background 0.12s;
+}
+.desk-task:hover { background: var(--hover-bg); }
+.desk-check {
+  width: 22px; height: 22px; flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid var(--content-muted);
+  background: transparent; color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.desk-task.done .desk-check { background: #2bac76; border-color: #2bac76; }
+.desk-task-title { flex: 1; min-width: 0; font-size: 14px; color: var(--content-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.desk-task.done .desk-task-title { text-decoration: line-through; color: var(--content-muted); }
+.desk-flag { display: inline-flex; }
+.desk-od { font-size: 10px; font-weight: 800; color: #e01e5a; background: color-mix(in srgb, #e01e5a 15%, transparent); border-radius: 999px; padding: 1px 7px; text-transform: uppercase; }
+.desk-num { font-size: 11px; font-weight: 700; color: var(--content-muted); }
+
+/* Whiteboard */
+.desk-wb-clear {
+  margin-left: auto;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 700;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: transparent; color: var(--content-fg);
+  padding: 4px 10px; cursor: pointer;
+}
+.desk-wb-clear:hover { background: var(--hover-bg); }
+.desk-wb canvas {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  background: #fffef7;
+  border: 1px solid var(--border);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.06);
+  cursor: crosshair;
+  touch-action: none;
+}
+
+/* Sticky notes */
+.desk-note-add {
+  margin-left: auto;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 700;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: transparent; color: var(--content-fg);
+  padding: 4px 10px; cursor: pointer;
+}
+.desk-note-add:hover { background: var(--hover-bg); }
+.desk-note-wall {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+}
+.sticky {
+  border-radius: 4px;
+  padding: 8px;
+  min-height: 130px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+  transform: rotate(-1.4deg);
+  transition: transform 0.12s;
+}
+.sticky:nth-child(even) { transform: rotate(1.6deg); }
+.sticky:hover { transform: rotate(0deg) scale(1.02); }
+.sticky-bar { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+.sticky-color { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.25); background: rgba(255, 255, 255, 0.5); cursor: pointer; }
+.sticky-del { margin-left: auto; border: none; background: transparent; color: rgba(0, 0, 0, 0.5); cursor: pointer; display: flex; }
+.sticky-del:hover { color: #b91c1c; }
+.sticky textarea {
+  flex: 1;
+  border: none;
+  background: transparent;
+  resize: none;
+  outline: none;
+  font-family: "Comic Sans MS", "Segoe Print", cursive, sans-serif;
+  font-size: 13.5px;
+  color: #1f2937;
+  line-height: 1.4;
+}
+.sticky textarea::placeholder { color: rgba(0, 0, 0, 0.35); }
+
+@media (max-width: 900px) {
+  .desk-grid { grid-template-columns: 1fr; grid-template-areas: "tasks" "wb" "notes"; }
+}

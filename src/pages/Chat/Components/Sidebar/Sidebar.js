@@ -1,5 +1,5 @@
 import "./Sidebar.css";
-import { ChevronDown, Search, FileText, Hash, Plus, Settings, Users, Gamepad2, CalendarDays, ListTodo } from "lucide-react";
+import { ChevronDown, Search, FileText, Hash, Plus, Settings, Users, Gamepad2, CalendarDays, ListTodo, LayoutDashboard } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getCurrentUser } from "../../../../api/user";
 import SettingsModal from "../SettingsModal/SettingsModal";
@@ -21,6 +21,7 @@ export default function Sidebar({
   onOpenContacts,
   onOpenTasks,
   onOpenMeetings,
+  onOpenDesk,
   onOpenSearch,
 }) {
   // Channels state
@@ -224,6 +225,13 @@ export default function Sidebar({
             >
               <CalendarDays size={18} />
               <span>Meetings</span>
+            </div>
+            <div
+              className={`drafts ${activeView === "mydesk" ? "active-link" : ""}`}
+              onClick={onOpenDesk}
+            >
+              <LayoutDashboard size={18} />
+              <span>My Desk</span>
             </div>
           </div>
 

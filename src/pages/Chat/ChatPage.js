@@ -12,6 +12,7 @@ import ThreadPanel from "./Components/ThreadPanel/ThreadPanel";
 import ProfilePanel from "./Components/ProfilePanel/ProfilePanel";
 import TasksBoard from "./Components/TasksBoard/TasksBoard";
 import MeetingsModal from "./Components/MeetingsModal/MeetingsModal";
+import MyDesk from "./Components/MyDesk/MyDesk";
 import CommandPalette from "./Components/CommandPalette/CommandPalette";
 import ResizeHandle from "../../components/ResizeHandle";
 import { MentionContext } from "./mentionContext";
@@ -478,6 +479,7 @@ export default function ChatPage() {
               onOpenContacts={() => setView("contacts")}
               onOpenTasks={() => setView("tasks")}
               onOpenMeetings={() => setView("meetings")}
+              onOpenDesk={() => setView("mydesk")}
               onOpenSearch={() => setCmdkOpen(true)}
             />
           </div>
@@ -497,6 +499,8 @@ export default function ChatPage() {
         <TasksBoard workspaceId={workspaceId} focus={focusTask} />
       ) : view === "meetings" ? (
         <MeetingsModal workspaceId={workspaceId} inline />
+      ) : view === "mydesk" ? (
+        <MyDesk workspaceId={workspaceId} />
       ) : (
         <>
           <ChatArea
