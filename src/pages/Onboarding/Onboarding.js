@@ -1,21 +1,11 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Box,
-  Card,
-  CardContent,
-  TextField,
-  Button,
-  Typography,
-  Tabs,
-  Tab,
-  Alert,
-  CircularProgress,
-} from "@mui/material";
-import { Hexagon, Plus, LogIn } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Hexagon, Plus, LogIn, AlertCircle, Check, Sparkles } from "lucide-react";
 import { createWorkspace, acceptInvite, slugify } from "../../api/workspace";
 
-const ACCENT = "#5048e5";
+import logoWide from "../../assets/logo-wide.png";
+import "../authLayout.css";
+import "./Onboarding.css";
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -69,90 +59,147 @@ export default function Onboarding() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        bgcolor: "#f6f6f7",
-        p: 2,
-      }}
-    >
-      <Box sx={{ width: "100%", maxWidth: 460 }}>
-        <Box sx={{ textAlign: "center", mb: 3 }}>
-          <Box
-            sx={{
-              width: 56, height: 56, borderRadius: 3, bgcolor: ACCENT, color: "#fff",
-              display: "inline-flex", alignItems: "center", justifyContent: "center", mb: 1.5,
-            }}
-          >
-            <Hexagon size={30} strokeWidth={2.2} />
-          </Box>
-          <Typography variant="h5" fontWeight={800} color="#1d1c1d">
-            Welcome to Virtual Office
-          </Typography>
-          <Typography variant="body2" color="#616061" mt={0.5}>
-            Create a new workspace or join one you were invited to.
-          </Typography>
-        </Box>
+    <div className="auth-shell">
+      <div className="auth-split">
+        {/* ---------- Brand panel ---------- */}
+        <aside className="auth-brand">
+          <Link to="/" className="auth-brand-mark" aria-label="Virtual Office home">
+            <img src={logoWide} alt="Virtual Office" />
+          </Link>
 
-        <Card sx={{ borderRadius: 3, boxShadow: "0 8px 30px rgba(0,0,0,0.08)" }}>
-          <Tabs
-            value={tab}
-            onChange={(_, v) => { setTab(v); setError(""); }}
-            variant="fullWidth"
-            sx={{
-              "& .MuiTab-root": { textTransform: "none", fontWeight: 700, py: 1.5 },
-              "& .Mui-selected": { color: `${ACCENT} !important` },
-              "& .MuiTabs-indicator": { bgcolor: ACCENT },
-            }}
-          >
-            <Tab icon={<Plus size={18} />} iconPosition="start" label="Create" />
-            <Tab icon={<LogIn size={18} />} iconPosition="start" label="Join" />
-          </Tabs>
+          <div className="auth-brand-body">
+            <span className="auth-brand-eyebrow">
+              <Sparkles size={15} aria-hidden="true" />
+              Almost there
+            </span>
+            <h2 className="auth-brand-title">Create your space, or join your team.</h2>
+            <p className="auth-brand-text">
+              Spin up a brand-new workspace and invite your teammates, or hop into one you were
+              invited to — you'll be on the floor in seconds.
+            </p>
+            <ul className="auth-brand-list">
+              <li>
+                <Check size={18} aria-hidden="true" /> Name it, and you're the admin
+              </li>
+              <li>
+                <Check size={18} aria-hidden="true" /> Invite the whole team with one link
+              </li>
+              <li>
+                <Check size={18} aria-hidden="true" /> Channels, tasks and a 2D office, ready to go
+              </li>
+            </ul>
+          </div>
 
-          <CardContent sx={{ p: 3 }}>
-            {error && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>}
+          <p className="auth-brand-foot">© {new Date().getFullYear()} Virtual Office</p>
+        </aside>
+
+        {/* ---------- Form panel ---------- */}
+        <main className="auth-panel">
+          <div className="auth-card">
+            <Link to="/" className="auth-card-logo" aria-label="Virtual Office home">
+              <img src={logoWide} alt="Virtual Office" />
+            </Link>
+
+            <div className="auth-head auth-head-center">
+              <span className="auth-badge" aria-hidden="true">
+                <Hexagon size={28} strokeWidth={2.2} />
+              </span>
+              <h1 className="auth-title">Welcome to Virtual Office</h1>
+              <p className="auth-subtitle">
+                Create a new workspace or join one you were invited to.
+              </p>
+            </div>
+
+            <div className="auth-tabs" role="tablist" aria-label="Workspace setup">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tab === 0}
+                className={`auth-tab ${tab === 0 ? "is-active" : ""}`}
+                onClick={() => {
+                  setTab(0);
+                  setError("");
+                }}
+              >
+                <Plus size={18} aria-hidden="true" />
+                Create
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tab === 1}
+                className={`auth-tab ${tab === 1 ? "is-active" : ""}`}
+                onClick={() => {
+                  setTab(1);
+                  setError("");
+                }}
+              >
+                <LogIn size={18} aria-hidden="true" />
+                Join
+              </button>
+            </div>
+
+            {error && (
+              <div className="auth-alert auth-alert-error" role="alert">
+                <AlertCircle size={18} aria-hidden="true" />
+                <span>{error}</span>
+              </div>
+            )}
 
             {tab === 0 ? (
-              <Box component="form" onSubmit={handleCreate} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <Typography variant="body2" color="#616061">
-                  Name your workspace — you'll be its admin.
-                </Typography>
-                <TextField
-                  autoFocus fullWidth size="small" label="Workspace name"
-                  placeholder="e.g. Acme HQ"
-                  value={name} onChange={(e) => setName(e.target.value)}
-                />
-                <Button
-                  type="submit" variant="contained" disableElevation disabled={busy || !name.trim()}
-                  sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, bgcolor: ACCENT, "&:hover": { bgcolor: "#403bc4" }, py: 1 }}
+              <form onSubmit={handleCreate} className="auth-form">
+                <p className="auth-hint">Name your workspace — you'll be its admin.</p>
+                <div className="auth-field">
+                  <label className="auth-label" htmlFor="ws-name">
+                    Workspace name
+                  </label>
+                  <input
+                    id="ws-name"
+                    className="auth-input"
+                    type="text"
+                    placeholder="e.g. Acme HQ"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="auth-btn auth-btn-primary auth-btn-block"
+                  disabled={busy || !name.trim()}
                 >
-                  {busy ? <CircularProgress size={20} sx={{ color: "#fff" }} /> : "Create workspace"}
-                </Button>
-              </Box>
+                  {busy ? <span className="auth-spinner" aria-hidden="true" /> : "Create workspace"}
+                </button>
+              </form>
             ) : (
-              <Box component="form" onSubmit={handleJoin} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <Typography variant="body2" color="#616061">
-                  Paste the invitation link or token you received.
-                </Typography>
-                <TextField
-                  autoFocus fullWidth size="small" label="Invitation link or token"
-                  placeholder="https://…?token=…  or  the token"
-                  value={invite} onChange={(e) => setInvite(e.target.value)}
-                />
-                <Button
-                  type="submit" variant="contained" disableElevation disabled={busy || !invite.trim()}
-                  sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, bgcolor: ACCENT, "&:hover": { bgcolor: "#403bc4" }, py: 1 }}
+              <form onSubmit={handleJoin} className="auth-form">
+                <p className="auth-hint">Paste the invitation link or token you received.</p>
+                <div className="auth-field">
+                  <label className="auth-label" htmlFor="ws-invite">
+                    Invitation link or token
+                  </label>
+                  <input
+                    id="ws-invite"
+                    className="auth-input"
+                    type="text"
+                    placeholder="https://…?token=…  or  the token"
+                    value={invite}
+                    onChange={(e) => setInvite(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="auth-btn auth-btn-primary auth-btn-block"
+                  disabled={busy || !invite.trim()}
                 >
-                  {busy ? <CircularProgress size={20} sx={{ color: "#fff" }} /> : "Join workspace"}
-                </Button>
-              </Box>
+                  {busy ? <span className="auth-spinner" aria-hidden="true" /> : "Join workspace"}
+                </button>
+              </form>
             )}
-          </CardContent>
-        </Card>
-      </Box>
-    </Box>
+          </div>
+        </main>
+      </div>
+    </div>
   );
 }

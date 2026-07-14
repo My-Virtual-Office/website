@@ -1,10 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
-import Header from "../../components/Header";
-import InputField from "../../components/InputField";
-import Button from "../../components/Button";
 import { useState } from "react";
+import { Check, AlertCircle, Sparkles } from "lucide-react";
 import { loginUser } from "../../api/auth";
 
+import logoWide from "../../assets/logo-wide.png";
+import "../authLayout.css";
 import "./Login.css";
 
 export default function Login() {
@@ -50,68 +50,119 @@ export default function Login() {
   };
 
   return (
-    <div className="login-page">
-      <Header />
+    <div className="auth-shell">
+      <div className="auth-split">
+        {/* ---------- Brand panel ---------- */}
+        <aside className="auth-brand">
+          <Link to="/" className="auth-brand-mark" aria-label="Virtual Office home">
+            <img src={logoWide} alt="Virtual Office" />
+          </Link>
 
-      <main className="login-main">
-        <div className="login-left">
-          <div className="login-box">
-            <h1 className="welcome-title">Lets work together!</h1>
-            <p className="welcome-sub">
-              Welcome back! Please login to your account.
+          <div className="auth-brand-body">
+            <span className="auth-brand-eyebrow">
+              <Sparkles size={15} aria-hidden="true" />
+              Welcome back
+            </span>
+            <h2 className="auth-brand-title">Your team is already at their desks.</h2>
+            <p className="auth-brand-text">
+              Sign in to jump back into chat, tasks, meetings and your walkable 2D office — all in
+              one place.
             </p>
+            <ul className="auth-brand-list">
+              <li>
+                <Check size={18} aria-hidden="true" /> Pick up conversations right where you left
+                them
+              </li>
+              <li>
+                <Check size={18} aria-hidden="true" /> See who's around and talk by proximity
+              </li>
+              <li>
+                <Check size={18} aria-hidden="true" /> Everything synced across your devices
+              </li>
+            </ul>
+          </div>
 
-            {error && <p style={{ color: "red" }}>{error}</p>}
+          <p className="auth-brand-foot">© {new Date().getFullYear()} Virtual Office</p>
+        </aside>
 
-            <form onSubmit={handleSubmit}>
-              <InputField
-                label="Email Address"
-                type="email"
-                placeholder="email@digital.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                maxLength={100}
-              />
+        {/* ---------- Form panel ---------- */}
+        <main className="auth-panel">
+          <div className="auth-card">
+            <Link to="/" className="auth-card-logo" aria-label="Virtual Office home">
+              <img src={logoWide} alt="Virtual Office" />
+            </Link>
 
-              <InputField
-                label="Password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+            <div className="auth-head">
+              <h1 className="auth-title">Let's work together!</h1>
+              <p className="auth-subtitle">Welcome back — please sign in to your account.</p>
+            </div>
 
-              <div className="remember-row">
-                <label className="checkbox-label">
-                  <input type="checkbox" />
-                  <span>Remember Me</span>
+            {error && (
+              <div className="auth-alert auth-alert-error" role="alert">
+                <AlertCircle size={18} aria-hidden="true" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="auth-form">
+              <div className="auth-field">
+                <label className="auth-label" htmlFor="login-email">
+                  Email Address
                 </label>
-                <Link to="/forgot-password" className="forgot-link">
-                  Forgot Password?
+                <input
+                  id="login-email"
+                  className="auth-input"
+                  type="email"
+                  placeholder="email@digital.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  maxLength={100}
+                  autoComplete="email"
+                />
+              </div>
+
+              <div className="auth-field">
+                <label className="auth-label" htmlFor="login-password">
+                  Password
+                </label>
+                <input
+                  id="login-password"
+                  className="auth-input"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                />
+              </div>
+
+              <div className="auth-row">
+                <label className="auth-check">
+                  <input type="checkbox" />
+                  <span>Remember me</span>
+                </label>
+                <Link to="/forgot-password" className="auth-inline-link">
+                  Forgot password?
                 </Link>
               </div>
 
-              <Button type="submit" disabled={loading}>
-                {loading ? "Loading..." : "Login"}
-              </Button>
+              <button
+                type="submit"
+                className="auth-btn auth-btn-primary auth-btn-block"
+                disabled={loading}
+              >
+                {loading ? <span className="auth-spinner" aria-hidden="true" /> : "Login"}
+              </button>
             </form>
 
-            <p className="signup-text">
-              Don't have an account? <Link to="/signup">Sign Up</Link>
+            <p className="auth-alt">
+              Don't have an account? <Link to="/signup">Sign up</Link>
             </p>
           </div>
-        </div>
-
-        <div className="login-right">
-          <img
-            src="/offficeImage.JPG"
-            alt="Office illustration"
-            className="office-img"
-          />
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
