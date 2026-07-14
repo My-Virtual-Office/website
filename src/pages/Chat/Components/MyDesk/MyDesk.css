@@ -383,3 +383,49 @@
   50% { transform: scale(1); }
 }
 .breathe-hint { font-size: 13px; color: var(--content-muted); }
+
+/* Today's agenda (calendar events) */
+.desk-agenda .agenda-list { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+.agenda-item {
+  display: grid;
+  grid-template-columns: 52px 14px 1fr auto;
+  align-items: start;
+  gap: 10px;
+  padding: 9px 8px;
+  border-radius: 10px;
+  transition: background 0.12s;
+}
+.agenda-item:hover { background: var(--hover-bg); }
+.agenda-time { display: flex; flex-direction: column; line-height: 1.25; text-align: right; padding-top: 1px; }
+.agenda-start { font-size: 13px; font-weight: 800; color: var(--content-strong); }
+.agenda-end { font-size: 11px; color: var(--content-muted); }
+.agenda-rail { position: relative; display: flex; justify-content: center; align-self: stretch; }
+.agenda-rail::before {
+  content: ""; position: absolute; top: 4px; bottom: -9px; width: 2px;
+  background: var(--border);
+}
+.agenda-item:last-child .agenda-rail::before { display: none; }
+.agenda-dot {
+  width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; z-index: 1;
+  background: var(--panel-bg); border: 2px solid var(--content-muted);
+}
+.agenda-body { min-width: 0; }
+.agenda-title { font-size: 13.5px; font-weight: 600; color: var(--content-fg); }
+.agenda-desc {
+  font-size: 12px; color: var(--content-muted); margin-top: 1px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.agenda-pill {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px;
+  padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+}
+.agenda-pill.now { color: var(--accent-fg); background: var(--accent); }
+.agenda-pill.next { color: var(--content-muted); background: var(--hover-bg); }
+
+/* Past events fade; the current one pops. */
+.agenda-item.past .agenda-title { color: var(--content-muted); }
+.agenda-item.past .agenda-dot { border-color: var(--border); }
+.agenda-item.now { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.agenda-item.now .agenda-dot { background: var(--accent); border-color: var(--accent); }
+.agenda-item.up .agenda-dot { border-color: var(--accent); }

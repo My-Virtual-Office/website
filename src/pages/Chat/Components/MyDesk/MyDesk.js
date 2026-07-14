@@ -1,10 +1,11 @@
 import "./MyDesk.css";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Plus, Check, Trash2, StickyNote, Pencil, Eraser, ListTodo, Flag, Play, Pause, RotateCcw, Timer, X, GripVertical, Search, Settings2 } from "lucide-react";
+import { Plus, Check, Trash2, StickyNote, Pencil, Eraser, ListTodo, Flag, Play, Pause, RotateCcw, Timer, X, GripVertical, Search, Settings2, CalendarDays, Clock } from "lucide-react";
 import {
   getMyTasks, createTask, updateTask, deleteTask,
   TASK_STATUSES, STATUS_LABEL, STATUS_COLOR, PRIORITY_COLOR,
 } from "../../../../api/tasks";
+import { getEvents } from "../../../../api/calendar";
 import { getMembers } from "../../../../api/workspace";
 import { getAllUsers } from "../../../../api/user";
 import { getCurrentUserId } from "../../../../utils/auth";
@@ -215,6 +216,9 @@ export default function MyDesk({ workspaceId }) {
         </div>
 
         <div className="desk-col">
+          {/* Today's meetings pulled from the calendar */}
+          <Agenda workspaceId={workspaceId} />
+
           {/* Whiteboard */}
           <Whiteboard storeKey={nsWb} />
 
@@ -256,6 +260,74 @@ export default function MyDesk({ workspaceId }) {
         />
       )}
     </div>
+  );
+}
+
+// Today's agenda — my calendar events for the current day, from the calendar
+// service. Highlights the meeting happening now and the next one coming up.
+function Agenda({ workspaceId }) {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!workspaceId) return;
+    let alive = true;
+    (async () => {
+      const start = startOfDay(new Date());
+      const from = start.toISOString();
+      const to = new Date(start.getTime() + DAY - 1).toISOString();
+      try {
+        const evs = await getEvents(workspaceId, from, to);
+        if (alive) setEvents((evs || []).slice().sort((a, b) => new Date(a.startTime) - new Date(b.startTime)));
+      } catch { if (alive) setEvents([]); }
+      finally { if (alive) setLoading(false); }
+    })();
+    // Tick every minute so "Now"/"Next" stay accurate without a reload.
+    const id = setInterval(() => setNow(Date.now()), 60000);
+    return () => { alive = false; clearInterval(id); };
+  }, [workspaceId]);
+
+  const fmt = (iso) => new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  const stateOf = (e) => {
+    const s = new Date(e.startTime).getTime(), en = new Date(e.endTime).getTime();
+    if (now >= s && now <= en) return "now";
+    if (en < now) return "past";
+    return "up";
+  };
+  const nextIdx = events.findIndex((e) => new Date(e.startTime).getTime() > now);
+
+  return (
+    <section className="desk-card desk-agenda">
+      <div className="desk-card-head">
+        <CalendarDays size={17} /> Today’s Agenda
+        {events.length > 0 && <span className="desk-hcount">{events.length}</span>}
+      </div>
+      <div className="agenda-list">
+        {loading && <div className="desk-empty">Loading your day…</div>}
+        {!loading && events.length === 0 && (
+          <div className="desk-empty">No meetings today — enjoy the focus time.</div>
+        )}
+        {!loading && events.map((e, i) => {
+          const st = stateOf(e);
+          return (
+            <div key={e.id} className={`agenda-item ${st}`}>
+              <div className="agenda-time">
+                <span className="agenda-start">{fmt(e.startTime)}</span>
+                <span className="agenda-end">{fmt(e.endTime)}</span>
+              </div>
+              <span className="agenda-rail"><span className="agenda-dot" /></span>
+              <div className="agenda-body">
+                <div className="agenda-title">{e.title}</div>
+                {e.description && <div className="agenda-desc">{e.description}</div>}
+              </div>
+              {st === "now" && <span className="agenda-pill now"><Clock size={11} /> Now</span>}
+              {st === "up" && i === nextIdx && <span className="agenda-pill next">Next</span>}
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
