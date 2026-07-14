@@ -149,7 +149,7 @@ export default function MembersList({ workspaceId }) {
       </div>
       <div className="person-info">
         <div className="person-name">
-          {displayName(m)}
+          <span className="person-name-text">{displayName(m)}</span>
           {(m.role === "OWNER" || m.role === "ADMIN") && (
             <span className={`role-badge ${m.role.toLowerCase()}`}>{m.role}</span>
           )}

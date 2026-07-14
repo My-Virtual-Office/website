@@ -390,3 +390,25 @@
   border-radius: 5px;
   padding: 1px 6px;
 }
+
+/* ── Depth + polish (ClickUp-style) ── */
+.sidebar { box-shadow: inset -1px 0 0 var(--border); }
+.search-drafts .search,
+.search-drafts .drafts {
+  border-radius: 8px;
+  transition: background 0.12s;
+}
+.channel-item {
+  border-radius: 8px;
+  transition: background 0.12s, box-shadow 0.12s;
+}
+.channel-item.active {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+}
+.virtual-office-btn {
+  box-shadow: 0 4px 14px rgba(92, 92, 240, 0.35);
+}
+.channels-header span,
+.dm-header span {
+  letter-spacing: 0.5px;
+}

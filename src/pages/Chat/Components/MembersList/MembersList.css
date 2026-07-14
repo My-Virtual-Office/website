@@ -46,12 +46,15 @@
   padding: 8px 6px;
 }
 
-/* People | Teams tabs */
+/* People | Teams tabs — segmented control */
 .people-tabs {
   display: flex;
-  gap: 4px;
-  padding: 6px 10px;
-  border-bottom: 1px solid var(--border);
+  gap: 3px;
+  margin: 10px 12px;
+  padding: 3px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
 }
 .people-tabs button {
   flex: 1;
@@ -63,35 +66,37 @@
   border: none;
   background: transparent;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 13px;
   color: var(--content-muted);
-  border-radius: 6px;
+  border-radius: 8px;
+  transition: background 0.12s, color 0.12s, box-shadow 0.12s;
 }
-.people-tabs button:hover {
-  background: var(--hover-bg);
-}
+.people-tabs button:hover { color: var(--content-strong); }
 .people-tabs button.active {
-  background: var(--hover-bg);
+  background: var(--panel-bg);
   color: var(--content-strong);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16);
 }
 
 /* Person card */
 .person-card {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 10px;
-  border-radius: 8px;
-  transition: background 0.12s;
+  gap: 11px;
+  padding: 9px 10px;
+  margin: 0 4px;
+  border-radius: 10px;
+  transition: background 0.12s, box-shadow 0.12s;
 }
 .person-card:hover {
   background: var(--hover-bg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 .person-avatar {
   position: relative;
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   flex-shrink: 0;
 }
 .person-avatar img {
@@ -136,10 +141,15 @@
   font-weight: 700;
   font-size: 14px;
   color: var(--content-strong);
-  white-space: nowrap;
+  min-width: 0;
+}
+.person-name-text {
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
+.role-badge { flex-shrink: 0; }
 .role-badge {
   font-size: 9px;
   font-weight: 800;
@@ -371,25 +381,24 @@
 }
 .invite-btn {
   width: 100%;
-  height: 36px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 8px 12px;
-  border-radius: 6px;
-  background: transparent;
-  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--accent);
+  border: none;
   cursor: pointer;
   font-weight: 700;
   font-size: 14px;
-  color: var(--content-fg);
-  transition: all 0.15s;
+  color: var(--accent-fg);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
+  transition: filter 0.15s, transform 0.06s;
 }
-.invite-btn:hover {
-  background: var(--hover-bg);
-  border-color: var(--content-muted);
-}
+.invite-btn:hover { filter: brightness(1.06); }
+.invite-btn:active { transform: translateY(1px); }
 .invite-btn svg {
   font-size: 18px;
 }
