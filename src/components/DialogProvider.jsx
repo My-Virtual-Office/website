@@ -139,7 +139,7 @@ export default function DialogProvider({ children }) {
           open
           autoHideDuration={3500}
           onClose={() => setToast(null)}
-          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
         >
           <Alert
             onClose={() => setToast(null)}

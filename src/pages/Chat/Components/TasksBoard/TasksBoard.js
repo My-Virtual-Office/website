@@ -312,9 +312,13 @@ export default function TasksBoard({ workspaceId, focus }) {
             </span>
             {activeSpaceObj?.name || "Tasks"}
             {activeSpaceObj && (
-              <span className="tb-title-members" title="Members with access">
+              <button
+                className="tb-title-members"
+                title="See who has access"
+                onClick={() => setSpaceModal(activeSpaceObj)}
+              >
                 <Users size={13} /> {activeSpaceObj.memberUserIds?.length || 1}
-              </span>
+              </button>
             )}
           </div>
           <div className="tb-tools">
