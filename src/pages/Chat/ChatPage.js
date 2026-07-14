@@ -410,57 +410,48 @@ export default function ChatPage() {
   };
 
   useEffect(() => {
-    let client; // 1. Local variable holds the reference
+    const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsHost = window.location.host;
 
-    const connectWebSocket = async () => {
-      try {
-        const ticketRes = await fetch("/api/chat/ws-ticket", {
-          method: "POST",
-          headers: authHeaders(),
-        });
-        if (!ticketRes.ok) {
-          const errorText = await ticketRes.text();
-          console.error("Failed to fetch websocket ticket. Server returned:", errorText);
-          return;
+    const client = new Client({
+      reconnectDelay: 4000,
+      // A ws-ticket is SINGLE-USE (consumed at the handshake). stompjs auto-reconnects after a drop
+      // — very common on mobile (screen off, network switch, tab backgrounding) — so we must fetch a
+      // FRESH ticket before EVERY connect attempt. Baking one ticket into brokerURL made every
+      // reconnect replay a consumed ticket → broker rejects it → socket stays dead ("Can't send
+      // message… reconnecting" forever). beforeConnect runs before each (re)connect.
+      beforeConnect: async () => {
+        try {
+          const res = await fetch("/api/chat/ws-ticket", { method: "POST", headers: authHeaders() });
+          if (!res.ok) throw new Error(`ws-ticket ${res.status}`);
+          const { ticket } = await res.json();
+          if (ticket) {
+            client.brokerURL = `${wsProtocol}//${wsHost}/api/chat/connect?ticket=${ticket}`;
+          }
+        } catch (err) {
+          console.error("Failed to fetch websocket ticket; will retry", err);
         }
-        const data = await ticketRes.json();
-        const ticket = data.ticket;
-        console.log("Fetched ticket:", ticket);
-        if (!ticket) {
-          console.error("Failed to fetch websocket ticket.");
-          return;
-        }
-
-        const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        const wsHost = window.location.host;
-        client = new Client({
-          brokerURL: `${wsProtocol}//${wsHost}/api/chat/connect?ticket=${ticket}`,
-          onConnect: () => {
-            console.log("Connected to STOMP!");
-            setStompClient(client);
-
-            client.subscribe('/user/queue/errors', (msg) => {
-              console.error("STOMP Error:", JSON.parse(msg.body));
-            });
-          },
-          onStompError: (frame) => {
-            console.error("Broker reported error: " + frame.headers['message']);
-            console.error("Additional details: " + frame.body);
-          },
+      },
+      onConnect: () => {
+        setStompClient(client);
+        client.subscribe("/user/queue/errors", (msg) => {
+          console.error("STOMP Error:", JSON.parse(msg.body));
         });
-        client.activate();
-      } catch (err) {
-        console.error("Failed to connect to websocket", err);
-      }
-    };
+      },
+      onStompError: (frame) => {
+        console.error("Broker reported error: " + frame.headers["message"]);
+        console.error("Additional details: " + frame.body);
+      },
+    });
 
-    connectWebSocket();
+    // Seed brokerURL so activate() enters the connect loop; beforeConnect swaps in the ticketed URL.
+    client.brokerURL = `${wsProtocol}//${wsHost}/api/chat/connect`;
+    client.activate();
 
-    // 2. Cleanup function looks at the local block scope variable 'client'
     return () => {
-      if (client) client.deactivate();
+      client.deactivate();
     };
-  }, []); // 3. The array safely stays empty!
+  }, []);
 
   return (
     <MentionContext.Provider
