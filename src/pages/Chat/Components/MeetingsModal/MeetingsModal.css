@@ -93,6 +93,75 @@
   color: var(--content-fg);
   cursor: pointer;
 }
+.meet-reminder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--content-fg);
+}
+.meet-reminder span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--content-muted);
+}
+.meet-reminder select {
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--input-fg);
+  font-size: 13px;
+}
+.meet-attendees {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+}
+.meet-attendees-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--content-muted);
+  margin-bottom: 6px;
+}
+.meet-attendees-hint {
+  margin-left: auto;
+  font-weight: 400;
+  font-style: italic;
+}
+.meet-attendees-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+.meet-att {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--hover-bg);
+  color: var(--content-fg);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.meet-att.on {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-color: var(--accent);
+  color: var(--content-strong);
+}
+.meet-att input {
+  margin: 0;
+}
 .meet-add {
   display: inline-flex;
   align-items: center;

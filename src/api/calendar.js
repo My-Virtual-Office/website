@@ -1,7 +1,16 @@
 import axiosInstance from "./axiosInstance";
 
-/** Create a calendar event (drives auto-status "In a meeting"). */
-export async function createEvent({ workspaceId, title, description, startTime, endTime, busy }) {
+/** Create a calendar event (drives auto-status + optional reminders/attendees). */
+export async function createEvent({
+  workspaceId,
+  title,
+  description,
+  startTime,
+  endTime,
+  busy,
+  reminderMinutes,
+  attendees,
+}) {
   const res = await axiosInstance.post("/api/calendar/events", {
     workspaceId,
     title,
@@ -9,6 +18,8 @@ export async function createEvent({ workspaceId, title, description, startTime, 
     startTime,
     endTime,
     busy: busy !== false,
+    reminderMinutes: reminderMinutes ?? null,
+    attendees: attendees ?? [],
   });
   return res.data;
 }

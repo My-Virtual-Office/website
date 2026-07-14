@@ -10,6 +10,7 @@ import MembersList from "./Components/MembersList/MembersList";
 import ContactsDirectory from "./Components/ContactsDirectory/ContactsDirectory";
 import ThreadPanel from "./Components/ThreadPanel/ThreadPanel";
 import ProfilePanel from "./Components/ProfilePanel/ProfilePanel";
+import NotificationCenter from "./Components/NotificationCenter/NotificationCenter";
 import ResizeHandle from "../../components/ResizeHandle";
 import { MentionContext } from "./mentionContext";
 import { authHeaders, getCurrentUserId } from "../../utils/auth";
@@ -375,6 +376,7 @@ export default function ChatPage() {
       }}
     >
     <div className="chatPage">
+      <NotificationCenter />
       <WorkspaceSidebar
         workspaces={workspaces}
         activeId={workspaceId}

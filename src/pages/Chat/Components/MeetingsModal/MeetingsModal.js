@@ -1,8 +1,19 @@
 import "./MeetingsModal.css";
 import { useState, useEffect, useCallback } from "react";
-import { X, Plus, Trash2, Calendar, Clock } from "lucide-react";
+import { X, Plus, Trash2, Calendar, Clock, Bell, Users } from "lucide-react";
 import { createEvent, getEvents, deleteEvent } from "../../../../api/calendar";
+import { getMembers } from "../../../../api/workspace";
+import { getAllUsers } from "../../../../api/user";
+import { getCurrentUserId } from "../../../../utils/auth";
 import { useDialogs } from "../../../../components/DialogProvider";
+
+const REMINDER_OPTIONS = [
+  { v: "", label: "No reminder" },
+  { v: "5", label: "5 min before" },
+  { v: "10", label: "10 min before" },
+  { v: "30", label: "30 min before" },
+  { v: "60", label: "1 hour before" },
+];
 
 /** Local datetime-local string (YYYY-MM-DDTHH:mm) for an offset in minutes from now. */
 function localInput(minutesFromNow) {
@@ -28,7 +39,46 @@ export default function MeetingsModal({ workspaceId, open, onClose }) {
   const [start, setStart] = useState(localInput(5));
   const [end, setEnd] = useState(localInput(35));
   const [busy, setBusy] = useState(true);
+  const [reminder, setReminder] = useState("10");
+  const [people, setPeople] = useState([]); // [{userId, name, email}]
+  const [attendeeIds, setAttendeeIds] = useState(() => new Set());
   const [saving, setSaving] = useState(false);
+  const me = getCurrentUserId();
+
+  // Load workspace members (with emails) for the attendee picker.
+  useEffect(() => {
+    if (!open || !workspaceId) return;
+    (async () => {
+      try {
+        const [desks, users] = await Promise.all([
+          getMembers(workspaceId),
+          getAllUsers().catch(() => []),
+        ]);
+        const byId = {};
+        users.forEach((u) => {
+          byId[u.id] = { name: `${u.firstName || ""} ${u.lastName || ""}`.trim(), email: u.email };
+        });
+        setPeople(
+          (desks || [])
+            .filter((d) => d.userId != null && d.userId !== me)
+            .map((d) => ({
+              userId: d.userId,
+              name: byId[d.userId]?.name || d.fullName || `User ${d.userId}`,
+              email: byId[d.userId]?.email || d.workEmail || "",
+            })),
+        );
+      } catch {
+        setPeople([]);
+      }
+    })();
+  }, [open, workspaceId, me]);
+
+  const toggleAttendee = (userId) =>
+    setAttendeeIds((prev) => {
+      const next = new Set(prev);
+      next.has(userId) ? next.delete(userId) : next.add(userId);
+      return next;
+    });
 
   const load = useCallback(async () => {
     if (!workspaceId) return;
@@ -52,16 +102,27 @@ export default function MeetingsModal({ workspaceId, open, onClose }) {
     if (new Date(end) <= new Date(start)) return notify("End must be after start", "warning");
     setSaving(true);
     try {
+      const attendees = people
+        .filter((p) => attendeeIds.has(p.userId))
+        .map((p) => ({ userId: p.userId, email: p.email || null }));
       await createEvent({
         workspaceId,
         title: title.trim(),
         startTime: new Date(start).toISOString(),
         endTime: new Date(end).toISOString(),
         busy,
+        reminderMinutes: reminder ? Number(reminder) : null,
+        attendees,
       });
       setTitle("");
+      setAttendeeIds(new Set());
       await load();
-      notify("Meeting added — your status auto-updates during it", "success");
+      notify(
+        attendees.length
+          ? `Meeting added — invited ${attendees.length} ${attendees.length === 1 ? "person" : "people"}`
+          : "Meeting added — your status auto-updates during it",
+        "success",
+      );
     } catch (e) {
       notify(e?.response?.data?.message || "Could not create meeting", "error");
     } finally {
@@ -107,6 +168,36 @@ export default function MeetingsModal({ workspaceId, open, onClose }) {
               <input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} />
             </label>
           </div>
+          <label className="meet-reminder">
+            <span><Bell size={14} /> Reminder</span>
+            <select value={reminder} onChange={(e) => setReminder(e.target.value)}>
+              {REMINDER_OPTIONS.map((o) => (
+                <option key={o.v} value={o.v}>{o.label}</option>
+              ))}
+            </select>
+          </label>
+
+          {people.length > 0 && (
+            <div className="meet-attendees">
+              <div className="meet-attendees-head">
+                <Users size={14} /> Invite people{attendeeIds.size > 0 ? ` (${attendeeIds.size})` : ""}
+                <span className="meet-attendees-hint">they get an email + reminder</span>
+              </div>
+              <div className="meet-attendees-list">
+                {people.map((p) => (
+                  <label key={p.userId} className={`meet-att ${attendeeIds.has(p.userId) ? "on" : ""}`}>
+                    <input
+                      type="checkbox"
+                      checked={attendeeIds.has(p.userId)}
+                      onChange={() => toggleAttendee(p.userId)}
+                    />
+                    {p.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
           <label className="meet-busy">
             <input type="checkbox" checked={busy} onChange={(e) => setBusy(e.target.checked)} />
             Set me to “In a meeting” during this event
