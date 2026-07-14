@@ -1,11 +1,14 @@
 import "./MeetingsModal.css";
 import { useState, useEffect, useCallback } from "react";
-import { X, Plus, Trash2, Calendar, Clock, Bell, Users } from "lucide-react";
+import {
+  X, Plus, Trash2, Calendar, Clock, Bell, Users, ChevronLeft, ChevronRight, List, LayoutGrid,
+} from "lucide-react";
 import { createEvent, getEvents, deleteEvent } from "../../../../api/calendar";
 import { getMembers } from "../../../../api/workspace";
 import { getAllUsers } from "../../../../api/user";
 import { getCurrentUserId } from "../../../../utils/auth";
 import { useDialogs } from "../../../../components/DialogProvider";
+import WeekGrid, { startOfWeek } from "./WeekGrid";
 
 const REMINDER_OPTIONS = [
   { v: "", label: "No reminder" },
@@ -15,14 +18,26 @@ const REMINDER_OPTIONS = [
   { v: "60", label: "1 hour before" },
 ];
 
-/** Local datetime-local string (YYYY-MM-DDTHH:mm) for an offset in minutes from now. */
-function localInput(minutesFromNow) {
-  const d = new Date(Date.now() + minutesFromNow * 60000);
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(
+const pad2 = (n) => String(n).padStart(2, "0");
+
+/** A Date → datetime-local string (YYYY-MM-DDTHH:mm). */
+function toLocalInput(d) {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(
     d.getMinutes(),
   )}`;
 }
+
+/** Local datetime-local string for an offset in minutes from now. */
+function localInput(minutesFromNow) {
+  return toLocalInput(new Date(Date.now() + minutesFromNow * 60000));
+}
+
+const weekLabel = (ws) => {
+  const end = new Date(ws);
+  end.setDate(end.getDate() + 6);
+  const opt = { month: "short", day: "numeric" };
+  return `${ws.toLocaleDateString(undefined, opt)} – ${end.toLocaleDateString(undefined, opt)}`;
+};
 
 const fmt = (iso) =>
   new Date(iso).toLocaleString(undefined, {
@@ -43,6 +58,8 @@ export default function MeetingsModal({ workspaceId, open, onClose }) {
   const [people, setPeople] = useState([]); // [{userId, name, email}]
   const [attendeeIds, setAttendeeIds] = useState(() => new Set());
   const [saving, setSaving] = useState(false);
+  const [view, setView] = useState("week"); // "week" | "list"
+  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
   const me = getCurrentUserId();
 
   // Load workspace members (with emails) for the attendee picker.
@@ -83,19 +100,39 @@ export default function MeetingsModal({ workspaceId, open, onClose }) {
   const load = useCallback(async () => {
     if (!workspaceId) return;
     try {
-      const from = new Date().toISOString();
-      const to = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString();
-      setEvents(await getEvents(workspaceId, from, to));
+      // Cover both the visible week and the 30-day "upcoming" list in one fetch.
+      const from = new Date(Math.min(weekStart.getTime() - 7 * 864e5, Date.now()));
+      const to = new Date(Math.max(weekStart.getTime() + 14 * 864e5, Date.now() + 30 * 864e5));
+      setEvents(await getEvents(workspaceId, from.toISOString(), to.toISOString()));
     } catch {
       /* calendar-service may still be starting */
     }
-  }, [workspaceId]);
+  }, [workspaceId, weekStart]);
 
   useEffect(() => {
     if (open) load();
   }, [open, load]);
 
+  // Grid drag-create → prefill the form's start/end with the picked slot.
+  const onPickSlot = (startDate, endDate) => {
+    setStart(toLocalInput(startDate));
+    setEnd(toLocalInput(endDate));
+  };
+  const shiftWeek = (days) =>
+    setWeekStart((ws) => {
+      const n = new Date(ws);
+      n.setDate(n.getDate() + days);
+      return n;
+    });
+
   if (!open) return null;
+
+  // The grid highlights whatever slot the form currently describes.
+  const selectedSlot = (() => {
+    const s = new Date(start);
+    const e = new Date(end);
+    return isNaN(s) || isNaN(e) ? null : { start: s, end: e };
+  })();
 
   const add = async () => {
     if (!title.trim()) return notify("Give the meeting a title", "warning");
@@ -139,19 +176,8 @@ export default function MeetingsModal({ workspaceId, open, onClose }) {
     }
   };
 
-  return (
-    <div className="meet-overlay" onClick={onClose}>
-      <div className="meet-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="meet-head">
-          <span className="meet-title">
-            <Calendar size={18} /> Meetings
-          </span>
-          <button className="meet-close" onClick={onClose} aria-label="Close">
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="meet-form">
+  const formPanel = (
+    <div className="meet-form">
           <input
             className="meet-input"
             placeholder="Meeting title"
@@ -206,31 +232,88 @@ export default function MeetingsModal({ workspaceId, open, onClose }) {
             <Plus size={16} /> Add meeting
           </button>
         </div>
+  );
 
-        <div className="meet-list">
-          <div className="meet-list-title">Upcoming</div>
-          {events.length === 0 ? (
-            <div className="meet-empty">No upcoming meetings</div>
-          ) : (
-            events
-              .slice()
-              .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
-              .map((e) => (
-                <div className="meet-row" key={e.id}>
-                  <div className="meet-row-main">
-                    <span className="meet-row-title">{e.title}</span>
-                    <span className="meet-row-time">
-                      <Clock size={12} /> {fmt(e.startTime)} – {fmt(e.endTime)}
-                      {e.busy && <span className="meet-busy-chip">busy</span>}
-                    </span>
-                  </div>
-                  <button className="meet-del" onClick={() => remove(e.id)} title="Delete">
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-              ))
-          )}
+  const listPanel = (
+    <div className="meet-list">
+      <div className="meet-list-title">Upcoming</div>
+      {events.filter((e) => new Date(e.endTime) >= new Date()).length === 0 ? (
+        <div className="meet-empty">No upcoming meetings</div>
+      ) : (
+        events
+          .filter((e) => new Date(e.endTime) >= new Date())
+          .slice()
+          .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
+          .map((e) => (
+            <div className="meet-row" key={e.id}>
+              <div className="meet-row-main">
+                <span className="meet-row-title">{e.title}</span>
+                <span className="meet-row-time">
+                  <Clock size={12} /> {fmt(e.startTime)} – {fmt(e.endTime)}
+                  {e.busy && <span className="meet-busy-chip">busy</span>}
+                </span>
+              </div>
+              <button className="meet-del" onClick={() => remove(e.id)} title="Delete">
+                <Trash2 size={15} />
+              </button>
+            </div>
+          ))
+      )}
+    </div>
+  );
+
+  return (
+    <div className="meet-overlay" onClick={onClose}>
+      <div className={`meet-modal ${view === "week" ? "wide" : ""}`} onClick={(e) => e.stopPropagation()}>
+        <div className="meet-head">
+          <span className="meet-title">
+            <Calendar size={18} /> Meetings
+          </span>
+          <div className="meet-viewtoggle">
+            <button className={view === "week" ? "on" : ""} onClick={() => setView("week")}>
+              <LayoutGrid size={14} /> Week
+            </button>
+            <button className={view === "list" ? "on" : ""} onClick={() => setView("list")}>
+              <List size={14} /> List
+            </button>
+          </div>
+          <button className="meet-close" onClick={onClose} aria-label="Close">
+            <X size={18} />
+          </button>
         </div>
+
+        {view === "week" ? (
+          <div className="meet-weekwrap">
+            <div className="meet-weekmain">
+              <div className="meet-weeknav">
+                <button onClick={() => shiftWeek(-7)} title="Previous week">
+                  <ChevronLeft size={16} />
+                </button>
+                <button className="today" onClick={() => setWeekStart(startOfWeek(new Date()))}>
+                  Today
+                </button>
+                <button onClick={() => shiftWeek(7)} title="Next week">
+                  <ChevronRight size={16} />
+                </button>
+                <span className="meet-weeklabel">{weekLabel(weekStart)}</span>
+                <span className="meet-weekhint">Drag on the grid to pick a time</span>
+              </div>
+              <WeekGrid
+                weekStart={weekStart}
+                events={events}
+                onPick={onPickSlot}
+                selected={selectedSlot}
+                onDelete={remove}
+              />
+            </div>
+            <div className="meet-side">{formPanel}</div>
+          </div>
+        ) : (
+          <>
+            {formPanel}
+            {listPanel}
+          </>
+        )}
       </div>
     </div>
   );
