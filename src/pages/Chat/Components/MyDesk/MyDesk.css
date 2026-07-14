@@ -71,6 +71,52 @@
   background: var(--accent); color: var(--accent-fg); cursor: pointer;
 }
 .desk-add button:hover { background: var(--accent-hover); }
+
+/* Smart quick-add bar: search existing tasks or create a new one */
+.desk-add.qa { position: relative; display: block; }
+.qa-input {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 4px 4px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 10px; background: var(--input-bg);
+}
+.qa-input:focus-within { border-color: var(--accent); }
+.qa-search-ic { color: var(--content-muted); flex-shrink: 0; }
+.desk-add.qa .qa-input input {
+  flex: 1; min-width: 0; padding: 8px 0;
+  border: none; border-radius: 0; background: transparent;
+  color: var(--input-fg); font-size: 14px;
+}
+.desk-add.qa .qa-input input:focus { outline: none; }
+.desk-add.qa .qa-add-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; flex-shrink: 0; border: none; border-radius: 8px;
+  background: var(--accent); color: var(--accent-fg); cursor: pointer;
+}
+.desk-add.qa .qa-add-btn:hover { background: var(--accent-hover); }
+.qa-menu {
+  position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 6px);
+  background: var(--panel-bg); border: 1px solid var(--border);
+  border-radius: 12px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  padding: 6px; max-height: 320px; overflow-y: auto;
+}
+.qa-label {
+  font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--content-muted); padding: 8px 8px 4px;
+}
+.qa-item {
+  display: flex; align-items: center; gap: 9px; width: 100%;
+  padding: 8px; border: none; border-radius: 8px; background: transparent;
+  color: var(--content-strong); cursor: pointer; text-align: left; font-size: 13.5px;
+}
+.qa-item:hover { background: var(--hover-bg); }
+.qa-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.qa-item-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qa-item-num { font-size: 11px; font-weight: 700; color: var(--content-muted); }
+.qa-create { color: var(--accent); font-weight: 600; }
+.qa-create svg { color: var(--accent); flex-shrink: 0; }
+.qa-kbd { font-size: 11px; color: var(--content-muted); border: 1px solid var(--border); border-radius: 5px; padding: 0 5px; }
+
 .desk-task-list { display: flex; flex-direction: column; gap: 4px; }
 .desk-empty { color: var(--content-muted); font-style: italic; padding: 16px 4px; font-size: 13.5px; }
 .desk-task {
@@ -92,6 +138,18 @@
 .desk-flag { display: inline-flex; }
 .desk-od { font-size: 10px; font-weight: 800; color: #e01e5a; background: color-mix(in srgb, #e01e5a 15%, transparent); border-radius: 999px; padding: 1px 7px; text-transform: uppercase; }
 .desk-num { font-size: 11px; font-weight: 700; color: var(--content-muted); }
+.desk-grip {
+  display: inline-flex; flex-shrink: 0; margin: 0 -4px 0 -2px;
+  color: var(--content-muted); opacity: 0; cursor: grab;
+  transition: opacity 0.12s;
+}
+.desk-task:hover .desk-grip { opacity: 0.55; }
+.desk-task:active .desk-grip { cursor: grabbing; }
+.desk-section.drag-over {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  outline: 1.5px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 2px; border-radius: 10px;
+}
 
 /* Whiteboard */
 .desk-wb-clear {

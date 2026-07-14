@@ -1,6 +1,6 @@
 import "./MyDesk.css";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Plus, Check, Trash2, StickyNote, Pencil, Eraser, ListTodo, Flag, Play, Pause, RotateCcw, Timer, X } from "lucide-react";
+import { Plus, Check, Trash2, StickyNote, Pencil, Eraser, ListTodo, Flag, Play, Pause, RotateCcw, Timer, X, GripVertical, Search, Settings2 } from "lucide-react";
 import {
   getMyTasks, createTask, updateTask, deleteTask,
   TASK_STATUSES, STATUS_LABEL, STATUS_COLOR, PRIORITY_COLOR,
@@ -23,12 +23,19 @@ export default function MyDesk({ workspaceId }) {
   const [newTask, setNewTask] = useState("");
   const nsNotes = `vo-desk-notes-${workspaceId}-${me}`;
   const nsWb = `vo-desk-wb-${workspaceId}-${me}`;
+  const nsOrder = `vo-desk-order-${workspaceId}-${me}`;
   const [notes, setNotes] = useState(() => load(nsNotes, []));
   const [editingTask, setEditingTask] = useState(null);
   const [members, setMembers] = useState([]);
+  // My preferred task order (list of task ids); drag-and-drop persists it per user.
+  const [orderIds, setOrderIds] = useState(() => load(nsOrder, []));
+  const [dragOver, setDragOver] = useState(null); // status section currently hovered while dragging
+  const dragId = useRef(null);
 
   useEffect(() => setNotes(load(nsNotes, [])), [nsNotes]);
   useEffect(() => save(nsNotes, notes), [nsNotes, notes]);
+  useEffect(() => setOrderIds(load(nsOrder, [])), [nsOrder]);
+  useEffect(() => save(nsOrder, orderIds), [nsOrder, orderIds]);
 
   // Workspace members for the task detail's assignee dropdown.
   useEffect(() => {
@@ -65,8 +72,9 @@ export default function MyDesk({ workspaceId }) {
     try { await updateTask(t.id, { status }); } catch { reload(); }
   };
 
-  const addTask = async () => {
-    const title = newTask.trim();
+  // Quick create with just a title (assigned to me, due today) — used by the quick-add bar.
+  const addTask = async (rawTitle) => {
+    const title = (rawTitle ?? newTask).trim();
     if (!title) return;
     try {
       await createTask({ workspaceId, title, assigneeUserId: me, dueDate: new Date(today + DAY / 2).toISOString() });
@@ -74,6 +82,43 @@ export default function MyDesk({ workspaceId }) {
       reload();
     } catch (e) {
       notify(e?.response?.data?.message || "Could not add task", "error");
+    }
+  };
+
+  // Sort a section by my saved order; tasks I've never dragged fall back to newest-first.
+  const byOrder = (a, b) => {
+    const ra = orderIds.indexOf(a.id), rb = orderIds.indexOf(b.id);
+    if (ra === -1 && rb === -1) return (b.taskNumber || 0) - (a.taskNumber || 0);
+    if (ra === -1) return 1;
+    if (rb === -1) return -1;
+    return ra - rb;
+  };
+
+  // Drop a dragged task before `beforeId` (or at the end of `targetStatus` when null),
+  // moving it between sections changes its status — just like the Tasks board.
+  const applyDrop = async (targetStatus, beforeId) => {
+    const id = dragId.current;
+    dragId.current = null;
+    setDragOver(null);
+    if (id == null || id === beforeId) return;
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+
+    setOrderIds((prev) => {
+      const ids = tasks.map((t) => t.id);
+      const order = prev.filter((x) => ids.includes(x));
+      ids.forEach((x) => { if (!order.includes(x)) order.push(x); });
+      const from = order.indexOf(id);
+      if (from !== -1) order.splice(from, 1);
+      let to = beforeId == null ? order.length : order.indexOf(beforeId);
+      if (to === -1) to = order.length;
+      order.splice(to, 0, id);
+      return order;
+    });
+
+    if (targetStatus && task.status !== targetStatus) {
+      setTasks((ts) => ts.map((x) => (x.id === id ? { ...x, status: targetStatus } : x)));
+      try { await updateTask(id, { status: targetStatus }); } catch { reload(); }
     }
   };
 
@@ -108,28 +153,41 @@ export default function MyDesk({ workspaceId }) {
             <div className="desk-card-head">
               <ListTodo size={17} /> My Tasks <span className="desk-hcount">{tasks.length}</span>
             </div>
-            <div className="desk-add">
-              <input
-                placeholder="Add a task for today…"
-                value={newTask}
-                onChange={(e) => setNewTask(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addTask()}
-              />
-              <button onClick={addTask}><Plus size={16} /></button>
-            </div>
+            <QuickAdd
+              tasks={tasks}
+              onPick={(t) => setEditingTask(t)}
+              onQuickCreate={(title) => addTask(title)}
+              onDetailedCreate={(title) => setEditingTask({ title, status: "TODO" })}
+            />
             <div className="desk-sections">
               {tasks.length === 0 && <div className="desk-empty">Nothing on your plate — add a task to get going.</div>}
               {TASK_STATUSES.map((status) => {
-                const list = tasks.filter((t) => t.status === status);
+                const list = tasks.filter((t) => t.status === status).sort(byOrder);
                 if (list.length === 0) return null;
                 return (
-                  <div key={status} className="desk-section">
+                  <div
+                    key={status}
+                    className={`desk-section ${dragOver === status ? "drag-over" : ""}`}
+                    onDragOver={(e) => { e.preventDefault(); if (dragId.current != null) setDragOver(status); }}
+                    onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOver((s) => (s === status ? null : s)); }}
+                    onDrop={(e) => { e.preventDefault(); applyDrop(status, null); }}
+                  >
                     <div className="desk-sec-head">
                       <span className="desk-sec-dot" style={{ background: STATUS_COLOR[status] }} />
                       {STATUS_LABEL[status]} <span className="desk-sec-count">{list.length}</span>
                     </div>
                     {list.map((t) => (
-                      <div key={t.id} className={`desk-task clickable ${t.status === "COMPLETE" ? "done" : ""}`} onClick={() => setEditingTask(t)}>
+                      <div
+                        key={t.id}
+                        className={`desk-task clickable ${t.status === "COMPLETE" ? "done" : ""}`}
+                        draggable
+                        onDragStart={(e) => { dragId.current = t.id; e.dataTransfer.effectAllowed = "move"; }}
+                        onDragEnd={() => { dragId.current = null; setDragOver(null); }}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => { e.preventDefault(); e.stopPropagation(); applyDrop(status, t.id); }}
+                        onClick={() => setEditingTask(t)}
+                      >
+                        <span className="desk-grip" title="Drag to reorder"><GripVertical size={13} /></span>
                         <button className="desk-check" onClick={(e) => { e.stopPropagation(); toggleDone(t); }}>
                           {t.status === "COMPLETE" ? <Check size={14} /> : null}
                         </button>
@@ -185,10 +243,87 @@ export default function MyDesk({ workspaceId }) {
         <TaskDetail
           task={editingTask}
           members={members}
+          workspaceId={workspaceId}
+          me={me}
           onClose={() => setEditingTask(null)}
           onSaved={() => { setEditingTask(null); reload(); }}
           onDeleted={() => { setEditingTask(null); reload(); }}
         />
+      )}
+    </div>
+  );
+}
+
+// Smart task bar: type to search your existing tasks, or create a new one —
+// quickly (Enter / +) or with full details (priority, due, description).
+function QuickAdd({ tasks, onPick, onQuickCreate, onDetailedCreate }) {
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState(false);
+  const boxRef = useRef(null);
+
+  useEffect(() => {
+    const onDoc = (e) => { if (boxRef.current && !boxRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  const query = q.trim().toLowerCase();
+  const matches = query
+    ? tasks.filter((t) =>
+        (t.title || "").toLowerCase().includes(query) ||
+        (t.description || "").toLowerCase().includes(query) ||
+        String(t.taskNumber) === query.replace(/^#/, ""),
+      ).slice(0, 6)
+    : [];
+
+  const quickCreate = () => {
+    const title = q.trim();
+    if (!title) return;
+    onQuickCreate(title);
+    setQ(""); setOpen(false);
+  };
+  const detailedCreate = () => { onDetailedCreate(q.trim()); setQ(""); setOpen(false); };
+  const pick = (t) => { onPick(t); setQ(""); setOpen(false); };
+
+  return (
+    <div className="desk-add qa" ref={boxRef}>
+      <div className="qa-input">
+        <Search size={15} className="qa-search-ic" />
+        <input
+          placeholder="Search a task or add a new one…"
+          value={q}
+          onChange={(e) => { setQ(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") quickCreate();
+            else if (e.key === "Escape") setOpen(false);
+          }}
+        />
+        <button className="qa-add-btn" onClick={quickCreate} title="Add task"><Plus size={16} /></button>
+      </div>
+      {open && query && (
+        <div className="qa-menu">
+          {matches.length > 0 && (
+            <>
+              <div className="qa-label">Existing tasks</div>
+              {matches.map((t) => (
+                <button key={t.id} className="qa-item" onClick={() => pick(t)}>
+                  <span className="qa-dot" style={{ background: STATUS_COLOR[t.status] }} />
+                  <span className="qa-item-title">{t.title}</span>
+                  <span className="qa-item-num">#{t.taskNumber}</span>
+                </button>
+              ))}
+            </>
+          )}
+          <div className="qa-label">Create</div>
+          <button className="qa-item qa-create" onClick={quickCreate}>
+            <Plus size={15} /> <span className="qa-item-title">Add “{q.trim()}”</span>
+            <span className="qa-kbd">↵</span>
+          </button>
+          <button className="qa-item qa-create" onClick={detailedCreate}>
+            <Settings2 size={15} /> <span className="qa-item-title">New task with details…</span>
+          </button>
+        </div>
       )}
     </div>
   );
@@ -371,14 +506,16 @@ function Breathe() {
   );
 }
 
-// Full task detail — view + update everything (status, priority, assignee, due), or delete.
-function TaskDetail({ task, members, onClose, onSaved, onDeleted }) {
+// Full task detail — create a new task, or view + update everything
+// (title, description, status, priority, assignee, due), or delete.
+function TaskDetail({ task, members, workspaceId, me, onClose, onSaved, onDeleted }) {
   const { confirm, notify } = useDialogs();
-  const [title, setTitle] = useState(task.title);
+  const isNew = !task.id;
+  const [title, setTitle] = useState(task.title || "");
   const [description, setDescription] = useState(task.description || "");
-  const [status, setStatus] = useState(task.status);
+  const [status, setStatus] = useState(task.status || "TODO");
   const [priority, setPriority] = useState(task.priority || "NORMAL");
-  const [assignee, setAssignee] = useState(task.assigneeUserId ?? "");
+  const [assignee, setAssignee] = useState(task.assigneeUserId ?? (isNew ? me ?? "" : ""));
   const p = (n) => String(n).padStart(2, "0");
   const toLocal = (iso) => { const d = new Date(iso); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; };
   const [due, setDue] = useState(task.dueDate ? toLocal(task.dueDate) : "");
@@ -387,15 +524,17 @@ function TaskDetail({ task, members, onClose, onSaved, onDeleted }) {
   const save = async () => {
     if (!title.trim()) return notify("Give the task a title", "warning");
     setSaving(true);
+    const body = {
+      title: title.trim(),
+      description: description || null,
+      status,
+      priority,
+      assigneeUserId: assignee === "" ? null : Number(assignee),
+      dueDate: due ? new Date(due).toISOString() : null,
+    };
     try {
-      await updateTask(task.id, {
-        title: title.trim(),
-        description: description || null,
-        status,
-        priority,
-        assigneeUserId: assignee === "" ? null : Number(assignee),
-        dueDate: due ? new Date(due).toISOString() : null,
-      });
+      if (isNew) await createTask({ workspaceId, ...body });
+      else await updateTask(task.id, body);
       onSaved();
     } catch (e) {
       notify(e?.response?.data?.message || "Could not save task", "error");
@@ -411,11 +550,11 @@ function TaskDetail({ task, members, onClose, onSaved, onDeleted }) {
     <div className="desk-overlay" onClick={onClose}>
       <div className="desk-modal" onClick={(e) => e.stopPropagation()}>
         <div className="desk-modal-head">
-          <span>Task #{task.taskNumber}</span>
+          <span>{isNew ? "New task" : `Task #${task.taskNumber}`}</span>
           <button className="desk-modal-close" onClick={onClose}><X size={18} /></button>
         </div>
         <div className="desk-modal-body">
-          <input className="desk-minput desk-mtitle" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Task title" />
+          <input className="desk-minput desk-mtitle" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Task title" autoFocus />
           <textarea className="desk-minput desk-mdesc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Add a description…" />
           <div className="desk-mfields">
             <label>Status
@@ -440,10 +579,12 @@ function TaskDetail({ task, members, onClose, onSaved, onDeleted }) {
           </div>
         </div>
         <div className="desk-modal-foot">
-          <button className="desk-mdel" onClick={remove}><Trash2 size={15} /> Delete</button>
+          {!isNew ? (
+            <button className="desk-mdel" onClick={remove}><Trash2 size={15} /> Delete</button>
+          ) : <span />}
           <div className="desk-mfoot-right">
             <button className="desk-mcancel" onClick={onClose}>Cancel</button>
-            <button className="desk-msave" onClick={save} disabled={saving}>Save</button>
+            <button className="desk-msave" onClick={save} disabled={saving}>{isNew ? "Create" : "Save"}</button>
           </div>
         </div>
       </div>

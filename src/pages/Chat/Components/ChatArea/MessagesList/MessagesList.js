@@ -104,6 +104,8 @@ export default function MessagesList({ activeChannel, stompClient, dmPartner, on
           const event = JSON.parse(messageOutput.body);
 
           if (event.action === "NEW_MESSAGE") {
+            // Thread replies live in the thread panel, never in the public channel feed.
+            if (event.payload?.threadId) return;
             // Safely append new message without mutating state
             setMessages((prev) => [...prev, event.payload]);
           } else if (
