@@ -5,6 +5,7 @@ import { getCurrentUser } from "../../../../api/user";
 import SettingsModal from "../SettingsModal/SettingsModal";
 import CreateChannelModal from "../CreateChannelModal/CreateChannelModal";
 import MeetingsModal from "../MeetingsModal/MeetingsModal";
+import DmPickerModal from "../DmPickerModal/DmPickerModal";
 import StatusMenu from "../StatusMenu/StatusMenu";
 import { getUserPhoto } from "../../../../api/user";
 import { getMyDesk, updateStatus } from "../../../../api/workspace";
@@ -31,7 +32,7 @@ export default function Sidebar({
   // user photo state
   const [userPhoto, setUserPhoto] = useState(null);
   // App dialogs / toasts
-  const { prompt, notify } = useDialogs();
+  const { notify } = useDialogs();
 
   // Create-channel modal (Phase 3: name + description + access + moderators)
   const [createOpen, setCreateOpen] = useState(false);
@@ -40,6 +41,7 @@ export default function Sidebar({
   const [myDesk, setMyDesk] = useState(null);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [showMeetings, setShowMeetings] = useState(false);
+  const [showDmPicker, setShowDmPicker] = useState(false);
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -82,40 +84,10 @@ export default function Sidebar({
     setCreateOpen(true);
   };
 
-  // Create a new DM
-  const handleCreateDM = async () => {
-    const targetIdStr = await prompt({
-      title: "New direct message",
-      message: "Enter the User ID of the person you want to message.",
-      placeholder: "User ID",
-      confirmText: "Start",
-    });
-    if (!targetIdStr) return;
-
-    const targetUserId = parseInt(targetIdStr, 10);
-    if (isNaN(targetUserId)) {
-      notify("Please enter a valid User ID (numbers only).", "warning");
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/chat/dm", {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({
-          targetUserId: targetUserId,
-        }),
-      });
-
-      if (response.ok) {
-        // Reload page to reflect new DM
-        window.location.reload();
-      } else {
-        notify("Failed to start direct message", "error");
-      }
-    } catch (error) {
-      console.error("Connection error:", error);
-    }
+  // Open a DM chosen from the people picker.
+  const openDm = (ch) => {
+    setActiveChannel(ch);
+    setDms((prev) => (prev.some((d) => d.id === ch.id) ? prev : [...prev, { id: ch.id, name: ch.name }]));
   };
 
   // Fetch channels once the workspace is resolved; DMs on mount.
@@ -286,7 +258,7 @@ export default function Sidebar({
             <div className="direct-messages-header">
               <span>DIRECT MESSAGES</span>
               <button
-                onClick={handleCreateDM}
+                onClick={() => setShowDmPicker(true)}
                 aria-label="New Direct Message"
                 title="New DM"
               >
@@ -434,6 +406,13 @@ export default function Sidebar({
         workspaceId={workspaceId}
         open={showMeetings}
         onClose={() => setShowMeetings(false)}
+      />
+
+      <DmPickerModal
+        workspaceId={workspaceId}
+        open={showDmPicker}
+        onClose={() => setShowDmPicker(false)}
+        onOpenDm={openDm}
       />
     </div>
   );
