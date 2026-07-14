@@ -197,6 +197,67 @@ body.msg-menu-active .message:not(.menu-open) .message-actions {
   border-radius: 8px;
 }
 
+/* Thread indicator — pill under a root message showing reply count + avatars */
+.thread-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 3px 10px 3px 4px;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--content-bg);
+  color: var(--link);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.thread-indicator:hover {
+  background: var(--hover-bg);
+  border-color: var(--content-muted);
+}
+.thread-indicator-avatars {
+  display: inline-flex;
+  align-items: center;
+}
+.thread-indicator-avatars img {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 2px solid var(--content-bg);
+  margin-left: -6px;
+}
+.thread-indicator-avatars img:first-child {
+  margin-left: 0;
+}
+.thread-indicator-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--link);
+}
+.thread-indicator-chevron {
+  color: var(--content-muted);
+}
+.thread-indicator:hover .thread-indicator-chevron {
+  color: var(--link);
+}
+
+/* Flash highlight when jumping to a message from channel search */
+.message.msg-flash {
+  animation: msg-flash-anim 1.6s ease;
+}
+@keyframes msg-flash-anim {
+  0%,
+  40% {
+    background: color-mix(in srgb, var(--accent, #1264a3) 22%, transparent);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
 /* Uploaded attachments */
 .msg-attachments {
   display: flex;

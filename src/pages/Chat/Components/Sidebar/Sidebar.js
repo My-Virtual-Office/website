@@ -1,5 +1,5 @@
 import "./Sidebar.css";
-import { ChevronDown, Search, FileText, Hash, Plus, Settings, Users, Gamepad2, CalendarDays, ListTodo, LayoutDashboard } from "lucide-react";
+import { ChevronDown, Search, Hash, Plus, Settings, Users, Gamepad2, CalendarDays, ListTodo, LayoutDashboard } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getCurrentUser } from "../../../../api/user";
 import SettingsModal from "../SettingsModal/SettingsModal";
@@ -200,10 +200,6 @@ export default function Sidebar({
               <Search size={18} />
               <span>Search</span>
               <span className="search-kbd">⌘K</span>
-            </div>
-            <div className="drafts">
-              <FileText size={18} />
-              <span>Drafts</span>
             </div>
             <div
               className={`drafts ${activeView === "contacts" ? "active-link" : ""}`}

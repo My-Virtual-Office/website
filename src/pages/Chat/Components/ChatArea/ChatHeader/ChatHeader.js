@@ -9,8 +9,9 @@ import {
   Pin,
   PanelLeftClose,
   PanelLeftOpen,
+  X,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { authHeaders } from "../../../../../utils/auth";
 import { getPins } from "../../../../../api/chat";
 import { useDialogs } from "../../../../../components/DialogProvider";
@@ -30,6 +31,81 @@ export default function ChatHeader({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showPins, setShowPins] = useState(false);
   const [pins, setPins] = useState([]);
+
+  // In-channel message search (distinct from the global ⌘K palette): searches
+  // only the messages of the currently open channel and jumps to a result.
+  const [channelSearchOpen, setChannelSearchOpen] = useState(false);
+  const [csQuery, setCsQuery] = useState("");
+  const [csMessages, setCsMessages] = useState([]);
+  const [csLoading, setCsLoading] = useState(false);
+  const csBoxRef = useRef(null);
+  const csInputRef = useRef(null);
+
+  // Load this channel's messages when the search panel opens.
+  useEffect(() => {
+    if (!channelSearchOpen || !activeChannel?.id) return;
+    let cancelled = false;
+    setCsLoading(true);
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/chat/channels/${activeChannel.id}/messages?page=1&limit=50`,
+          { headers: authHeaders() },
+        );
+        const data = res.ok ? await res.json() : {};
+        if (!cancelled) setCsMessages(data.content || []); // newest-first
+      } catch {
+        if (!cancelled) setCsMessages([]);
+      } finally {
+        if (!cancelled) setCsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [channelSearchOpen, activeChannel?.id]);
+
+  // Focus the input + close the panel on an outside click.
+  useEffect(() => {
+    if (!channelSearchOpen) return;
+    setTimeout(() => csInputRef.current?.focus(), 30);
+    const onDoc = (e) => {
+      if (csBoxRef.current && !csBoxRef.current.contains(e.target)) setChannelSearchOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [channelSearchOpen]);
+
+  const csResults = useMemo(() => {
+    const q = csQuery.trim().toLowerCase();
+    if (!q) return [];
+    return csMessages
+      .filter((m) => m.type !== "SYSTEM" && (m.content || "").toLowerCase().includes(q))
+      .slice(0, 30);
+  }, [csQuery, csMessages]);
+
+  const toggleChannelSearch = () => {
+    setChannelSearchOpen((o) => {
+      const next = !o;
+      if (next) {
+        setShowPins(false);
+        setIsMenuOpen(false);
+      } else {
+        setCsQuery("");
+      }
+      return next;
+    });
+  };
+
+  // Scroll to a matching message in the list and flash it.
+  const jumpToMessage = (id) => {
+    setChannelSearchOpen(false);
+    setCsQuery("");
+    const el = document.getElementById(`msg-${id}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("msg-flash");
+      setTimeout(() => el.classList.remove("msg-flash"), 1600);
+    }
+  };
 
   const togglePins = async () => {
     const next = !showPins;
@@ -241,7 +317,69 @@ export default function ChatHeader({
           )}
         </div>
 
-        <div className="header-search" onClick={onOpenSearch} title="Search (Ctrl/⌘K)">
+        {/* In-channel search (only this channel's messages) */}
+        <div
+          className="info-dropdown-container channel-search-wrap"
+          style={{ position: "relative" }}
+          ref={csBoxRef}
+        >
+          <button
+            className={`header-btn ${channelSearchOpen ? "active" : ""}`}
+            onClick={toggleChannelSearch}
+            aria-label="Search this channel"
+            title="Search this channel"
+          >
+            <Search size={18} />
+          </button>
+          {channelSearchOpen && (
+            <div className="dropdown-menu channel-search-menu">
+              <div className="cs-input-row">
+                <Search size={15} />
+                <input
+                  ref={csInputRef}
+                  type="text"
+                  placeholder="Search this channel"
+                  value={csQuery}
+                  onChange={(e) => setCsQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Escape" && setChannelSearchOpen(false)}
+                />
+                {csQuery && (
+                  <button className="cs-clear" onClick={() => setCsQuery("")} aria-label="Clear">
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+              <div className="cs-results">
+                {csLoading ? (
+                  <div className="cs-empty">Loading messages…</div>
+                ) : !csQuery.trim() ? (
+                  <div className="cs-empty">Type to search messages in #{channelNameForDisplay}</div>
+                ) : csResults.length === 0 ? (
+                  <div className="cs-empty">No messages match “{csQuery.trim()}”</div>
+                ) : (
+                  csResults.map((m) => (
+                    <button key={m.id} className="cs-item" onClick={() => jumpToMessage(m.id)}>
+                      <span className="cs-item-top">
+                        <span className="cs-sender">User {m.senderId}</span>
+                        <span className="cs-time">
+                          {m.createdAt
+                            ? new Date(m.createdAt).toLocaleDateString([], {
+                                month: "short",
+                                day: "numeric",
+                              })
+                            : ""}
+                        </span>
+                      </span>
+                      <span className="cs-content">{m.content || "(attachment)"}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="header-search" onClick={onOpenSearch} title="Search everything (Ctrl/⌘K)">
           <Search size={16} />
           <input type="text" placeholder="Search" readOnly onFocus={onOpenSearch} />
         </div>

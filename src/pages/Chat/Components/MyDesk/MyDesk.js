@@ -131,11 +131,16 @@ export default function MyDesk({ workspaceId }) {
 
   const doneCount = focus.filter((t) => t.status === "COMPLETE").length;
 
+  // My first name (from the workspace member list) for the greeting header.
+  const myFirstName = (
+    members.find((m) => Number(m.userId) === Number(me))?.name || ""
+  ).trim().split(/\s+/)[0] || "";
+
   return (
     <div className="desk">
       <div className="desk-head">
         <div>
-          <h1>My Desk</h1>
+          <h1>{myFirstName ? `Welcome back, ${myFirstName}` : "Welcome back"}</h1>
           <span className="desk-date">
             {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
           </span>

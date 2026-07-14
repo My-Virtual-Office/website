@@ -13,6 +13,7 @@ import {
   MoreVertical,
   Circle,
   Link2,
+  ChevronRight,
 } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
 import { useState, useEffect, useRef } from "react";
@@ -63,7 +64,7 @@ function renderContent(text, onMention, onChannel, onTask) {
   return parts;
 }
 
-export default function Message({ message, stompClient, grouped, onOpenThread, unread }) {
+export default function Message({ message, stompClient, grouped, onOpenThread, unread, thread }) {
   const { onMention, onChannel, onMarkUnread, onTask } = useMentions();
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
@@ -215,6 +216,7 @@ export default function Message({ message, stompClient, grouped, onOpenThread, u
 
   return (
     <div
+      id={`msg-${message.id}`}
       className={`message ${grouped ? "grouped" : ""} ${showMenu ? "menu-open" : ""} ${unread ? "unread" : ""}`}
     >
       <div className="message-avatar">
@@ -332,6 +334,25 @@ export default function Message({ message, stompClient, grouped, onOpenThread, u
               <SmilePlus size={14} />
             </button>
           </div>
+        )}
+
+        {/* Thread indicator — shown on a root message that has replies */}
+        {thread && thread.count > 0 && onOpenThread && (
+          <button
+            className="thread-indicator"
+            onClick={() => onOpenThread(message)}
+            title="View thread"
+          >
+            <span className="thread-indicator-avatars">
+              {thread.repliers.slice(0, 3).map((uid, i) => (
+                <img key={uid ?? i} src="/avatar1.jpg" alt="" />
+              ))}
+            </span>
+            <span className="thread-indicator-count">
+              {thread.count} {thread.count === 1 ? "reply" : "replies"}
+            </span>
+            <ChevronRight size={15} className="thread-indicator-chevron" />
+          </button>
         )}
       </div>
 

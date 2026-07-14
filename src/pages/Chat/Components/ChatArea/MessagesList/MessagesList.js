@@ -1,8 +1,8 @@
 import "./MessagesList.css";
 import Message from "./Message/Message";
-import { useState, useEffect, Fragment } from "react";
+import { useState, useEffect, useCallback, useRef, Fragment } from "react";
 import { authHeaders } from "../../../../../utils/auth";
-import { getUnread, markRead } from "../../../../../api/chat";
+import { getUnread, markRead, getChannelThreads, getThreadMessages } from "../../../../../api/chat";
 
 const initials = (name) =>
   (name || "?").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
@@ -45,11 +45,47 @@ export default function MessagesList({ activeChannel, stompClient, dmPartner, on
   const [messages, setMessages] = useState([]);
   // Id of the first unread message — where the "New" divider is drawn.
   const [firstUnreadId, setFirstUnreadId] = useState(null);
+  // Map of rootMessageId -> { threadId, count, repliers } so a root message can
+  // show a "N replies" indicator that opens its thread.
+  const [threadMap, setThreadMap] = useState({});
+
+  // Fetch the channel's threads and their reply counts (the thread list DTO has
+  // no count, so we read each thread's replies). Keyed by root message id.
+  const loadThreads = useCallback(async (channelId) => {
+    if (!channelId) return;
+    try {
+      const threads = await getChannelThreads(channelId);
+      const entries = await Promise.all(
+        (threads || []).map(async (t) => {
+          try {
+            const replies = await getThreadMessages(t.id);
+            const list = Array.isArray(replies) ? replies : [];
+            const repliers = [...new Set(list.map((r) => r.senderId))];
+            return [String(t.rootMessageId), { threadId: t.id, count: list.length, repliers }];
+          } catch {
+            return null;
+          }
+        }),
+      );
+      const map = {};
+      entries.forEach((e) => { if (e && e[1].count > 0) map[e[0]] = e[1]; });
+      setThreadMap(map);
+    } catch {
+      /* best-effort — indicators just won't show */
+    }
+  }, []);
+
+  // Keep the latest loadThreads reachable from the live subscription without
+  // forcing it to re-subscribe.
+  const loadThreadsRef = useRef(loadThreads);
+  loadThreadsRef.current = loadThreads;
 
   useEffect(() => {
     // Do nothing if no active channel
     if (!activeChannel?.id) return;
     setFirstUnreadId(null);
+    setThreadMap({});
+    loadThreadsRef.current(activeChannel.id);
 
     // 1. Fetch historical messages from backend
     const fetchMessages = async () => {
@@ -104,10 +140,16 @@ export default function MessagesList({ activeChannel, stompClient, dmPartner, on
           const event = JSON.parse(messageOutput.body);
 
           if (event.action === "NEW_MESSAGE") {
-            // Thread replies live in the thread panel, never in the public channel feed.
-            if (event.payload?.threadId) return;
+            // Thread replies live in the thread panel, never in the public channel
+            // feed — but a reply changes a root message's "N replies" indicator.
+            if (event.payload?.threadId) {
+              loadThreadsRef.current(activeChannel.id);
+              return;
+            }
             // Safely append new message without mutating state
             setMessages((prev) => [...prev, event.payload]);
+          } else if (event.action === "THREAD_DELETED") {
+            loadThreadsRef.current(activeChannel.id);
           } else if (
             event.action === "EDIT_MESSAGE" ||
             event.action === "REACTION" ||
@@ -178,6 +220,7 @@ export default function MessagesList({ activeChannel, stompClient, dmPartner, on
               grouped={grouped}
               onOpenThread={onOpenThread}
               unread={isUnread}
+              thread={threadMap[String(message.id)]}
             />
           </Fragment>
         );

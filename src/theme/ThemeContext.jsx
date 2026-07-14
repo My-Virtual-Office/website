@@ -20,6 +20,48 @@ export const THEMES = [
     hint: "Easy on the eyes",
     swatch: { rail: "#121016", sidebar: "#19171d", content: "#1a1d21" },
   },
+  {
+    id: "obsidian",
+    label: "Obsidian",
+    hint: "Near-black + violet",
+    swatch: { rail: "#0d0d12", sidebar: "#16161e", content: "#1a1a22" },
+  },
+  {
+    id: "clickup",
+    label: "ClickUp",
+    hint: "Bright & purple",
+    swatch: { rail: "#f7f6fd", sidebar: "#faf9ff", content: "#ffffff" },
+  },
+  {
+    id: "nord",
+    label: "Nord",
+    hint: "Arctic blue",
+    swatch: { rail: "#242933", sidebar: "#2e3440", content: "#2e3440" },
+  },
+  {
+    id: "dracula",
+    label: "Dracula",
+    hint: "Purple & cyan",
+    swatch: { rail: "#1e1f29", sidebar: "#21222c", content: "#282a36" },
+  },
+  {
+    id: "rose-pine",
+    label: "Rosé Pine",
+    hint: "Muted rose",
+    swatch: { rail: "#16141f", sidebar: "#1f1d2e", content: "#191724" },
+  },
+  {
+    id: "gruvbox",
+    label: "Gruvbox",
+    hint: "Warm retro",
+    swatch: { rail: "#1d2021", sidebar: "#282828", content: "#282828" },
+  },
+  {
+    id: "catppuccin",
+    label: "Catppuccin",
+    hint: "Soft pastel",
+    swatch: { rail: "#181825", sidebar: "#181825", content: "#1e1e2e" },
+  },
 ];
 
 const STORAGE_KEY = "vo-theme";
