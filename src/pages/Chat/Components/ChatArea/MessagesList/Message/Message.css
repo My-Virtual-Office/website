@@ -457,3 +457,19 @@ body.msg-menu-active .message:not(.menu-open) .message-actions {
   color: var(--content-muted);
   text-align: center;
 }
+
+/* Slack-style 1-click quick reactions in the hover toolbar */
+.message-actions .quick-emoji {
+  font-size: 15px;
+  line-height: 1;
+  padding: 4px 5px;
+}
+.message-actions .quick-emoji:hover {
+  transform: scale(1.25);
+}
+@media (max-width: 640px) {
+  /* keep the toolbar compact on small screens: show only the emoji picker */
+  .message-actions .quick-emoji {
+    display: none;
+  }
+}

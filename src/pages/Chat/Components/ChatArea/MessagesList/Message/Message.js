@@ -21,6 +21,9 @@ import { toggleReaction, fileUrl, pinMessage, unpinMessage } from "../../../../.
 import { useDialogs } from "../../../../../../components/DialogProvider";
 import { useMentions } from "../../../../mentionContext";
 
+// Frequent emojis for Slack-style 1-click reactions on hover.
+const QUICK_EMOJIS = ["👍", "✅", "😂", "❤️", "🎉"];
+
 /** Highlight @mention, #channel, and #<number> (task) tokens, making them clickable. */
 function renderContent(text, onMention, onChannel, onTask) {
   if (!text) return null;
@@ -335,7 +338,17 @@ export default function Message({ message, stompClient, grouped, onOpenThread, u
       {/* Hover action toolbar (floats top-right; works for grouped rows too) */}
       {!isEditing && (
         <div className="message-actions">
-          <button className="msg-action-btn" onClick={() => setShowPicker((s) => !s)} title="Add reaction">
+          {QUICK_EMOJIS.map((em) => (
+            <button
+              key={em}
+              className="msg-action-btn quick-emoji"
+              onClick={() => handleReact(em)}
+              title={`React ${em}`}
+            >
+              {em}
+            </button>
+          ))}
+          <button className="msg-action-btn" onClick={() => setShowPicker((s) => !s)} title="More reactions">
             <SmilePlus size={15} />
           </button>
           {onOpenThread && (
