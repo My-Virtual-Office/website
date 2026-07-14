@@ -1,9 +1,10 @@
 import "./Sidebar.css";
-import { ChevronDown, Search, FileText, Hash, Plus, Settings, Users, Gamepad2 } from "lucide-react";
+import { ChevronDown, Search, FileText, Hash, Plus, Settings, Users, Gamepad2, CalendarDays } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getCurrentUser } from "../../../../api/user";
 import SettingsModal from "../SettingsModal/SettingsModal";
 import CreateChannelModal from "../CreateChannelModal/CreateChannelModal";
+import MeetingsModal from "../MeetingsModal/MeetingsModal";
 import StatusMenu from "../StatusMenu/StatusMenu";
 import { getUserPhoto } from "../../../../api/user";
 import { getMyDesk, updateStatus } from "../../../../api/workspace";
@@ -38,6 +39,7 @@ export default function Sidebar({
   // My desk in this workspace (carries my presence status) + status picker.
   const [myDesk, setMyDesk] = useState(null);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [showMeetings, setShowMeetings] = useState(false);
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -235,6 +237,10 @@ export default function Sidebar({
               <Users size={18} />
               <span>People</span>
             </div>
+            <div className="drafts" onClick={() => setShowMeetings(true)}>
+              <CalendarDays size={18} />
+              <span>Meetings</span>
+            </div>
           </div>
 
           <div className="channels-section">
@@ -422,6 +428,12 @@ export default function Sidebar({
           setChannels((c) => [...c, ch]);
           setActiveChannel({ id: ch.id, name: ch.name });
         }}
+      />
+
+      <MeetingsModal
+        workspaceId={workspaceId}
+        open={showMeetings}
+        onClose={() => setShowMeetings(false)}
       />
     </div>
   );
