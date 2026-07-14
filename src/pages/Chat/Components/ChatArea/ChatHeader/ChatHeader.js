@@ -24,6 +24,7 @@ export default function ChatHeader({
   onToggleSidebar,
   onToggleMembers,
   onChannelUpdated,
+  onOpenSearch,
 }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showPins, setShowPins] = useState(false);
@@ -239,9 +240,9 @@ export default function ChatHeader({
           )}
         </div>
 
-        <div className="header-search">
+        <div className="header-search" onClick={onOpenSearch} title="Search (Ctrl/⌘K)">
           <Search size={16} />
-          <input type="text" placeholder="Search" />
+          <input type="text" placeholder="Search" readOnly onFocus={onOpenSearch} />
         </div>
 
         <NotificationCenter inline />

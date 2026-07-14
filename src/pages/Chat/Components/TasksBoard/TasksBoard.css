@@ -222,7 +222,7 @@
   margin-bottom: 10px;
 }
 .tb-col {
-  min-height: 210px;               /* tall, spacious drop zones like ClickUp */
+  min-height: calc(100vh - 230px); /* each day fills ~90% of the screen like ClickUp */
   padding: 6px;
   border-radius: 12px;
   display: flex; flex-direction: column; gap: 10px;
@@ -329,3 +329,5 @@
   .tb-spaces-head, .tb-space-name, .tb-space-count, .tb-space-new span { display: none; }
   .tb-space { justify-content: center; }
 }
+
+.tb-spaces-head-btns { display: flex; align-items: center; gap: 2px; }

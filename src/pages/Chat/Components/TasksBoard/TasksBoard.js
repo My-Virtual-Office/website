@@ -74,7 +74,6 @@ export default function TasksBoard({ workspaceId, focus }) {
   const [daysAhead, setDaysAhead] = useState(10); // infinite scroll horizon (grows on scroll)
   const [railOpen, setRailOpen] = useState(() => persist("vo-tb-rail-open", true));
   const [railW, setRailW] = useState(() => persist("vo-tb-rail-w", 232));
-  const [dragId, setDragId] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false); // only admins/owners can create spaces
   const gridRef = useRef(null);
   const me = getCurrentUserId();
@@ -94,7 +93,7 @@ export default function TasksBoard({ workspaceId, focus }) {
         const [desks, users] = await Promise.all([getMembers(workspaceId), getAllUsers().catch(() => [])]);
         const byId = {};
         users.forEach((u) => (byId[u.id] = `${u.firstName || ""} ${u.lastName || ""}`.trim()));
-        const myDesk = (desks || []).find((d) => d.userId === me);
+        const myDesk = (desks || []).find((d) => String(d.userId) === String(me));
         setIsAdmin(["ADMIN", "OWNER"].includes(myDesk?.role));
         setMembers(
           (desks || []).filter((d) => d.userId != null).map((d) => ({
@@ -224,10 +223,12 @@ export default function TasksBoard({ workspaceId, focus }) {
 
   const Card = ({ t }) => (
     <div
-      className={`tb-card ${q && `#${t.taskNumber}` === q ? "focused" : ""} ${dragId === t.id ? "dragging" : ""}`}
+      className={`tb-card ${q && `#${t.taskNumber}` === q ? "focused" : ""}`}
       draggable
-      onDragStart={(e) => { e.dataTransfer.setData("text/task", String(t.id)); setDragId(t.id); }}
-      onDragEnd={() => setDragId(null)}
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/task", String(t.id));
+      }}
       onClick={() => setEditing(t)}
     >
       <div className="tb-card-title">{t.title}</div>
@@ -258,9 +259,16 @@ export default function TasksBoard({ workspaceId, focus }) {
           <aside className="tb-spaces" style={{ width: railW }}>
             <div className="tb-spaces-head">
               <span><Layers size={15} /> Spaces</span>
-              <button className="tb-rail-toggle" title="Hide spaces" onClick={() => setRailOpen(false)}>
-                <PanelLeftClose size={16} />
-              </button>
+              <div className="tb-spaces-head-btns">
+                {isAdmin && (
+                  <button className="tb-rail-toggle" title="New Space" onClick={() => setSpaceModal({ new: true })}>
+                    <Plus size={16} />
+                  </button>
+                )}
+                <button className="tb-rail-toggle" title="Hide spaces" onClick={() => setRailOpen(false)}>
+                  <PanelLeftClose size={16} />
+                </button>
+              </div>
             </div>
             <div className="tb-spaces-list">
               {spaces.map((s) => (

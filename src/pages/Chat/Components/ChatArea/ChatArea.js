@@ -10,6 +10,7 @@ export default function ChatArea({
   membersOpen,
   dmPartner,
   onViewProfile,
+  onOpenSearch,
   onToggleSidebar,
   onToggleMembers,
   onChannelUpdated,
@@ -22,6 +23,7 @@ export default function ChatArea({
         workspaceId={workspaceId}
         sidebarOpen={sidebarOpen}
         membersOpen={membersOpen}
+        onOpenSearch={onOpenSearch}
         onToggleSidebar={onToggleSidebar}
         onToggleMembers={onToggleMembers}
         onChannelUpdated={onChannelUpdated}

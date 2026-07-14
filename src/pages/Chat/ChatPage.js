@@ -64,9 +64,15 @@ export default function ChatPage() {
   const [focusTask, setFocusTask] = useState(null); // task # to focus in the board
 
   // The other person in a DM (for the Slack-style conversation intro + View Profile).
+  // Match on display name OR any normalized handle form so "User 4"-style fallbacks resolve too.
   const dmPartner =
     activeChannel?.type === "DIRECT"
-      ? dirMembers.find((m) => m.name === activeChannel.name) || null
+      ? dirMembers.find(
+          (m) =>
+            m.name === activeChannel.name ||
+            m.handles?.has(norm(activeChannel.name || "")) ||
+            String(m.userId) === String(activeChannel.dmUserId),
+        ) || null
       : null;
   const [cmdkOpen, setCmdkOpen] = useState(false);
 
@@ -478,7 +484,8 @@ export default function ChatPage() {
             sidebarOpen={sidebarOpen}
             membersOpen={membersOpen}
             dmPartner={dmPartner}
-            onViewProfile={() => dmPartner && setProfileMember(dmPartner)}
+            onViewProfile={() => (dmPartner ? setProfileMember(dmPartner) : setMembersOpen(true))}
+            onOpenSearch={() => setCmdkOpen(true)}
             onToggleSidebar={() => setSidebarOpen((o) => !o)}
             onToggleMembers={() => setMembersOpen((o) => !o)}
             onChannelUpdated={(ch) =>
