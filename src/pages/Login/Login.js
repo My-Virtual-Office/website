@@ -1,6 +1,6 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
-import { Check, AlertCircle, Sparkles } from "lucide-react";
+import { Check, AlertCircle, CheckCircle2, Sparkles } from "lucide-react";
 import { loginUser } from "../../api/auth";
 
 import logoWide from "../../assets/logo-wide.png";
@@ -9,6 +9,9 @@ import "./Login.css";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  // A one-time success message passed from another page (e.g. after a password reset or email verify).
+  const [notice] = useState(location.state?.message || "");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -97,6 +100,12 @@ export default function Login() {
               <p className="auth-subtitle">Welcome back — please sign in to your account.</p>
             </div>
 
+            {notice && !error && (
+              <div className="auth-alert auth-alert-success" role="status">
+                <CheckCircle2 size={18} aria-hidden="true" />
+                <span>{notice}</span>
+              </div>
+            )}
             {error && (
               <div className="auth-alert auth-alert-error" role="alert">
                 <AlertCircle size={18} aria-hidden="true" />
