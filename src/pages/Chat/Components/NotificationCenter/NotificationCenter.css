@@ -4,6 +4,23 @@
   right: 16px;
   z-index: 1200;
 }
+/* When placed inside the chat top-bar (Discord-style), flow in the header instead of floating. */
+.notif-center.inline {
+  position: relative;
+  top: auto;
+  right: auto;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+}
+.notif-center.inline .notif-bell {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+.notif-center.inline .notif-bell:hover { background: var(--hover-bg); }
 .notif-bell {
   position: relative;
   width: 38px;

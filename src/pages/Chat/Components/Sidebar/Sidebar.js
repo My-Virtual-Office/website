@@ -21,6 +21,7 @@ export default function Sidebar({
   onOpenContacts,
   onOpenTasks,
   onOpenMeetings,
+  onOpenSearch,
 }) {
   // Channels state
   const [channels, setChannels] = useState([]);
@@ -194,9 +195,10 @@ export default function Sidebar({
 
         <div className="sidebar-main">
           <div className="search-drafts">
-            <div className="search">
+            <div className="search" onClick={onOpenSearch} title="Search everything (Ctrl/⌘K)">
               <Search size={18} />
               <span>Search</span>
+              <span className="search-kbd">⌘K</span>
             </div>
             <div className="drafts">
               <FileText size={18} />

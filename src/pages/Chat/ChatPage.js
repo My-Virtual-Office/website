@@ -10,7 +10,6 @@ import MembersList from "./Components/MembersList/MembersList";
 import ContactsDirectory from "./Components/ContactsDirectory/ContactsDirectory";
 import ThreadPanel from "./Components/ThreadPanel/ThreadPanel";
 import ProfilePanel from "./Components/ProfilePanel/ProfilePanel";
-import NotificationCenter from "./Components/NotificationCenter/NotificationCenter";
 import TasksBoard from "./Components/TasksBoard/TasksBoard";
 import MeetingsModal from "./Components/MeetingsModal/MeetingsModal";
 import CommandPalette from "./Components/CommandPalette/CommandPalette";
@@ -418,7 +417,6 @@ export default function ChatPage() {
       }}
     >
     <div className="chatPage">
-      <NotificationCenter />
       <CommandPalette
         open={cmdkOpen}
         onClose={() => setCmdkOpen(false)}
@@ -452,6 +450,7 @@ export default function ChatPage() {
               onOpenContacts={() => setView("contacts")}
               onOpenTasks={() => setView("tasks")}
               onOpenMeetings={() => setView("meetings")}
+              onOpenSearch={() => setCmdkOpen(true)}
             />
           </div>
           <ResizeHandle

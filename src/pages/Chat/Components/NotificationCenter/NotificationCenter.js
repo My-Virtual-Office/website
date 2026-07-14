@@ -16,7 +16,7 @@ const timeAgo = (iso) => {
   return new Date(iso).toLocaleDateString();
 };
 
-export default function NotificationCenter() {
+export default function NotificationCenter({ inline = false }) {
   const [items, setItems] = useState([]);
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
@@ -97,7 +97,7 @@ export default function NotificationCenter() {
   };
 
   return (
-    <div className="notif-center" ref={panelRef}>
+    <div className={`notif-center ${inline ? "inline" : ""}`} ref={panelRef}>
       <button className="notif-bell" onClick={toggle} title="Notifications" aria-label="Notifications">
         <Bell size={18} />
         {unread > 0 && <span className="notif-badge">{unread > 99 ? "99+" : unread}</span>}

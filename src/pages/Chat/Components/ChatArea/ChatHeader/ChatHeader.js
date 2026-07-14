@@ -15,6 +15,7 @@ import { authHeaders } from "../../../../../utils/auth";
 import { getPins } from "../../../../../api/chat";
 import { useDialogs } from "../../../../../components/DialogProvider";
 import ChannelSettingsModal from "../../ChannelSettingsModal/ChannelSettingsModal";
+import NotificationCenter from "../../NotificationCenter/NotificationCenter";
 export default function ChatHeader({
   activeChannel,
   workspaceId,
@@ -242,6 +243,8 @@ export default function ChatHeader({
           <Search size={16} />
           <input type="text" placeholder="Search" />
         </div>
+
+        <NotificationCenter inline />
       </div>
 
       <ChannelSettingsModal
