@@ -8,8 +8,10 @@ export function getCurrentUserId() {
 
   try {
     const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-    // user-service embeds the numeric id in the "sub" claim as a string
-    const id = parseInt(payload.sub, 10);
+    // The numeric id lives in the "userId" claim; "sub" is the user's email
+    // (see user-service JwtUtil). Fall back to sub only for legacy numeric-subject tokens.
+    const raw = payload.userId != null ? payload.userId : payload.sub;
+    const id = parseInt(raw, 10);
     return isNaN(id) ? null : id;
   } catch {
     return null;

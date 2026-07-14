@@ -17,6 +17,7 @@ const load = (k, def) => { try { const v = localStorage.getItem(k); return v == 
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* ignore */ } };
 
 export default function MyDesk({ workspaceId }) {
+  const { notify } = useDialogs();
   const me = getCurrentUserId();
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState("");
@@ -67,11 +68,13 @@ export default function MyDesk({ workspaceId }) {
   const addTask = async () => {
     const title = newTask.trim();
     if (!title) return;
-    setNewTask("");
     try {
       await createTask({ workspaceId, title, assigneeUserId: me, dueDate: new Date(today + DAY / 2).toISOString() });
+      setNewTask("");
       reload();
-    } catch { /* ignore */ }
+    } catch (e) {
+      notify(e?.response?.data?.message || "Could not add task", "error");
+    }
   };
 
   const addNote = () =>
