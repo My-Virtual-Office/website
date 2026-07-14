@@ -60,6 +60,13 @@ export default function ChatPage() {
   const [dirMembers, setDirMembers] = useState([]);
   const [dirChannels, setDirChannels] = useState([]);
   const [profileMember, setProfileMember] = useState(null);
+  const [focusTask, setFocusTask] = useState(null); // task # to focus in the board
+
+  // Clicking a #<number> in chat opens the tasks board focused on that task.
+  const handleTaskClick = (number) => {
+    setFocusTask({ n: number });
+    setView("tasks");
+  };
 
   // Unread badges: { [conversationId]: { count, mention } }.
   const [unread, setUnread] = useState({});
@@ -374,6 +381,7 @@ export default function ChatPage() {
         onMention: handleMentionClick,
         onChannel: handleChannelClick,
         onMarkUnread: handleMarkUnread,
+        onTask: handleTaskClick,
       }}
     >
     <div className="chatPage">
@@ -410,7 +418,7 @@ export default function ChatPage() {
       {view === "contacts" ? (
         <ContactsDirectory workspaceId={workspaceId} />
       ) : view === "tasks" ? (
-        <TasksBoard workspaceId={workspaceId} />
+        <TasksBoard workspaceId={workspaceId} focus={focusTask} />
       ) : (
         <>
           <ChatArea

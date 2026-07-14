@@ -38,11 +38,16 @@ const localDT = (iso) => {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 };
 
-export default function TasksBoard({ workspaceId }) {
+export default function TasksBoard({ workspaceId, focus }) {
   const { confirm, notify } = useDialogs();
   const [tasks, setTasks] = useState([]);
   const [board, setBoard] = useState("date"); // "date" | "assignee"
   const [q, setQ] = useState("");
+
+  // When opened from a #<number> chat mention, focus that task.
+  useEffect(() => {
+    if (focus?.n) setQ(`#${focus.n}`);
+  }, [focus]);
   const [mineOnly, setMineOnly] = useState(false);
   const [members, setMembers] = useState([]); // [{userId, name}]
   const [editing, setEditing] = useState(null); // task or {new:true, status, dueBucket}

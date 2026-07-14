@@ -11,6 +11,7 @@ export const MentionContext = createContext({
   onMention: null,
   onChannel: null,
   onMarkUnread: null,
+  onTask: null, // onTask(number) -> open that task (#<digits> in chat)
 });
 
 export const useMentions = () => useContext(MentionContext);

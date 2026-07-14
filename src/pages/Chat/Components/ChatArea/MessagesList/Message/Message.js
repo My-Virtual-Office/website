@@ -21,8 +21,8 @@ import { toggleReaction, fileUrl, pinMessage, unpinMessage } from "../../../../.
 import { useDialogs } from "../../../../../../components/DialogProvider";
 import { useMentions } from "../../../../mentionContext";
 
-/** Highlight @mention and #channel tokens, making them clickable. */
-function renderContent(text, onMention, onChannel) {
+/** Highlight @mention, #channel, and #<number> (task) tokens, making them clickable. */
+function renderContent(text, onMention, onChannel, onTask) {
   if (!text) return null;
   const parts = [];
   const regex = /(^|[\s(])([@#][\w-]+)/g;
@@ -33,11 +33,20 @@ function renderContent(text, onMention, onChannel) {
     const start = m.index + m[1].length; // skip the leading boundary char
     if (start > last) parts.push(text.slice(last, start));
     const isUser = token[0] === "@";
-    const handler = isUser ? onMention : onChannel;
+    const isTask = token[0] === "#" && /^\d+$/.test(token.slice(1));
+    let className = "mention";
+    let handler = onMention;
+    if (isTask) {
+      className = "mention-task";
+      handler = onTask;
+    } else if (!isUser) {
+      className = "mention-channel";
+      handler = onChannel;
+    }
     parts.push(
       <span
         key={start}
-        className={isUser ? "mention" : "mention-channel"}
+        className={className}
         role={handler ? "button" : undefined}
         tabIndex={handler ? 0 : undefined}
         onClick={handler ? () => handler(token.slice(1)) : undefined}
@@ -52,7 +61,7 @@ function renderContent(text, onMention, onChannel) {
 }
 
 export default function Message({ message, stompClient, grouped, onOpenThread, unread }) {
-  const { onMention, onChannel, onMarkUnread } = useMentions();
+  const { onMention, onChannel, onMarkUnread, onTask } = useMentions();
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
   // --- Message State ---
@@ -252,7 +261,7 @@ export default function Message({ message, stompClient, grouped, onOpenThread, u
             </div>
           </div>
         ) : currentContent ? (
-          <div className="message-text">{renderContent(currentContent, onMention, onChannel)}</div>
+          <div className="message-text">{renderContent(currentContent, onMention, onChannel, onTask)}</div>
         ) : null}
 
         {/* Uploaded attachments */}

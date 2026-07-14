@@ -66,6 +66,18 @@
 .mention-channel:hover {
   background: color-mix(in srgb, var(--link) 20%, transparent);
 }
+/* #<number> task reference */
+.mention-task {
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 0 3px;
+  color: #b9791f;
+  background: color-mix(in srgb, #e8a33d 18%, transparent);
+  cursor: pointer;
+}
+.mention-task:hover {
+  background: color-mix(in srgb, #e8a33d 28%, transparent);
+}
 
 /* Hover action toolbar */
 .message-actions {
