@@ -31,13 +31,14 @@
 .desk-grid {
   display: grid;
   grid-template-columns: 1.1fr 1.4fr;
-  grid-template-areas: "tasks wb" "tasks notes";
+  grid-template-areas: "tasks wb" "play notes";
   gap: 18px;
   align-items: start;
 }
 .desk-tasks { grid-area: tasks; }
 .desk-wb { grid-area: wb; }
 .desk-notes { grid-area: notes; }
+.desk-play { grid-area: play; }
 
 .desk-card {
   background: var(--panel-bg);
@@ -164,3 +165,111 @@
 @media (max-width: 900px) {
   .desk-grid { grid-template-columns: 1fr; grid-template-areas: "tasks" "wb" "notes"; }
 }
+
+/* ── Break hub: focus timer + mini-games ── */
+.desk-play .desk-card-head { position: relative; }
+.play-tabs {
+  margin-left: auto;
+  display: flex;
+  gap: 2px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2px;
+}
+.play-tabs button {
+  border: none;
+  background: transparent;
+  color: var(--content-muted);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.play-tabs button.on {
+  background: var(--panel-bg);
+  color: var(--content-strong);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16);
+}
+
+/* Focus timer */
+.focus { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 8px 0; }
+.focus-ring {
+  width: 150px; height: 150px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.3s linear;
+}
+.focus-inner {
+  width: 122px; height: 122px; border-radius: 50%;
+  background: var(--panel-bg);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.focus-time { font-size: 30px; font-weight: 800; color: var(--content-strong); font-variant-numeric: tabular-nums; }
+.focus-presets { display: flex; gap: 6px; }
+.focus-presets button {
+  border: 1px solid var(--border); background: transparent; color: var(--content-fg);
+  border-radius: 999px; padding: 5px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer;
+}
+.focus-presets button.on { background: color-mix(in srgb, var(--accent) 16%, transparent); border-color: var(--accent); color: var(--content-strong); }
+.focus-ctrl { display: flex; gap: 8px; }
+.focus-go {
+  display: inline-flex; align-items: center; gap: 7px;
+  border: none; border-radius: 10px;
+  background: var(--accent); color: var(--accent-fg);
+  padding: 9px 22px; font-weight: 800; font-size: 14px; cursor: pointer;
+}
+.focus-go:hover { background: var(--accent-hover); }
+.focus-reset {
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border); background: transparent; color: var(--content-fg);
+  border-radius: 10px; width: 40px; cursor: pointer;
+}
+.focus-reset:hover { background: var(--hover-bg); }
+
+/* Memory game */
+.memory { display: flex; flex-direction: column; gap: 12px; padding: 4px 0; }
+.memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.mcard {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-size: 22px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #5b8def, #7c5cf0);
+  color: #fff;
+  transition: transform 0.15s, background 0.15s;
+}
+.mcard span { transition: opacity 0.1s; }
+.mcard:not(.open) span { opacity: 0.55; font-weight: 800; }
+.mcard.open {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transform: rotateY(0);
+}
+.mcard:hover { transform: translateY(-2px); }
+.memory-foot { display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 700; color: var(--content-muted); }
+.memory-foot button {
+  border: 1px solid var(--border); background: transparent; color: var(--content-fg);
+  border-radius: 8px; padding: 5px 12px; font-weight: 700; font-size: 12.5px; cursor: pointer;
+}
+.memory-foot button:hover { background: var(--hover-bg); }
+
+/* Breathe */
+.breathe { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 22px 0; }
+.breathe-bubble {
+  width: 150px; height: 150px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 700; font-size: 15px; letter-spacing: 0.5px;
+  background: radial-gradient(circle at 35% 30%, #7cc5ff, #5b8def 60%, #7c5cf0);
+  box-shadow: 0 8px 30px rgba(91, 141, 239, 0.4);
+  animation: breathe 9s ease-in-out infinite;
+}
+@keyframes breathe {
+  0%, 100% { transform: scale(0.62); }
+  50% { transform: scale(1); }
+}
+.breathe-hint { font-size: 13px; color: var(--content-muted); }

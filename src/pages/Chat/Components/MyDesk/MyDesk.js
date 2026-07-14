@@ -1,6 +1,6 @@
 import "./MyDesk.css";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Plus, Check, Trash2, StickyNote, Pencil, Eraser, ListTodo, Flag } from "lucide-react";
+import { Plus, Check, Trash2, StickyNote, Pencil, Eraser, ListTodo, Flag, Play, Pause, RotateCcw, Timer } from "lucide-react";
 import { getMyTasks, createTask, updateTask, PRIORITY_COLOR } from "../../../../api/tasks";
 import { getCurrentUserId } from "../../../../utils/auth";
 
@@ -106,6 +106,9 @@ export default function MyDesk({ workspaceId }) {
           </div>
         </section>
 
+        {/* Break hub: focus timer + relaxing mini-games */}
+        <BreakCard />
+
         {/* Whiteboard */}
         <Whiteboard storeKey={nsWb} />
 
@@ -205,5 +208,111 @@ function Whiteboard({ storeKey }) {
         onTouchEnd={end}
       />
     </section>
+  );
+}
+
+// Break hub: a focus timer + a couple of relaxing mini-games.
+function BreakCard() {
+  const [tab, setTab] = useState("focus");
+  return (
+    <section className="desk-card desk-play">
+      <div className="desk-card-head">
+        <Timer size={17} /> Take a Break
+        <div className="play-tabs">
+          <button className={tab === "focus" ? "on" : ""} onClick={() => setTab("focus")}>Focus</button>
+          <button className={tab === "memory" ? "on" : ""} onClick={() => setTab("memory")}>Memory</button>
+          <button className={tab === "breathe" ? "on" : ""} onClick={() => setTab("breathe")}>Breathe</button>
+        </div>
+      </div>
+      {tab === "focus" && <FocusTimer />}
+      {tab === "memory" && <MemoryGame />}
+      {tab === "breathe" && <Breathe />}
+    </section>
+  );
+}
+
+const PRESETS = [{ m: 25, l: "Focus" }, { m: 5, l: "Short" }, { m: 15, l: "Long" }];
+function FocusTimer() {
+  const [total, setTotal] = useState(25 * 60);
+  const [left, setLeft] = useState(25 * 60);
+  const [running, setRunning] = useState(false);
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => setLeft((s) => { if (s <= 1) { setRunning(false); return 0; } return s - 1; }), 1000);
+    return () => clearInterval(id);
+  }, [running]);
+  const mmss = `${String(Math.floor(left / 60)).padStart(2, "0")}:${String(left % 60).padStart(2, "0")}`;
+  const pct = total ? 1 - left / total : 0;
+  const setPreset = (m) => { setRunning(false); setTotal(m * 60); setLeft(m * 60); };
+  return (
+    <div className="focus">
+      <div className="focus-ring" style={{ background: `conic-gradient(#5b8def ${pct * 360}deg, var(--hover-bg) 0)` }}>
+        <div className="focus-inner"><span className="focus-time">{mmss}</span></div>
+      </div>
+      <div className="focus-presets">
+        {PRESETS.map((p) => (
+          <button key={p.m} className={total === p.m * 60 ? "on" : ""} onClick={() => setPreset(p.m)}>{p.l}</button>
+        ))}
+      </div>
+      <div className="focus-ctrl">
+        <button className="focus-go" onClick={() => setRunning((r) => !r)}>
+          {running ? <Pause size={15} /> : <Play size={15} />} {running ? "Pause" : "Start"}
+        </button>
+        <button className="focus-reset" onClick={() => { setRunning(false); setLeft(total); }}><RotateCcw size={15} /></button>
+      </div>
+    </div>
+  );
+}
+
+const MEM_EMOJIS = ["🌸", "🍀", "🌊", "🔥", "⭐", "🍉", "🎈", "🦋"];
+function MemoryGame() {
+  const [deck, setDeck] = useState([]);
+  const [flipped, setFlipped] = useState([]);
+  const [matched, setMatched] = useState(() => new Set());
+  const [moves, setMoves] = useState(0);
+  const shuffle = () => {
+    const d = [...MEM_EMOJIS, ...MEM_EMOJIS].map((e, i) => ({ id: i, e })).sort(() => Math.random() - 0.5);
+    setDeck(d); setFlipped([]); setMatched(new Set()); setMoves(0);
+  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { shuffle(); }, []);
+  const flip = (i) => {
+    if (flipped.length === 2 || flipped.includes(i) || matched.has(deck[i].e)) return;
+    const next = [...flipped, i];
+    setFlipped(next);
+    if (next.length === 2) {
+      setMoves((m) => m + 1);
+      const [a, b] = next;
+      if (deck[a].e === deck[b].e) { setMatched((s) => new Set(s).add(deck[a].e)); setTimeout(() => setFlipped([]), 320); }
+      else setTimeout(() => setFlipped([]), 720);
+    }
+  };
+  const won = matched.size === MEM_EMOJIS.length && deck.length > 0;
+  return (
+    <div className="memory">
+      <div className="memory-grid">
+        {deck.map((c, i) => {
+          const open = flipped.includes(i) || matched.has(c.e);
+          return (
+            <button key={c.id} className={`mcard ${open ? "open" : ""}`} onClick={() => flip(i)}>
+              <span>{open ? c.e : "?"}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="memory-foot">
+        <span>{won ? "🎉 Solved!" : `Moves: ${moves}`}</span>
+        <button onClick={shuffle}>New game</button>
+      </div>
+    </div>
+  );
+}
+
+function Breathe() {
+  return (
+    <div className="breathe">
+      <div className="breathe-bubble"><span>breathe</span></div>
+      <div className="breathe-hint">In as the circle grows, out as it shrinks.</div>
+    </div>
   );
 }
