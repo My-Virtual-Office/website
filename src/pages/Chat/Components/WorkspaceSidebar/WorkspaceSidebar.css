@@ -149,6 +149,12 @@
   color: var(--content-muted);
   padding: 6px 10px 8px;
 }
+/* Cap the theme list to ~3 rows so the popover stays short and the rest scrolls. */
+.theme-menu-list {
+  max-height: 150px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 .theme-menu-item {
   width: 100%;
   display: flex;

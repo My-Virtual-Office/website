@@ -66,27 +66,29 @@ export default function WorkspaceSidebar({ workspaces = [], activeId, onSwitch }
         }}
       >
         <div className="theme-menu-title">Theme</div>
-        {themes.map((t) => (
-          <button
-            key={t.id}
-            className={`theme-menu-item ${t.id === theme ? "active" : ""}`}
-            onClick={() => {
-              setTheme(t.id);
-              setAnchorEl(null);
-            }}
-          >
-            <span className="theme-swatch">
-              <span style={{ background: t.swatch.rail }} />
-              <span style={{ background: t.swatch.sidebar }} />
-              <span style={{ background: t.swatch.content }} />
-            </span>
-            <span className="theme-menu-labels">
-              <span className="theme-menu-label">{t.label}</span>
-              <span className="theme-menu-hint">{t.hint}</span>
-            </span>
-            {t.id === theme && <Check size={16} color="#1264a3" strokeWidth={3} />}
-          </button>
-        ))}
+        <div className="theme-menu-list">
+          {themes.map((t) => (
+            <button
+              key={t.id}
+              className={`theme-menu-item ${t.id === theme ? "active" : ""}`}
+              onClick={() => {
+                setTheme(t.id);
+                setAnchorEl(null);
+              }}
+            >
+              <span className="theme-swatch">
+                <span style={{ background: t.swatch.rail }} />
+                <span style={{ background: t.swatch.sidebar }} />
+                <span style={{ background: t.swatch.content }} />
+              </span>
+              <span className="theme-menu-labels">
+                <span className="theme-menu-label">{t.label}</span>
+                <span className="theme-menu-hint">{t.hint}</span>
+              </span>
+              {t.id === theme && <Check size={16} color="#1264a3" strokeWidth={3} />}
+            </button>
+          ))}
+        </div>
       </Popover>
     </div>
   );
