@@ -11,6 +11,7 @@ import ContactsDirectory from "./Components/ContactsDirectory/ContactsDirectory"
 import ThreadPanel from "./Components/ThreadPanel/ThreadPanel";
 import ProfilePanel from "./Components/ProfilePanel/ProfilePanel";
 import NotificationCenter from "./Components/NotificationCenter/NotificationCenter";
+import TasksBoard from "./Components/TasksBoard/TasksBoard";
 import ResizeHandle from "../../components/ResizeHandle";
 import { MentionContext } from "./mentionContext";
 import { authHeaders, getCurrentUserId } from "../../utils/auth";
@@ -393,6 +394,7 @@ export default function ChatPage() {
               activeView={view}
               unread={unread}
               onOpenContacts={() => setView("contacts")}
+              onOpenTasks={() => setView("tasks")}
             />
           </div>
           <ResizeHandle
@@ -407,6 +409,8 @@ export default function ChatPage() {
 
       {view === "contacts" ? (
         <ContactsDirectory workspaceId={workspaceId} />
+      ) : view === "tasks" ? (
+        <TasksBoard workspaceId={workspaceId} />
       ) : (
         <>
           <ChatArea
