@@ -56,7 +56,8 @@
 
 /* Tasks */
 .desk-add { display: flex; gap: 8px; margin-bottom: 12px; }
-.desk-add input {
+/* Legacy simple add-box (scoped so it never styles the smart quick-add dropdown buttons). */
+.desk-add:not(.qa) input {
   flex: 1; min-width: 0;
   padding: 10px 12px;
   border: 1px solid var(--input-border);
@@ -65,12 +66,12 @@
   color: var(--input-fg);
   font-size: 14px;
 }
-.desk-add button {
+.desk-add:not(.qa) button {
   display: flex; align-items: center; justify-content: center;
   width: 40px; border: none; border-radius: 10px;
   background: var(--accent); color: var(--accent-fg); cursor: pointer;
 }
-.desk-add button:hover { background: var(--accent-hover); }
+.desk-add:not(.qa) button:hover { background: var(--accent-hover); }
 
 /* Smart quick-add bar: search existing tasks or create a new one */
 .desk-add.qa { position: relative; display: block; }
