@@ -222,7 +222,7 @@
   margin-bottom: 10px;
 }
 .tb-col {
-  min-height: calc(100vh - 230px); /* each day fills ~90% of the screen like ClickUp */
+  min-height: 70vh; /* each day band is a tall, comfortable drop zone (~70% of screen) */
   padding: 6px;
   border-radius: 12px;
   display: flex; flex-direction: column; gap: 10px;

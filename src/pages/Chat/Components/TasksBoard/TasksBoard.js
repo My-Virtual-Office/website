@@ -9,7 +9,7 @@ import {
   getSpaces, createSpace, updateSpace, deleteSpace,
   TASK_STATUSES, STATUS_LABEL, STATUS_COLOR, PRIORITY_COLOR,
 } from "../../../../api/tasks";
-import { getMembers } from "../../../../api/workspace";
+import { getMembers, getMyDesk } from "../../../../api/workspace";
 import { getAllUsers } from "../../../../api/user";
 import { getCurrentUserId } from "../../../../utils/auth";
 import { useDialogs } from "../../../../components/DialogProvider";
@@ -90,11 +90,15 @@ export default function TasksBoard({ workspaceId, focus }) {
     if (!workspaceId) return;
     (async () => {
       try {
-        const [desks, users] = await Promise.all([getMembers(workspaceId), getAllUsers().catch(() => [])]);
+        const [desks, users, myDesk] = await Promise.all([
+          getMembers(workspaceId),
+          getAllUsers().catch(() => []),
+          getMyDesk(workspaceId).catch(() => null),
+        ]);
         const byId = {};
         users.forEach((u) => (byId[u.id] = `${u.firstName || ""} ${u.lastName || ""}`.trim()));
-        const myDesk = (desks || []).find((d) => String(d.userId) === String(me));
-        setIsAdmin(["ADMIN", "OWNER"].includes(myDesk?.role));
+        const role = myDesk?.role || (desks || []).find((d) => String(d.userId) === String(me))?.role;
+        setIsAdmin(["ADMIN", "OWNER"].includes(role));
         setMembers(
           (desks || []).filter((d) => d.userId != null).map((d) => ({
             userId: d.userId, name: byId[d.userId] || d.fullName || `User ${d.userId}`,

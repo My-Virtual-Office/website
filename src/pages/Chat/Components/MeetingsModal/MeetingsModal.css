@@ -563,3 +563,42 @@
 }
 .meet-create:hover { background: var(--accent-hover); }
 .meet-page .meet-form { border-bottom: 1px solid var(--border); max-width: 640px; }
+
+/* ── Google-Calendar-style quick-create window ── */
+.meet-quick-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1400;
+}
+.meet-quick {
+  width: 460px;
+  max-width: calc(100vw - 32px);
+  max-height: 88vh;
+  overflow-y: auto;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--overlay-shadow);
+  animation: meet-quick-in 0.14s ease;
+}
+@keyframes meet-quick-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.meet-quick-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--content-strong);
+}
+.meet-quick .meet-form { border-bottom: none; max-width: none; }
+/* Full-width week grid now that the side form is a popup */
+.meet-page .meet-weekmain { flex: 1; min-width: 0; }

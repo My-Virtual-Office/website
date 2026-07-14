@@ -61,7 +61,7 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
   const [saving, setSaving] = useState(false);
   const [view, setView] = useState("week"); // "week" | "list"
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
-  const [showForm, setShowForm] = useState(false); // List view: toggled by "Create event"
+  const [quickOpen, setQuickOpen] = useState(false); // Google-Calendar-style create popup
   const me = getCurrentUserId();
 
   // Load workspace members (with emails) for the attendee picker.
@@ -115,10 +115,11 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
     if (shown) load();
   }, [inline, open, shown, load]);
 
-  // Grid drag-create → prefill the form's start/end with the picked slot.
+  // Grid drag-create → prefill start/end and pop the Google-Calendar-style create window.
   const onPickSlot = (startDate, endDate) => {
     setStart(toLocalInput(startDate));
     setEnd(toLocalInput(endDate));
+    setQuickOpen(true);
   };
   const shiftWeek = (days) =>
     setWeekStart((ws) => {
@@ -155,6 +156,7 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
       });
       setTitle("");
       setAttendeeIds(new Set());
+      setQuickOpen(false);
       await load();
       notify(
         attendees.length
@@ -286,40 +288,51 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
       </div>
 
       {view === "week" ? (
-        <div className="meet-weekwrap">
-          <div className="meet-weekmain">
-            <div className="meet-weeknav">
-              <button onClick={() => shiftWeek(-7)} title="Previous week">
-                <ChevronLeft size={16} />
-              </button>
-              <button className="today" onClick={() => setWeekStart(startOfWeek(new Date()))}>
-                Today
-              </button>
-              <button onClick={() => shiftWeek(7)} title="Next week">
-                <ChevronRight size={16} />
-              </button>
-              <span className="meet-weeklabel">{weekLabel(weekStart)}</span>
-              <span className="meet-weekhint">Drag on the grid to pick a time</span>
-            </div>
-            <WeekGrid
-              weekStart={weekStart}
-              events={events}
-              onPick={onPickSlot}
-              selected={selectedSlot}
-              onDelete={remove}
-            />
+        <div className="meet-weekmain">
+          <div className="meet-weeknav">
+            <button onClick={() => shiftWeek(-7)} title="Previous week">
+              <ChevronLeft size={16} />
+            </button>
+            <button className="today" onClick={() => setWeekStart(startOfWeek(new Date()))}>
+              Today
+            </button>
+            <button onClick={() => shiftWeek(7)} title="Next week">
+              <ChevronRight size={16} />
+            </button>
+            <span className="meet-weeklabel">{weekLabel(weekStart)}</span>
+            <span className="meet-weekhint">Drag on the grid to create an event</span>
           </div>
-          <div className="meet-side">{formPanel}</div>
+          <WeekGrid
+            weekStart={weekStart}
+            events={events}
+            onPick={onPickSlot}
+            selected={selectedSlot}
+            onDelete={remove}
+          />
         </div>
       ) : (
         <div className="meet-listwrap">
           <div className="meet-listbar">
-            <button className="meet-create" onClick={() => setShowForm((s) => !s)}>
-              {showForm ? <X size={15} /> : <Plus size={15} />} {showForm ? "Close" : "Create event"}
+            <button className="meet-create" onClick={() => setQuickOpen(true)}>
+              <Plus size={15} /> Create event
             </button>
           </div>
-          {showForm && formPanel}
           {listPanel}
+        </div>
+      )}
+
+      {/* Google-Calendar-style create window (drag on grid or "Create event") */}
+      {quickOpen && (
+        <div className="meet-quick-overlay" onClick={() => setQuickOpen(false)}>
+          <div className="meet-quick" onClick={(e) => e.stopPropagation()}>
+            <div className="meet-quick-head">
+              <span>New event</span>
+              <button className="meet-close" onClick={() => setQuickOpen(false)} aria-label="Close">
+                <X size={18} />
+              </button>
+            </div>
+            {formPanel}
+          </div>
         </div>
       )}
     </>
