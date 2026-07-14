@@ -30,15 +30,11 @@
 
 .desk-grid {
   display: grid;
-  grid-template-columns: 1.1fr 1.4fr;
-  grid-template-areas: "tasks wb" "play notes";
+  grid-template-columns: 1.05fr 1.4fr;
   gap: 18px;
   align-items: start;
 }
-.desk-tasks { grid-area: tasks; }
-.desk-wb { grid-area: wb; }
-.desk-notes { grid-area: notes; }
-.desk-play { grid-area: play; }
+.desk-col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 
 .desk-card {
   background: var(--panel-bg);
@@ -163,8 +159,53 @@
 .sticky textarea::placeholder { color: rgba(0, 0, 0, 0.35); }
 
 @media (max-width: 900px) {
-  .desk-grid { grid-template-columns: 1fr; grid-template-areas: "tasks" "wb" "notes"; }
+  .desk-grid { grid-template-columns: 1fr; }
 }
+
+/* ── Task status sections + detail modal ── */
+.desk-hcount { margin-left: 6px; font-size: 12px; font-weight: 700; color: var(--content-muted); background: var(--hover-bg); border-radius: 999px; padding: 1px 9px; }
+.desk-sections { display: flex; flex-direction: column; gap: 12px; }
+.desk-section { display: flex; flex-direction: column; gap: 2px; }
+.desk-sec-head {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11.5px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.4px;
+  color: var(--content-muted);
+  padding: 2px 4px;
+}
+.desk-sec-dot { width: 9px; height: 9px; border-radius: 50%; }
+.desk-sec-count { background: var(--hover-bg); border-radius: 999px; padding: 0 7px; font-size: 10.5px; }
+.desk-task.clickable { cursor: pointer; }
+
+.desk-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding-top: 8vh; z-index: 1300;
+}
+.desk-modal {
+  width: 520px; max-width: calc(100vw - 32px);
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--overlay-shadow);
+  display: flex; flex-direction: column; max-height: 84vh;
+}
+.desk-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 15px 18px; border-bottom: 1px solid var(--border); font-weight: 800; font-size: 15px; color: var(--content-strong); }
+.desk-modal-close { background: transparent; border: none; color: var(--content-muted); cursor: pointer; display: flex; }
+.desk-modal-body { padding: 16px 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.desk-minput { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--input-fg); font-size: 14px; font-family: inherit; }
+.desk-mtitle { font-size: 16px; font-weight: 600; }
+.desk-mdesc { min-height: 80px; resize: vertical; }
+.desk-mfields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.desk-mfields label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--content-muted); }
+.desk-mfields select, .desk-mfields input { padding: 8px 10px; border: 1px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--input-fg); font-size: 13px; }
+.desk-modal-foot { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-top: 1px solid var(--border); }
+.desk-mdel { display: flex; align-items: center; gap: 6px; background: transparent; border: none; color: var(--danger); cursor: pointer; font-weight: 600; font-size: 13px; }
+.desk-mfoot-right { margin-left: auto; display: flex; gap: 8px; }
+.desk-mcancel { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--content-fg); cursor: pointer; font-weight: 600; }
+.desk-msave { padding: 8px 18px; border-radius: 8px; border: none; background: var(--accent); color: var(--accent-fg); cursor: pointer; font-weight: 700; }
+.desk-msave:hover { background: var(--accent-hover); }
 
 /* ── Break hub: focus timer + mini-games ── */
 .desk-play .desk-card-head { position: relative; }
