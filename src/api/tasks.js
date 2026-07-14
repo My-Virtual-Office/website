@@ -7,13 +7,46 @@ export async function createTask(body) {
 }
 
 /** List tasks with optional filters (workspaceId required). q searches title+description. */
-export async function getTasks(workspaceId, { assigneeUserId, status, q } = {}) {
+export async function getTasks(workspaceId, { spaceId, assigneeUserId, status, q } = {}) {
   const params = new URLSearchParams({ workspaceId });
+  if (spaceId != null) params.set("spaceId", spaceId);
   if (assigneeUserId != null) params.set("assigneeUserId", assigneeUserId);
   if (status) params.set("status", status);
   if (q) params.set("q", q);
   const res = await axiosInstance.get(`/api/tasks?${params.toString()}`);
   return res.data ?? [];
+}
+
+// ─────────────────────────── Team Spaces ───────────────────────────
+
+/** Team Spaces I can access in a workspace (auto-creates a shared "General" on first visit). */
+export async function getSpaces(workspaceId) {
+  const res = await axiosInstance.get(`/api/tasks/spaces?workspaceId=${workspaceId}`);
+  return res.data ?? [];
+}
+
+/** Create a Team Space. memberUserIds = who else can access it (creator is always added). */
+export async function createSpace({ workspaceId, name, memberUserIds }) {
+  const res = await axiosInstance.post("/api/tasks/spaces", {
+    workspaceId,
+    name,
+    memberUserIds: memberUserIds ?? [],
+  });
+  return res.data;
+}
+
+/** Rename a space and/or replace its member set. */
+export async function updateSpace(id, { name, memberUserIds }) {
+  const res = await axiosInstance.patch(`/api/tasks/spaces/${id}`, {
+    name: name ?? null,
+    memberUserIds: memberUserIds ?? null,
+  });
+  return res.data;
+}
+
+/** Delete a space and its tasks (creator only). */
+export async function deleteSpace(id) {
+  await axiosInstance.delete(`/api/tasks/spaces/${id}`);
 }
 
 /** Tasks assigned to me. */

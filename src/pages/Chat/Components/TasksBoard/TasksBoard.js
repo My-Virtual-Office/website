@@ -1,8 +1,12 @@
 import "./TasksBoard.css";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Search, Plus, X, Trash2, Flag, CalendarDays, User, ListTodo } from "lucide-react";
 import {
-  createTask, getTasks, updateTask, deleteTask,
+  Search, Plus, X, Trash2, Flag, CalendarDays, User, ChevronDown, ChevronRight,
+  Users, Settings2, Layers,
+} from "lucide-react";
+import {
+  createTask, getTasks, updateTask, deleteTask, getTaskByNumber,
+  getSpaces, createSpace, updateSpace, deleteSpace,
   TASK_STATUSES, STATUS_LABEL, STATUS_COLOR, PRIORITY_COLOR,
 } from "../../../../api/tasks";
 import { getMembers } from "../../../../api/workspace";
@@ -29,8 +33,20 @@ const DATE_GROUPS = [
   { key: "later", label: "Upcoming", color: "#8b5cf6" },
   { key: "none", label: "No date", color: "#9aa0a6" },
 ];
-const fmtDue = (iso) =>
-  iso ? new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "";
+
+// ClickUp-style relative due date shown on cards.
+function relDue(iso) {
+  if (!iso) return "";
+  const d = startOfDay(iso).getTime();
+  const today = startOfDay(new Date()).getTime();
+  const diff = Math.round((d - today) / DAY);
+  if (diff === 0) return "Today";
+  if (diff === -1) return "Yesterday";
+  if (diff === 1) return "Tomorrow";
+  if (diff < 0) return `${-diff} days ago`;
+  if (diff > 0 && diff < 7) return new Date(iso).toLocaleDateString(undefined, { weekday: "short" });
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
 const localDT = (iso) => {
   if (!iso) return "";
   const d = new Date(iso);
@@ -40,17 +56,16 @@ const localDT = (iso) => {
 
 export default function TasksBoard({ workspaceId, focus }) {
   const { confirm, notify } = useDialogs();
+  const [spaces, setSpaces] = useState([]);
+  const [activeSpace, setActiveSpace] = useState(null); // space id
   const [tasks, setTasks] = useState([]);
   const [board, setBoard] = useState("date"); // "date" | "assignee"
   const [q, setQ] = useState("");
-
-  // When opened from a #<number> chat mention, focus that task.
-  useEffect(() => {
-    if (focus?.n) setQ(`#${focus.n}`);
-  }, [focus]);
   const [mineOnly, setMineOnly] = useState(false);
   const [members, setMembers] = useState([]); // [{userId, name}]
+  const [collapsed, setCollapsed] = useState(() => new Set());
   const [editing, setEditing] = useState(null); // task or {new:true, status, dueBucket}
+  const [spaceModal, setSpaceModal] = useState(null); // {new:true} | space
   const me = getCurrentUserId();
 
   const nameOf = useCallback(
@@ -58,17 +73,7 @@ export default function TasksBoard({ workspaceId, focus }) {
     [members],
   );
 
-  const load = useCallback(async () => {
-    if (!workspaceId) return;
-    try {
-      setTasks(await getTasks(workspaceId, {}));
-    } catch {
-      /* tasks-service may still be starting */
-    }
-  }, [workspaceId]);
-
-  useEffect(() => { load(); }, [load]);
-
+  // Workspace members (names) — for assignee dropdowns + the space member picker.
   useEffect(() => {
     if (!workspaceId) return;
     (async () => {
@@ -85,6 +90,37 @@ export default function TasksBoard({ workspaceId, focus }) {
     })();
   }, [workspaceId]);
 
+  const loadSpaces = useCallback(async () => {
+    if (!workspaceId) return [];
+    try {
+      const s = await getSpaces(workspaceId);
+      setSpaces(s);
+      setActiveSpace((cur) => (cur && s.some((x) => x.id === cur) ? cur : s[0]?.id ?? null));
+      return s;
+    } catch { return []; }
+  }, [workspaceId]);
+
+  useEffect(() => { loadSpaces(); }, [loadSpaces]);
+
+  const loadTasks = useCallback(async () => {
+    if (!workspaceId || !activeSpace) { setTasks([]); return; }
+    try { setTasks(await getTasks(workspaceId, { spaceId: activeSpace })); } catch { /* starting */ }
+  }, [workspaceId, activeSpace]);
+
+  useEffect(() => { loadTasks(); }, [loadTasks]);
+
+  // When opened from a #<number> chat mention, jump to the task's space + highlight it.
+  useEffect(() => {
+    if (!focus?.n || !workspaceId) return;
+    (async () => {
+      try {
+        const t = await getTaskByNumber(workspaceId, focus.n);
+        if (t?.spaceId) setActiveSpace(t.spaceId);
+        setQ(`#${focus.n}`);
+      } catch { setQ(`#${focus.n}`); }
+    })();
+  }, [focus, workspaceId]);
+
   const visible = useMemo(() => {
     const s = q.trim().toLowerCase();
     return tasks.filter((t) => {
@@ -97,16 +133,19 @@ export default function TasksBoard({ workspaceId, focus }) {
   const move = async (task, status) => {
     if (task.status === status) return;
     setTasks((ts) => ts.map((t) => (t.id === task.id ? { ...t, status } : t)));
-    try { await updateTask(task.id, { status }); } catch { notify("Could not move task", "error"); load(); }
+    try { await updateTask(task.id, { status }); } catch { notify("Could not move task", "error"); loadTasks(); }
   };
 
   const remove = async (task) => {
     if (!(await confirm({ title: "Delete task", message: `Delete “${task.title}”?`, confirmText: "Delete", tone: "danger" }))) return;
     setTasks((ts) => ts.filter((t) => t.id !== task.id));
-    try { await deleteTask(task.id); } catch { notify("Could not delete", "error"); load(); }
+    try { await deleteTask(task.id); } catch { notify("Could not delete", "error"); loadTasks(); }
   };
 
-  // Swimlanes: either date buckets or assignees.
+  const toggleBand = (key) =>
+    setCollapsed((prev) => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
+
+  // Swimlanes: date buckets or assignees.
   const lanes = useMemo(() => {
     if (board === "assignee") {
       const ids = [...new Set(visible.map((t) => t.assigneeUserId ?? 0))];
@@ -120,104 +159,206 @@ export default function TasksBoard({ workspaceId, focus }) {
     return DATE_GROUPS.map((g) => ({ ...g, match: (t) => bucketOf(t) === g.key }));
   }, [board, visible, members, nameOf]);
 
+  const totals = useMemo(() => {
+    const m = { TODO: 0, IN_PROGRESS: 0, COMPLETE: 0 };
+    visible.forEach((t) => { if (m[t.status] != null) m[t.status] += 1; });
+    return m;
+  }, [visible]);
+
+  const activeSpaceObj = spaces.find((s) => s.id === activeSpace);
+
   const Card = ({ t }) => (
     <div
-      className="tb-card"
+      className={`tb-card ${q && `#${t.taskNumber}` === q ? "focused" : ""}`}
       draggable
       onDragStart={(e) => e.dataTransfer.setData("text/task", String(t.id))}
       onClick={() => setEditing(t)}
     >
       <div className="tb-card-title">{t.title}</div>
       <div className="tb-card-meta">
-        <span className="tb-num">#{t.taskNumber}</span>
-        {t.priority && t.priority !== "NORMAL" && (
-          <span className="tb-flag" style={{ color: PRIORITY_COLOR[t.priority] }}><Flag size={11} /> {t.priority.toLowerCase()}</span>
+        {t.dueDate && (
+          <span className={`tb-chip tb-due ${bucketOf(t) === "overdue" ? "overdue" : ""}`}>
+            <CalendarDays size={11} /> {relDue(t.dueDate)}
+          </span>
         )}
-        {t.dueDate && <span className="tb-due"><CalendarDays size={11} /> {fmtDue(t.dueDate)}</span>}
-        {t.assigneeUserId && <span className="tb-assignee">{nameOf(t.assigneeUserId)}</span>}
+        {t.priority && t.priority !== "NORMAL" && (
+          <span className="tb-chip tb-flag" style={{ color: PRIORITY_COLOR[t.priority] }}>
+            <Flag size={11} /> {t.priority.toLowerCase()}
+          </span>
+        )}
+        {t.assigneeUserId && (
+          <span className="tb-chip tb-assignee" title={nameOf(t.assigneeUserId)}>
+            {initials(nameOf(t.assigneeUserId))}
+          </span>
+        )}
+        <span className="tb-num">#{t.taskNumber}</span>
       </div>
     </div>
   );
 
   return (
     <div className="tasks-board">
-      <div className="tb-head">
-        <div className="tb-title"><ListTodo size={18} /> Tasks</div>
-        <div className="tb-tools">
-          <div className="tb-search"><Search size={15} /><input placeholder="Search tasks" value={q} onChange={(e) => setQ(e.target.value)} /></div>
-          <button className={`tb-toggle ${mineOnly ? "on" : ""}`} onClick={() => setMineOnly((v) => !v)}><User size={14} /> My tasks</button>
-          <button className="tb-add" onClick={() => setEditing({ new: true, status: "TODO" })}><Plus size={15} /> Add task</button>
+      {/* ── Spaces rail ── */}
+      <aside className="tb-spaces">
+        <div className="tb-spaces-head"><Layers size={15} /> Spaces</div>
+        <div className="tb-spaces-list">
+          {spaces.map((s) => (
+            <button
+              key={s.id}
+              className={`tb-space ${s.id === activeSpace ? "active" : ""}`}
+              onClick={() => setActiveSpace(s.id)}
+            >
+              <span className="tb-space-icon" style={{ background: spaceColor(s.id) }}>
+                {s.name.slice(0, 1).toUpperCase()}
+              </span>
+              <span className="tb-space-name">{s.name}</span>
+              <span className="tb-space-count">{s.taskCount}</span>
+              <span
+                className="tb-space-cog"
+                title="Space settings"
+                onClick={(e) => { e.stopPropagation(); setSpaceModal(s); }}
+              >
+                <Settings2 size={13} />
+              </span>
+            </button>
+          ))}
         </div>
-      </div>
+        <button className="tb-space-new" onClick={() => setSpaceModal({ new: true })}>
+          <Plus size={15} /> New Space
+        </button>
+      </aside>
 
-      <div className="tb-boardswitch">
-        <button className={board === "date" ? "on" : ""} onClick={() => setBoard("date")}><CalendarDays size={14} /> Today · Tomorrow · Next</button>
-        <button className={board === "assignee" ? "on" : ""} onClick={() => setBoard("assignee")}><User size={14} /> Tasks per person</button>
-      </div>
+      {/* ── Board ── */}
+      <div className="tb-main">
+        <div className="tb-head">
+          <div className="tb-title">
+            <span className="tb-space-icon lg" style={{ background: spaceColor(activeSpace) }}>
+              {(activeSpaceObj?.name || "T").slice(0, 1).toUpperCase()}
+            </span>
+            {activeSpaceObj?.name || "Tasks"}
+            {activeSpaceObj && (
+              <span className="tb-title-members" title="Members with access">
+                <Users size={13} /> {activeSpaceObj.memberUserIds?.length || 1}
+              </span>
+            )}
+          </div>
+          <div className="tb-tools">
+            <div className="tb-search"><Search size={15} /><input placeholder="Search tasks" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+            <button className={`tb-toggle ${mineOnly ? "on" : ""}`} onClick={() => setMineOnly((v) => !v)}><User size={14} /> My tasks</button>
+            <button className="tb-add" onClick={() => setEditing({ new: true, status: "TODO", spaceId: activeSpace })}><Plus size={15} /> Add task</button>
+          </div>
+        </div>
 
-      <div className="tb-scroll">
-        {lanes.length === 0 && <div className="tb-empty">No tasks yet. Add one to get started.</div>}
-        {lanes.map((lane) => {
-          const laneTasks = visible.filter(lane.match);
-          if (board === "assignee" && laneTasks.length === 0) return null;
-          return (
-            <div className="tb-lane" key={lane.key}>
-              <div className="tb-lane-head" style={{ color: lane.color }}>
-                {lane.label} <span className="tb-lane-count">{laneTasks.length}</span>
+        <div className="tb-boardswitch">
+          <button className={board === "date" ? "on" : ""} onClick={() => setBoard("date")}><CalendarDays size={14} /> Today · Tomorrow · Next</button>
+          <button className={board === "assignee" ? "on" : ""} onClick={() => setBoard("assignee")}><User size={14} /> Tasks per person</button>
+        </div>
+
+        <div className="tb-grid">
+          {/* Sticky status column headers */}
+          <div className="tb-statusrow">
+            {TASK_STATUSES.map((status) => (
+              <div className="tb-statushead" key={status}>
+                <span className="tb-dot" style={{ background: STATUS_COLOR[status] }} />
+                {STATUS_LABEL[status]}
+                <span className="tb-status-count">{totals[status]}</span>
               </div>
-              <div className="tb-cols">
-                {TASK_STATUSES.map((status) => (
-                  <div
-                    className="tb-col"
-                    key={status}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      const id = Number(e.dataTransfer.getData("text/task"));
-                      const t = tasks.find((x) => x.id === id);
-                      if (t) move(t, status);
-                    }}
-                  >
-                    <div className="tb-col-head">
-                      <span className="tb-dot" style={{ background: STATUS_COLOR[status] }} />
-                      {STATUS_LABEL[status]}
-                      <span className="tb-col-count">{laneTasks.filter((t) => t.status === status).length}</span>
-                    </div>
-                    {laneTasks.filter((t) => t.status === status).map((t) => <Card key={t.id} t={t} />)}
-                    <button
-                      className="tb-quickadd"
-                      onClick={() =>
-                        setEditing({
-                          new: true, status,
-                          dueBucket: board === "date" ? lane.key : undefined,
-                          assigneeUserId: board === "assignee" ? Number(lane.key.slice(1)) || null : undefined,
-                        })
-                      }
-                    >
-                      <Plus size={13} /> Add task
-                    </button>
+            ))}
+          </div>
+
+          {lanes.length === 0 && <div className="tb-empty">No tasks yet. Add one to get started.</div>}
+
+          {lanes.map((lane) => {
+            const laneTasks = visible.filter(lane.match);
+            if (board === "assignee" && laneTasks.length === 0) return null;
+            const isCollapsed = collapsed.has(lane.key);
+            return (
+              <div className="tb-band" key={lane.key}>
+                <button className="tb-band-head" style={{ color: lane.color }} onClick={() => toggleBand(lane.key)}>
+                  {isCollapsed ? <ChevronRight size={15} /> : <ChevronDown size={15} />}
+                  <span className="tb-band-label">{lane.label}</span>
+                  <span className="tb-band-count">{laneTasks.length}</span>
+                </button>
+                {!isCollapsed && (
+                  <div className="tb-cols">
+                    {TASK_STATUSES.map((status) => {
+                      const colTasks = laneTasks.filter((t) => t.status === status);
+                      return (
+                        <div
+                          className="tb-col"
+                          key={status}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            const id = Number(e.dataTransfer.getData("text/task"));
+                            const t = tasks.find((x) => x.id === id);
+                            if (t) move(t, status);
+                          }}
+                        >
+                          {colTasks.map((t) => <Card key={t.id} t={t} />)}
+                          {/* Add task only in the TO DO column (per spec). */}
+                          {status === "TODO" && (
+                            <button
+                              className="tb-quickadd"
+                              onClick={() =>
+                                setEditing({
+                                  new: true, status: "TODO", spaceId: activeSpace,
+                                  dueBucket: board === "date" ? lane.key : undefined,
+                                  assigneeUserId: board === "assignee" ? Number(lane.key.slice(1)) || null : undefined,
+                                })
+                              }
+                            >
+                              <Plus size={13} /> Add Task
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                ))}
+                )}
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {editing && (
         <TaskModal
           task={editing}
           workspaceId={workspaceId}
+          spaceId={activeSpace}
           members={members}
           onClose={() => setEditing(null)}
-          onSaved={() => { setEditing(null); load(); }}
+          onSaved={() => { setEditing(null); loadTasks(); loadSpaces(); }}
           onDelete={editing.new ? null : () => { remove(editing); setEditing(null); }}
+        />
+      )}
+
+      {spaceModal && (
+        <SpaceModal
+          space={spaceModal}
+          workspaceId={workspaceId}
+          members={members}
+          me={me}
+          onClose={() => setSpaceModal(null)}
+          onSaved={async (createdId) => {
+            setSpaceModal(null);
+            const s = await loadSpaces();
+            if (createdId && s.some((x) => x.id === createdId)) setActiveSpace(createdId);
+          }}
+          onDeleted={async () => { setSpaceModal(null); await loadSpaces(); }}
         />
       )}
     </div>
   );
 }
 
-function TaskModal({ task, workspaceId, members, onClose, onSaved, onDelete }) {
+const initials = (name) =>
+  (name || "?").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
+
+const SPACE_COLORS = ["#5b8def", "#2bac76", "#e8a33d", "#8b5cf6", "#e01e5a", "#0ea5e9", "#f2762e"];
+const spaceColor = (id) => SPACE_COLORS[Math.abs(Number(id) || 0) % SPACE_COLORS.length];
+
+function TaskModal({ task, workspaceId, spaceId, members, onClose, onSaved, onDelete }) {
   const { notify } = useDialogs();
   const isNew = !!task.new;
   const [title, setTitle] = useState(isNew ? "" : task.title);
@@ -246,7 +387,7 @@ function TaskModal({ task, workspaceId, members, onClose, onSaved, onDelete }) {
       reminderMinutes: reminder ? Number(reminder) : null,
     };
     try {
-      if (isNew) await createTask({ workspaceId, ...body });
+      if (isNew) await createTask({ workspaceId, spaceId: task.spaceId ?? spaceId, ...body });
       else await updateTask(task.id, body);
       onSaved();
     } catch (e) {
@@ -302,6 +443,76 @@ function TaskModal({ task, workspaceId, members, onClose, onSaved, onDelete }) {
           <div className="tb-foot-right">
             <button className="tb-cancel" onClick={onClose}>Cancel</button>
             <button className="tb-save" onClick={save} disabled={saving}>{isNew ? "Create task" : "Save"}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SpaceModal({ space, workspaceId, members, me, onClose, onSaved, onDeleted }) {
+  const { confirm, notify } = useDialogs();
+  const isNew = !!space.new;
+  const [name, setName] = useState(isNew ? "" : space.name);
+  const [picked, setPicked] = useState(() => new Set((space.memberUserIds || []).filter((id) => id !== me)));
+  const [saving, setSaving] = useState(false);
+  const isCreator = !isNew && space.createdBy === me;
+
+  const toggle = (uid) => setPicked((prev) => { const n = new Set(prev); n.has(uid) ? n.delete(uid) : n.add(uid); return n; });
+
+  const save = async () => {
+    if (!name.trim()) return notify("Give the space a name", "warning");
+    setSaving(true);
+    try {
+      const memberUserIds = [...picked];
+      if (isNew) {
+        const created = await createSpace({ workspaceId, name: name.trim(), memberUserIds });
+        onSaved(created.id);
+      } else {
+        await updateSpace(space.id, { name: name.trim(), memberUserIds });
+        onSaved(space.id);
+      }
+    } catch (e) {
+      notify(e?.response?.data?.message || "Could not save space", "error");
+      setSaving(false);
+    }
+  };
+
+  const remove = async () => {
+    if (!(await confirm({ title: "Delete space", message: `Delete “${space.name}” and all its tasks?`, confirmText: "Delete", tone: "danger" }))) return;
+    try { await deleteSpace(space.id); onDeleted(); }
+    catch { notify("Could not delete space", "error"); }
+  };
+
+  return (
+    <div className="tb-overlay" onClick={onClose}>
+      <div className="tb-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="tb-modal-head">
+          <span>{isNew ? "New Team Space" : "Space settings"}</span>
+          <button className="tb-close" onClick={onClose}><X size={18} /></button>
+        </div>
+        <div className="tb-modal-body">
+          <input className="tb-input tb-title-input" placeholder="Space name (e.g. Engineering)" value={name} autoFocus onChange={(e) => setName(e.target.value)} />
+          <div className="tb-members-head"><Users size={14} /> Who can access this space</div>
+          <div className="tb-members-hint">You always have access. Pick teammates to add.</div>
+          <div className="tb-members">
+            {members.filter((m) => m.userId !== me).map((m) => (
+              <label key={m.userId} className={`tb-member ${picked.has(m.userId) ? "on" : ""}`}>
+                <input type="checkbox" checked={picked.has(m.userId)} onChange={() => toggle(m.userId)} />
+                <span className="tb-member-av">{initials(m.name)}</span>
+                {m.name}
+              </label>
+            ))}
+            {members.filter((m) => m.userId !== me).length === 0 && (
+              <div className="tb-members-empty">No other members in this workspace yet.</div>
+            )}
+          </div>
+        </div>
+        <div className="tb-modal-foot">
+          {!isNew && isCreator && <button className="tb-del" onClick={remove}><Trash2 size={15} /> Delete</button>}
+          <div className="tb-foot-right">
+            <button className="tb-cancel" onClick={onClose}>Cancel</button>
+            <button className="tb-save" onClick={save} disabled={saving}>{isNew ? "Create Space" : "Save"}</button>
           </div>
         </div>
       </div>
