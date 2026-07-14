@@ -6,19 +6,32 @@
   if (!token) return null;
 
   try {
-    const payload = JSON.parse(
-      atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")),
-    );
-    // user-service embeds the numeric id in the "sub" claim as a string
-    let idValue = payload.userId || payload.id || payload.sub;
-    const id = parseInt(idValue, 10);
-    if(isNaN(id)){
-      const cachedId = localStorage.getItem("userId");
-      return cachedId? parseInt(cachedId, 10) : null ;
-    }
-    return id;
+    const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    // The numeric id lives in the "userId" claim; "sub" is the user's email
+    // (see user-service JwtUtil). Fall back to sub only for legacy numeric-subject tokens.
+    const raw = payload.userId != null ? payload.userId : payload.sub;
+    const id = parseInt(raw, 10);
+    return isNaN(id) ? null : id;
   } catch {
     const cachedId = localStorage.getItem("userId")
     return cachedId ? parseInt(cachedId, 10) : null 
   }
+}
+
+/**
+ * Standard headers for authenticated backend calls made with fetch().
+ * Includes the JWT bearer token (required by the API gateway) plus the
+ * identity headers the chat-service expects. Pass `extra` to add/override.
+ */
+export function authHeaders(extra = {}) {
+  const token = localStorage.getItem("token");
+  const userId = getCurrentUserId();
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(userId != null
+      ? { "X-User-Id": String(userId), "X-User-Role": "USER" }
+      : {}),
+    ...extra,
+  };
 }

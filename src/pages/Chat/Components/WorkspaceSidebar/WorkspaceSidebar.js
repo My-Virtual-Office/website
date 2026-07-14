@@ -1,78 +1,95 @@
 import "./WorkspaceSidebar.css";
-import PolylineIcon from "@mui/icons-material/Polyline";
-import AddIcon from "@mui/icons-material/Add";
-import { useState, useEffect } from "react";
-import { fetchMyWorkspaces, createWorkspace } from "../../../../api/workspace";
-import CreateWorkspaceModal from "./CreateWorkspaceModal";
+import { Plus, Palette, Check } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Popover } from "@mui/material";
+import { useTheme } from "../../../../theme/ThemeContext";
 
-export default function WorkspaceSidebar({ activeWorkspace, setActiveWorkspace }) {
-  const [workspaces, setWorkspaces] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  useEffect(() => {
-    const loadWorkspaces = async () => {
-      try {
-        let data = await fetchMyWorkspaces();
-        if (data.length === 0) {
-          const newWs = await createWorkspace({ name: "Virtual Office", slug: "virtual-office", defaultTimezone: "Africa/Cairo" });
-          data = [newWs];
-          setWorkspaces(data);
-        } else {
-          setWorkspaces(data);
-        }
-        if (data.length > 0 && !activeWorkspace) {
-          setActiveWorkspace(data[0]);
-        }
-      } catch (err) {
-        console.error("Failed to fetch workspaces:", err);
-      }
-    };
-    loadWorkspaces();
-  }, []);
-
-  const handleRefresh = async () => {
-    try {
-      const data = await fetchMyWorkspaces();
-      setWorkspaces(data);
-    } catch (err) {
-      console.error("Failed to refresh workspaces:", err);
-    }
-  };
+export default function WorkspaceSidebar({ workspaces = [], activeId, onSwitch }) {
+  const { theme, setTheme, themes } = useTheme();
+  const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
+  const navigate = useNavigate();
 
   return (
-    <div className="container">
-      <div className="workspace">
-        <div className="workspace-items">
-          <i>
-            <PolylineIcon />
-          </i>
-          <hr />
-          {workspaces.map((ws) => (
-            <img
-              src={ws.img || "/ws.jpg"}
-              key={ws.id}
-              alt={ws.name}
-              className={`workspace-img ${activeWorkspace?.id === ws.id ? "active" : ""}`}
-              onClick={() => setActiveWorkspace(ws)}
-            />
-          ))}
-        </div>
-
-        <button onClick={() => setIsModalOpen(true)}>
-          <AddIcon />
+    <div className="rail">
+      <div className="rail-top">
+        {workspaces.map((ws) => (
+          <button
+            key={ws.id}
+            className={`rail-ws ${ws.id === activeId ? "active" : ""}`}
+            onClick={() => onSwitch?.(ws)}
+            title={ws.name}
+          >
+            {ws.logoUrl ? (
+              <img src={ws.logoUrl} alt={ws.name} />
+            ) : (
+              <span>{(ws.name || "?").charAt(0).toUpperCase()}</span>
+            )}
+          </button>
+        ))}
+        <button
+          className="rail-add"
+          title="Add or join a workspace"
+          onClick={() => navigate("/onboarding")}
+        >
+          <Plus size={22} />
         </button>
       </div>
 
-      {isModalOpen && (
-        <CreateWorkspaceModal
-          onClose={() => setIsModalOpen(false)}
-          onCreated={(newWs) => {
-            setWorkspaces((prev) => [...prev, newWs]);
-            setActiveWorkspace(newWs);
-            setIsModalOpen(false);
-          }}
-        />
-      )}
+      <button
+        className={`rail-theme ${open ? "active" : ""}`}
+        onClick={(e) => setAnchorEl(e.currentTarget)}
+        title="Themes"
+      >
+        <Palette size={20} />
+      </button>
+
+      <Popover
+        open={open}
+        anchorEl={anchorEl}
+        onClose={() => setAnchorEl(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "bottom", horizontal: "left" }}
+        slotProps={{
+          paper: {
+            sx: {
+              ml: 1.2,
+              p: 0.75,
+              width: 232,
+              borderRadius: 2,
+              bgcolor: "var(--panel-bg)",
+              border: "1px solid var(--border)",
+              boxShadow: "var(--overlay-shadow)",
+            },
+          },
+        }}
+      >
+        <div className="theme-menu-title">Theme</div>
+        <div className="theme-menu-list">
+          {themes.map((t) => (
+            <button
+              key={t.id}
+              className={`theme-menu-item ${t.id === theme ? "active" : ""}`}
+              onClick={() => {
+                setTheme(t.id);
+                setAnchorEl(null);
+              }}
+            >
+              <span className="theme-swatch">
+                <span style={{ background: t.swatch.rail }} />
+                <span style={{ background: t.swatch.sidebar }} />
+                <span style={{ background: t.swatch.content }} />
+              </span>
+              <span className="theme-menu-labels">
+                <span className="theme-menu-label">{t.label}</span>
+                <span className="theme-menu-hint">{t.hint}</span>
+              </span>
+              {t.id === theme && <Check size={16} color="#1264a3" strokeWidth={3} />}
+            </button>
+          ))}
+        </div>
+      </Popover>
     </div>
   );
 }

@@ -1,91 +1,211 @@
-.container {
-  width: 61px;
-  /* height: 95vh; */
-}
-.workspace {
-  width: 100%;
-  height: 100%;
-  padding: 16px 0;
-  /* background-color: #e2e8f0;
-  border-right: 1px solid #cbd5e1; */
-  background-color: var(--bg-workspace);
-  border-right: 1px solid var(--border-primary);
+.rail {
+  width: 64px;
+  flex-shrink: 0;
+  height: 100vh;
+  background: var(--rail-bg);
+  border-right: 1px solid var(--sidebar-border);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
+  padding: 12px 0;
 }
-.workspace-items {
+
+.rail-top {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 10px;
-  align-items: center;
 }
-.workspace i {
-  width: 48px;
-  height: 48px;
-  /* background-color: #5048e5; */
-  background-color: var(--accent-color);
+
+.rail-workspace {
+  width: 40px;
+  height: 40px;
   border-radius: 12px;
-  color: white;
+  background: var(--rail-icon-bg);
+  color: #fff;
+  border: none;
+  cursor: pointer;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
+  transition: border-radius 0.15s, transform 0.15s;
+}
+.rail-workspace:hover {
+  border-radius: 14px;
+  transform: translateY(-1px);
+}
+
+/* Real workspace icons (initial letter or logo), Slack-style active ring */
+.rail-ws {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--rail-icon-bg);
+  color: #fff;
+  border: none;
   cursor: pointer;
-  transition: transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 16px;
+  overflow: hidden;
+  position: relative;
+  transition: border-radius 0.15s, box-shadow 0.15s, transform 0.15s;
 }
-
-.workspace i:hover {
-  transform: scale(1.05);
-}
-
-.workspace i svg {
-  font-size: 24px;
-}
-
-.workspace hr {
-  width: 32px;
-  /* border: solid 1px #cbd5e1; */
-  border: solid 1px var(--border-primary);
-}
-.workspace-img {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s;
+.rail-ws img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
 }
-.workspace-img:hover {
-  /* border-color: #5048e5; */
-  border-color: var(--accent-color);
+.rail-ws:hover {
+  border-radius: 14px;
+  transform: translateY(-1px);
 }
-.workspace button {
-  width: 48px;
-  height: 48px;
-  /* color: #5048e5; */
-  /* border: dashed 2px #cbd5e1; */
-  /* background-color: #ffffff; */
-  color: var(--accent-color);
-  border: dashed 2px var(--border-primary);
-  background-color: var(--bg-primary);
+.rail-ws.active {
+  border-radius: 14px;
+  box-shadow: 0 0 0 2px var(--rail-bg), 0 0 0 4px var(--rail-active-ring);
+}
 
-  border-radius: 50%;
+.rail-divider {
+  width: 28px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.14);
+}
+:root[data-theme="light"] .rail-divider {
+  background: rgba(0, 0, 0, 0.1);
+}
 
+.rail-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  object-fit: cover;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-radius 0.15s;
+}
+.rail-img:hover {
+  border-radius: 14px;
+}
+
+.rail-add {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--rail-fg);
+  border: 1px dashed rgba(255, 255, 255, 0.25);
   cursor: pointer;
   display: flex;
-  justify-content: center;
   align-items: center;
-  transition: all 0.3s;
-  margin-top: auto;
+  justify-content: center;
+  transition: all 0.15s;
 }
-.workspace button:hover {
-  /* border-color: #5048e5; */
-  border-color: var(--accent-color);
-  transform: scale(1.05);
+:root[data-theme="light"] .rail-add {
+  border-color: rgba(0, 0, 0, 0.2);
+}
+.rail-add:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+:root[data-theme="light"] .rail-add:hover {
+  color: var(--content-strong);
+  background: rgba(0, 0, 0, 0.05);
 }
 
-.workspace button svg {
-  font-size: 24px;
+.rail-theme {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--rail-fg);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.rail-theme:hover,
+.rail-theme.active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+:root[data-theme="light"] .rail-theme:hover,
+:root[data-theme="light"] .rail-theme.active {
+  color: var(--content-strong);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* Theme picker popover (rendered in a portal, styled via global tokens) */
+.theme-menu-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--content-muted);
+  padding: 6px 10px 8px;
+}
+/* Cap the theme list to ~3 rows so the popover stays short and the rest scrolls. */
+.theme-menu-list {
+  max-height: 150px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.theme-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 8px;
+  text-align: left;
+  transition: background 0.12s;
+}
+.theme-menu-item:hover,
+.theme-menu-item.active {
+  background: var(--hover-bg);
+}
+.theme-swatch {
+  width: 36px;
+  height: 26px;
+  border-radius: 5px;
+  overflow: hidden;
+  display: flex;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.theme-swatch > span {
+  display: block;
+  height: 100%;
+}
+.theme-swatch > span:nth-child(1) {
+  width: 7px;
+}
+.theme-swatch > span:nth-child(2) {
+  width: 11px;
+}
+.theme-swatch > span:nth-child(3) {
+  flex: 1;
+}
+.theme-menu-labels {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.theme-menu-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--content-strong);
+}
+.theme-menu-hint {
+  font-size: 12px;
+  color: var(--content-muted);
 }

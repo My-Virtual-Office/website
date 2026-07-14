@@ -1,55 +1,18 @@
+// DEV-ONLY proxy (used by `npm start`, never by the production build).
+// Routes every /api call — REST and WebSocket — through the API gateway,
+// matching how the containerized nginx serves the app in production.
 const { createProxyMiddleware } = require("http-proxy-middleware");
 
 let wsUpgradeInitialized = false;
 
 module.exports = function (app) {
-  const wsRoutes = [];
-
-  function ensureWsUpgrade(server) {
-    if (!wsUpgradeInitialized) {
-      wsUpgradeInitialized = true;
-      server.on("upgrade", (upgradeReq, socket, head) => {
-        for (const route of wsRoutes) {
-          if (upgradeReq.url.startsWith(route.path)) {
-            route.proxy.upgrade(upgradeReq, socket, head);
-            break;
-          }
-        }
-      });
-    }
-  }
-
-  const chatProxy = createProxyMiddleware({
-    target: "http://localhost:8084",
-    changeOrigin: true,
-  });
-
-  wsRoutes.push({ path: "/api/chat", proxy: chatProxy });
-
-  app.use("/api/chat", (req, res, next) => {
-    const server = req.socket?.server;
-    if (server) ensureWsUpgrade(server);
-    return chatProxy(req, res, next);
-  });
-
+  // Pass the path context as the FIRST arg so http-proxy-middleware scopes its
+  // WebSocket `upgrade` handler to /api only. Mounting with app.use("/api", ...)
+  // leaves the proxy's WS filter at "/" and it hijacks the dev-server HMR socket
+  // (/ws) -> "Invalid frame header". Scoping to /api leaves /ws for webpack.
   app.use(
-    "/api/auth",
-    createProxyMiddleware({
-      target: "http://localhost:8091",
-      changeOrigin: true,
-    }),
-  );
-  app.use(
-    "/api/users",
-    createProxyMiddleware({
-      target: "http://localhost:8091",
-      changeOrigin: true,
-    }),
-  );
-  app.use(
-    "/api/tasks",
-    createProxyMiddleware({
-      target: "http://localhost:8085",
+    createProxyMiddleware("/api", {
+      target: "http://localhost:8080",
       changeOrigin: true,
     }),
   );

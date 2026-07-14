@@ -1,22 +1,29 @@
 import "./Sidebar.css";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import SearchIcon from "@mui/icons-material/Search";
-import DraftsOutlinedIcon from "@mui/icons-material/DraftsOutlined";
-import NumbersIcon from "@mui/icons-material/Numbers";
-import AddIcon from "@mui/icons-material/Add";
-import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
-import MeetingRoomIcon from "@mui/icons-material/MeetingRoom";
+import { ChevronDown, Search, Hash, Plus, Settings, Users, Gamepad2, CalendarDays, ListTodo, LayoutDashboard } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getCurrentUser } from "../../../../api/user";
 import SettingsModal from "../SettingsModal/SettingsModal";
+import CreateChannelModal from "../CreateChannelModal/CreateChannelModal";
+import DmPickerModal from "../DmPickerModal/DmPickerModal";
+import StatusMenu from "../StatusMenu/StatusMenu";
 import { getUserPhoto } from "../../../../api/user";
-import { getCurrentUserId } from "../../../../utils/auth";
-import NotificationsMenu from "../../../../components/NotificationsMenu";
-import CloseIcon from "@mui/icons-material/Close";
-import { fetchRooms, createRoom, createChannel, fetchChannels as fetchChannelsApi } from "../../../../api/chat";
-import InviteDialog from "./InviteDialog";
+import { getMyDesk, updateStatus } from "../../../../api/workspace";
+import { statusColor, statusText } from "../../statusMeta";
+import { authHeaders } from "../../../../utils/auth";
+import { useDialogs } from "../../../../components/DialogProvider";
 
-export default function Sidebar({ activeChannel, setActiveChannel, workspaceId, activeWorkspace, joinChannelId }) {
+export default function Sidebar({
+  activeChannel,
+  setActiveChannel,
+  workspaceId,
+  activeView,
+  unread = {},
+  onOpenContacts,
+  onOpenTasks,
+  onOpenMeetings,
+  onOpenDesk,
+  onOpenSearch,
+}) {
   // Channels state
   const [channels, setChannels] = useState([]);
   // Rooms state
@@ -29,92 +36,76 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId, 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   // user photo state
   const [userPhoto, setUserPhoto] = useState(null);
-  // invite dialog state
-  const [inviteDialogChannel, setInviteDialogChannel] = useState(null);
+  // App dialogs / toasts
+  const { notify } = useDialogs();
 
-  const isInviteOpen = Boolean(inviteDialogChannel);
+  // Create-channel modal (Phase 3: name + description + access + moderators)
+  const [createOpen, setCreateOpen] = useState(false);
 
-  const handleCreateChannel = async () => {
+  // My desk in this workspace (carries my presence status) + status picker.
+  const [myDesk, setMyDesk] = useState(null);
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [showDmPicker, setShowDmPicker] = useState(false);
+
+  useEffect(() => {
+    if (!workspaceId) return;
+    getMyDesk(workspaceId).then(setMyDesk).catch(() => {});
+  }, [workspaceId]);
+
+  // Open the SkyOffice virtual office for this workspace, authenticated via the
+  // JWT (the office server verifies it + checks workspace membership).
+  const openVirtualOffice = () => {
     if (!workspaceId) {
-      alert("No workspace selected. Please wait for the workspace to load.");
+      notify("Workspace still loading — try again in a moment.", "warning");
       return;
     }
-
-    const channelName = prompt(
-      "Enter the new channel name (e.g. Development):",
-    );
-
-    if (!channelName) return;
-
-    try {
-      const newChannel = await createChannel(channelName, workspaceId);
-      if (newChannel) {
-        setChannels([...channels, newChannel]);
-        setInviteDialogChannel({ id: newChannel.id, name: newChannel.name });
-      } else {
-        alert("Failed to create the channel!");
-      }
-    } catch (error) {
-      console.error("Connection error:", error);
-    }
+    const token = localStorage.getItem("token");
+    const url = `${window.location.protocol}//${window.location.hostname}:5000/?token=${encodeURIComponent(
+      token || "",
+    )}&workspaceId=${workspaceId}`;
+    window.open(url, "_blank", "noopener");
   };
 
-  // Create a new DM
-  const handleCreateDM = async () => {
-    const targetIdStr = prompt("Enter the User ID you want to message:");
-    if (!targetIdStr) return;
-
-    const targetUserId = parseInt(targetIdStr);
-    if (isNaN(targetUserId)) {
-      alert("Please enter a valid User ID (numbers only).");
-      return;
-    }
-
+  const saveStatus = async (status, statusEmoji, statusCustomText) => {
+    if (!myDesk?.id) return;
     try {
-      const response = await fetch("/api/chat/dm", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "X-User-Id": String(getCurrentUserId()), // Hardcoded user ID, update dynamically later
-          "X-User-Role": "USER",
-        },
-        body: JSON.stringify({
-          targetUserId: targetUserId,
-        }),
+      const updated = await updateStatus(workspaceId, myDesk.id, {
+        status,
+        statusEmoji,
+        statusCustomText,
       });
-
-      if (response.ok) {
-        // Reload page to reflect new DM
-        window.location.reload();
-      } else {
-        alert("Failed to start direct message!");
-      }
-    } catch (error) {
-      console.error("Connection error:", error);
+      setMyDesk(updated);
+    } catch {
+      notify("Couldn't update status", "error");
     }
   };
 
-  const handleCreateRoom = async () => {
-    const roomName = prompt("Enter the new room name (e.g. Standup):");
-    if (!roomName) return;
-
-    try {
-      const newRoom = await createRoom(roomName, workspaceId);
-      setRooms([...rooms, newRoom]);
-    } catch (error) {
-      console.error("Error creating room:", error);
-      alert("Failed to create the room!");
+  const openCreateChannel = () => {
+    if (!workspaceId) {
+      notify("Workspace still loading — try again in a moment.", "warning");
+      return;
     }
+    setCreateOpen(true);
   };
 
-  // Fetch channels and DMs on component mount
+  // Open a DM chosen from the people picker.
+  const openDm = (ch) => {
+    setActiveChannel(ch);
+    setDms((prev) => (prev.some((d) => d.id === ch.id) ? prev : [...prev, { id: ch.id, name: ch.name }]));
+  };
+
+  // Fetch channels once the workspace is resolved; DMs on mount.
   useEffect(() => {
     const fetchChannels = async () => {
+      if (!workspaceId) return;
       try {
-        if (!workspaceId) return;
-        let channelList = await fetchChannelsApi(workspaceId);
-        setChannels(channelList);
+        const response = await fetch(
+          `/api/chat/channels?workspaceId=${workspaceId}&page=1&limit=20`,
+          {
+            method: "GET",
+            headers: authHeaders(),
+          },
+        );
 
         if (channelList.length === 0) {
           const defaultNames = ["general", "random", "announcements"];
@@ -186,12 +177,7 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId, 
       try {
         const response = await fetch("/api/chat/dm?page=1&limit=20", {
           method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "X-User-Id": String(getCurrentUserId()),
-            "X-User-Role": "USER",
-          },
+          headers: authHeaders(),
         });
 
         if (response.ok) {
@@ -215,7 +201,7 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId, 
 
     fetchChannels();
     fetchDMs();
-    fetchRoomsList();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId]);
 
   const fetchUser = async () => {
@@ -256,49 +242,88 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId, 
         <div className="sidebar-header">
           <span>{activeWorkspace?.name || "Virtual-Office"}</span>
           <button>
-            <KeyboardArrowDownIcon></KeyboardArrowDownIcon>
+            <ChevronDown size={18} />
           </button>
         </div>
 
+        <button className="virtual-office-btn" onClick={openVirtualOffice}>
+          <Gamepad2 size={19} />
+          <span>Enter Virtual Office</span>
+        </button>
+
         <div className="sidebar-main">
           <div className="search-drafts">
-            <div className="search">
-              <SearchIcon></SearchIcon>
+            <div className="search" onClick={onOpenSearch} title="Search everything (Ctrl/⌘K)">
+              <Search size={18} />
               <span>Search</span>
+              <span className="search-kbd">⌘K</span>
             </div>
-            <div className="drafts">
-              <DraftsOutlinedIcon></DraftsOutlinedIcon>
-              <span>Drafts</span>
+            <div
+              className={`drafts ${activeView === "contacts" ? "active-link" : ""}`}
+              onClick={onOpenContacts}
+            >
+              <Users size={18} />
+              <span>People</span>
+            </div>
+            <div
+              className={`drafts ${activeView === "tasks" ? "active-link" : ""}`}
+              onClick={onOpenTasks}
+            >
+              <ListTodo size={18} />
+              <span>Tasks</span>
+            </div>
+            <div
+              className={`drafts ${activeView === "meetings" ? "active-link" : ""}`}
+              onClick={onOpenMeetings}
+            >
+              <CalendarDays size={18} />
+              <span>Meetings</span>
+            </div>
+            <div
+              className={`drafts ${activeView === "mydesk" ? "active-link" : ""}`}
+              onClick={onOpenDesk}
+            >
+              <LayoutDashboard size={18} />
+              <span>My Desk</span>
             </div>
           </div>
 
           <div className="channels-section">
             <div className="channels-header">
               <span>CHANNELS</span>
-              <button onClick={handleCreateChannel}>
-                <AddIcon></AddIcon>
+              <button onClick={openCreateChannel}>
+                <Plus size={16} />
               </button>
             </div>
 
             <div className="channels-list">
-              {channels.map((channel) => (
-                <div
-                  key={channel.id}
-                  className={`channel-item ${activeChannel !== null && activeChannel.id === channel.id ? "active" : ""}`}
-                  onClick={() => {
-                    setActiveChannel({
-                      id: channel.id,
-                      name: channel.name,
-                      type: channel.type || "GROUP",
-                    });
-                  }}
-                >
-                  <span>
-                    <NumbersIcon></NumbersIcon>
-                  </span>
-                  <span className="channel-name">{channel.name}</span>
-                </div>
-              ))}
+              {channels.map((channel) => {
+                const isActive = activeChannel !== null && activeChannel.id === channel.id;
+                const u = unread[channel.id];
+                const showBadge = !isActive && u && u.count > 0;
+                return (
+                  <div
+                    key={channel.id}
+                    className={`channel-item ${isActive ? "active" : ""} ${showBadge ? "unread" : ""}`}
+                    onClick={() => {
+                      setActiveChannel({
+                        id: channel.id,
+                        name: channel.name,
+                      });
+                    }}
+                  >
+                    <span>
+                      <Hash size={16} />
+                    </span>
+                    <span className="channel-name">{channel.name}</span>
+                    {showBadge && (
+                      <span className={`unread-badge ${u.mention ? "mention" : ""}`}>
+                        {u.count > 99 ? "99+" : u.count}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -335,11 +360,11 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId, 
             <div className="direct-messages-header">
               <span>DIRECT MESSAGES</span>
               <button
-                onClick={handleCreateDM}
+                onClick={() => setShowDmPicker(true)}
                 aria-label="New Direct Message"
                 title="New DM"
               >
-                <AddIcon />
+                <Plus size={16} />
               </button>
             </div>
 
@@ -352,15 +377,18 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId, 
                   ? dm.name
                   : (`User ${otherUserId || "X"}`);
 
+                const isActive = activeChannel !== null && activeChannel.id === dm.id;
+                const u = unread[dm.id];
+                const showBadge = !isActive && u && u.count > 0;
                 return (
                   <div
                     key={dm.id}
-                    className={`dm-item ${activeChannel !== null && activeChannel.id === dm.id ? "active" : ""}`}
+                    className={`dm-item ${isActive ? "active" : ""} ${showBadge ? "unread" : ""}`}
                     onClick={() => {
                       setActiveChannel({
                         id: dm.id,
                         name: dmDisplayName,
-                        type: dm.type || "DIRECT",
+                        type: "DIRECT",
                       });
                     }}
                   >
@@ -370,13 +398,11 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId, 
                       <span className="status-dot online"></span>
                     </div>
                     <span className="dm-name">{dmDisplayName}</span>
-                    <button
-                      className="dm-close-btn"
-                      onClick={(e) => handleCloseDm(e, dm.id)}
-                      title="Remove from sidebar"
-                    >
-                      <CloseIcon fontSize="small" />
-                    </button>
+                    {showBadge && (
+                      <span className={`unread-badge ${u.mention ? "mention" : ""}`}>
+                        {u.count > 99 ? "99+" : u.count}
+                      </span>
+                    )}
                   </div>
                 );
               })}
@@ -384,7 +410,12 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId, 
           </div>
 
           <div className="user-profile">
-            <div className="user-info">
+            <div
+              className="user-info"
+              onClick={() => setShowStatusMenu((s) => !s)}
+              title="Set your status"
+              role="button"
+            >
               <div className="user-avatar">
                 {userPhoto ? (
                   <img
@@ -416,36 +447,41 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId, 
                     {user?.lastName?.[0]}
                   </div>
                 )}
+                <span
+                  className="user-status-dot"
+                  style={{ background: statusColor(myDesk?.status) }}
+                />
               </div>
 
               <div className="user-details">
-                <span className="user-name">
+                <span
+                  className="user-name"
+                  title={user ? `${user.firstName} ${user.lastName}` : ""}
+                >
                   {user ? `${user.firstName} ${user.lastName}` : "Loading..."}
                 </span>
                 <span className="user-status">
-                  {user ? user.accountStatus : ""}
+                  {myDesk?.statusEmoji ? `${myDesk.statusEmoji} ` : ""}
+                  {statusText(myDesk) || "Set a status"}
                 </span>
               </div>
             </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                paddingRight: "12px",
-                gap: "4px",
-              }}
-            >
-              <NotificationsMenu />
 
-              <button
-                className="settings-btn"
-                aria-label="Settings"
-                onClick={() => setIsSettingsOpen(true)}
-                style={{ padding: "4px" }}
-              >
-                <SettingsOutlinedIcon></SettingsOutlinedIcon>
-              </button>
-            </div>
+            {showStatusMenu && (
+              <StatusMenu
+                desk={myDesk}
+                onSave={saveStatus}
+                onClose={() => setShowStatusMenu(false)}
+              />
+            )}
+
+            <button
+              className="settings-btn"
+              aria-label="Settings"
+              onClick={() => setIsSettingsOpen(true)}
+            >
+              <Settings size={18} />
+            </button>
 
             {/* Settings Modal */}
             <SettingsModal
@@ -467,6 +503,23 @@ export default function Sidebar({ activeChannel, setActiveChannel, workspaceId, 
           </div>
         </div>
       </div>
+
+      <CreateChannelModal
+        workspaceId={workspaceId}
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={(ch) => {
+          setChannels((c) => [...c, ch]);
+          setActiveChannel({ id: ch.id, name: ch.name });
+        }}
+      />
+
+      <DmPickerModal
+        workspaceId={workspaceId}
+        open={showDmPicker}
+        onClose={() => setShowDmPicker(false)}
+        onOpenDm={openDm}
+      />
     </div>
   );
 }

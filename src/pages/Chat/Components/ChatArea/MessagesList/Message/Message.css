@@ -1,22 +1,18 @@
 .message {
   display: flex;
-  gap: 16px;
-  transition: 0.2s;
-  /* cursor: pointer; */
-  margin-top: 15px;
+  gap: 10px;
+  padding: 5px 20px;
+  transition: background 0.1s;
+  position: relative;
 }
-
 .message:hover {
-  /* background: #f8fafc; */
-  background: var(--bg-secondary);
-  margin: 0 -8px;
-  padding: 8px;
-  border-radius: 6px;
+  background: var(--hover-bg);
 }
 .message-avatar {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
+  margin-top: 2px;
 }
 .message-avatar img {
   width: 100%;
@@ -27,68 +23,456 @@
 .message-content {
   display: flex;
   flex-direction: column;
-  gap: 2.88px;
+  gap: 1px;
   min-width: 0;
   flex: 1;
 }
 .message-header {
-  height: 20px;
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 8px;
 }
 .message-user {
-  font-weight: 700;
-  font-size: 14px;
-  line-height: 20px;
-  letter-spacing: 0px;
-  vertical-align: middle;
-  /* color: #a7adb6; */
-  color: var(--text-secondary);
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--content-strong);
 }
 .message-time {
   font-weight: 400;
-  font-size: 10px;
-  line-height: 15px;
-  letter-spacing: 0px;
-  vertical-align: middle;
-  /* color: #94a3b8; */
-  color: var(--text-muted);
+  font-size: 12px;
+  color: var(--content-muted);
 }
 .message-text {
-  padding-bottom: 0.63px;
   font-weight: 400;
-  font-size: 14px;
-  line-height: 22.75px;
-  letter-spacing: 0px;
-  vertical-align: middle;
-  /* color: #475569; */
-  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 1.46;
+  color: var(--content-fg);
   word-wrap: break-word;
   overflow-wrap: break-word;
-  white-space: normal;
+  white-space: pre-wrap;
 }
+
+/* @mention and #channel highlights */
+.mention,
+.mention-channel {
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 0 3px;
+  color: var(--link);
+  background: color-mix(in srgb, var(--link) 12%, transparent);
+  cursor: pointer;
+}
+.mention:hover,
+.mention-channel:hover {
+  background: color-mix(in srgb, var(--link) 20%, transparent);
+}
+/* #<number> task reference */
+.mention-task {
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 0 3px;
+  color: #b9791f;
+  background: color-mix(in srgb, #e8a33d 18%, transparent);
+  cursor: pointer;
+}
+.mention-task:hover {
+  background: color-mix(in srgb, #e8a33d 28%, transparent);
+}
+
+/* Hover action toolbar */
+.message-actions {
+  position: absolute;
+  top: -12px;
+  right: 16px;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--content-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--overlay-shadow);
+  opacity: 0;
+  transition: opacity 0.1s;
+  z-index: 2;
+}
+.message:hover .message-actions,
+.message.menu-open .message-actions {
+  opacity: 1;
+}
+/* Keep the row (and its toolbar/menu) active while the ... menu is open, and
+   lift it above sibling rows so the menu is never overlapped. */
+.message.menu-open {
+  background: var(--hover-bg);
+  z-index: 40;
+}
+/* While any menu is open, no other row shows its hover toolbar */
+body.msg-menu-active .message:not(.menu-open) .message-actions {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
+/* Unread messages — subtle tint so you can see where you left off */
+.message.unread {
+  background: color-mix(in srgb, var(--accent, #1264a3) 7%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent, #1264a3);
+}
+.message.unread:hover {
+  background: color-mix(in srgb, var(--accent, #1264a3) 11%, transparent);
+}
+
+/* Grouped (consecutive-author) messages: compact, no header, time-on-hover */
+.message.grouped {
+  padding-top: 1px;
+  padding-bottom: 1px;
+}
+.grouped-time {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  font-size: 10px;
+  color: var(--content-muted);
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.message:hover .grouped-time {
+  opacity: 1;
+}
+
+/* Reactions */
+.reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.reaction-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--hover-bg);
+  color: var(--content-fg);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.reaction-pill:hover {
+  border-color: var(--content-muted);
+}
+.reaction-pill.mine {
+  background: color-mix(in srgb, var(--sidebar-active-bg) 15%, transparent);
+  border-color: var(--sidebar-active-bg);
+  color: var(--sidebar-active-bg);
+}
+.reaction-count {
+  font-weight: 700;
+  font-size: 11px;
+}
+.reaction-add-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--content-muted);
+  cursor: pointer;
+}
+.reaction-add-inline:hover {
+  color: var(--content-strong);
+  border-color: var(--content-muted);
+  background: var(--hover-bg);
+}
+.reaction-picker {
+  position: absolute;
+  top: 24px;
+  right: 20px;
+  z-index: 20;
+  box-shadow: var(--overlay-shadow);
+  border-radius: 8px;
+}
+
+/* Thread indicator — pill under a root message showing reply count + avatars */
+.thread-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 3px 10px 3px 4px;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--content-bg);
+  color: var(--link);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.thread-indicator:hover {
+  background: var(--hover-bg);
+  border-color: var(--content-muted);
+}
+.thread-indicator-avatars {
+  display: inline-flex;
+  align-items: center;
+}
+.thread-indicator-avatars img {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 2px solid var(--content-bg);
+  margin-left: -6px;
+}
+.thread-indicator-avatars img:first-child {
+  margin-left: 0;
+}
+.thread-indicator-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--link);
+}
+.thread-indicator-chevron {
+  color: var(--content-muted);
+}
+.thread-indicator:hover .thread-indicator-chevron {
+  color: var(--link);
+}
+
+/* Flash highlight when jumping to a message from channel search */
+.message.msg-flash {
+  animation: msg-flash-anim 1.6s ease;
+}
+@keyframes msg-flash-anim {
+  0%,
+  40% {
+    background: color-mix(in srgb, var(--accent, #1264a3) 22%, transparent);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+/* Uploaded attachments */
+.msg-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+.msg-image {
+  display: block;
+  max-width: 320px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.msg-image img {
+  display: block;
+  max-width: 320px;
+  max-height: 260px;
+  object-fit: cover;
+}
+.msg-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--content-fg);
+  background: var(--content-bg);
+  max-width: 320px;
+}
+.msg-file:hover {
+  background: var(--hover-bg);
+}
+.msg-file-icon {
+  color: var(--content-muted);
+  display: flex;
+}
+.msg-file-name {
+  font-size: 14px;
+  font-weight: 500;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.msg-file-dl {
+  color: var(--content-muted);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Pins */
+.msg-action-btn.pinned {
+  color: var(--accent);
+}
+.pinned-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--content-muted);
+  margin-bottom: 2px;
+}
+.pinned-label svg {
+  color: var(--accent);
+}
+.msg-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--content-muted);
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  border-radius: 5px;
+  transition: all 0.12s;
+}
+.msg-action-btn:hover {
+  color: var(--content-strong);
+  background: var(--hover-bg);
+}
+.msg-action-btn.danger:hover {
+  color: var(--danger);
+}
+
+/* More-actions (⋮) dropdown menu */
+.msg-menu-wrap {
+  position: relative;
+  display: flex;
+}
+.msg-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 200px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--overlay-shadow);
+  padding: 6px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+}
+.msg-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--content-fg);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+}
+.msg-menu-item svg {
+  color: var(--content-muted);
+  flex-shrink: 0;
+}
+.msg-menu-item:hover {
+  background: var(--hover-bg);
+  color: var(--content-strong);
+}
+.msg-menu-item:hover svg {
+  color: var(--content-strong);
+}
+.msg-menu-item.danger {
+  color: var(--danger);
+}
+.msg-menu-item.danger svg {
+  color: var(--danger);
+}
+.msg-menu-item.danger:hover {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+.msg-menu-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+/* Inline edit */
+.edit-mode-box {
+  margin-top: 4px;
+}
+.edit-mode-box textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--input-fg);
+  font-size: 15px;
+  font-family: inherit;
+  resize: vertical;
+}
+.edit-mode-box textarea:focus {
+  outline: none;
+  border-color: var(--link);
+}
+.edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+.edit-save,
+.edit-cancel {
+  padding: 5px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+.edit-save {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+.edit-save:hover {
+  background: var(--accent-hover);
+}
+.edit-cancel {
+  background: var(--badge-bg);
+  color: var(--content-fg);
+}
+
+/* Attachments */
 .message-attachment {
   width: fit-content;
-  /* border: 1px solid #e2e8f0; */
-  border: 1px solid var(--border-secondary);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 12px;
+  padding: 10px 12px;
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-top: 4px;
 }
 .attachment-icon {
   width: 40px;
   height: 40px;
   border-radius: 8px;
-  background: #fee2e2;
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
   display: flex;
   justify-content: center;
   align-items: center;
 }
 .attachment-icon svg {
-  color: #dc2626;
+  color: var(--danger);
   font-size: 24px;
 }
 .attachment-info {
@@ -96,83 +480,59 @@
   flex-direction: column;
 }
 .attachment-name {
-  font-weight: 500;
+  font-weight: 600;
   font-size: 14px;
-  line-height: 20px;
-  letter-spacing: 0px;
-  vertical-align: middle;
-  /* color: #1e293b; */
-  color: var(--text-primary);
+  color: var(--content-strong);
 }
 .attachment-size {
   font-weight: 400;
   font-size: 12px;
-  line-height: 16px;
-  letter-spacing: 0px;
-  vertical-align: middle;
-  /* color: #64748b; */
-  color: var(--text-secondary);
+  color: var(--content-muted);
 }
 .attachment-download {
-  width: 16px;
-  height: 16px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  background: transparent;
   border: none;
   cursor: pointer;
-  background-color: transparent;
+  display: flex;
+  align-items: center;
 }
 .attachment-download svg {
-  color: #94a3b8;
+  color: var(--content-muted);
 }
+
+/* System messages — centered, muted, Slack-style join/announcement line */
 .system-message {
-  margin-top: 8px;
+  padding: 6px 20px;
   display: flex;
   align-items: center;
-  gap: 16px;
-}
-.system-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
   justify-content: center;
-  align-items: center;
-  /* color: #94a3b8; */
-  color: var(--text-muted);
+  gap: 8px;
 }
-.system-text {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.system-icon-inline {
+  color: var(--content-muted);
+  font-size: 16px !important;
 }
-.system-user {
-  font-weight: 700;
-  font-size: 12px;
-  line-height: 16px;
-  letter-spacing: 0px;
-  vertical-align: middle;
-  /* color: #79828f; */
-  color: var(--text-secondary);
-}
-.system-action {
+.system-line {
   font-weight: 400;
-  font-size: 12px;
-
-  line-height: 100%;
-  /* color: #94a3b8; */
-  color: var(--text-muted);
+  font-size: 13px;
+  color: var(--content-muted);
+  text-align: center;
 }
 
-/* ── Message action buttons (thread / edit / delete) ── */
-.msg-action-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  color: #94a3b8;
+/* Slack-style 1-click quick reactions in the hover toolbar */
+.message-actions .quick-emoji {
+  font-size: 15px;
+  line-height: 1;
+  padding: 4px 5px;
+}
+.message-actions .quick-emoji:hover {
+  transform: scale(1.25);
+}
+@media (max-width: 640px) {
+  /* keep the toolbar compact on small screens: show only the emoji picker */
+  .message-actions .quick-emoji {
+    display: none;
+  }
 }
 
 .msg-action-btn--delete {

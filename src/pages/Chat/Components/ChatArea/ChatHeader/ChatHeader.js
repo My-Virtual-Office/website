@@ -1,33 +1,124 @@
 import "./ChatHeader.css";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
-import NumbersIcon from "@mui/icons-material/Numbers";
-import MenuIcon from "@mui/icons-material/Menu";
-import MeetingRoomIcon from "@mui/icons-material/MeetingRoom";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import CloseIcon from "@mui/icons-material/Close";
-import { useState, useEffect, useRef, useMemo } from "react";
-import { getCurrentUserId } from "../../../../../utils/auth";
-import { Snackbar, Alert } from "@mui/material";
-import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined";
-import NightsStayOutlinedIcon from "@mui/icons-material/NightsStayOutlined";
-import Switch from "@mui/material/Switch";
+import {
+  Hash,
+  AtSign,
+  Phone,
+  Info,
+  Search,
+  Users,
+  Pin,
+  PanelLeftClose,
+  PanelLeftOpen,
+  X,
+} from "lucide-react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { authHeaders } from "../../../../../utils/auth";
+import { getPins } from "../../../../../api/chat";
+import { useDialogs } from "../../../../../components/DialogProvider";
+import ChannelSettingsModal from "../../ChannelSettingsModal/ChannelSettingsModal";
+import NotificationCenter from "../../NotificationCenter/NotificationCenter";
+export default function ChatHeader({
+  activeChannel,
+  workspaceId,
+  sidebarOpen,
+  membersOpen,
+  onToggleSidebar,
+  onToggleMembers,
+  onChannelUpdated,
+  onOpenSearch,
+  onNotificationNavigate,
+}) {
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [showPins, setShowPins] = useState(false);
+  const [pins, setPins] = useState([]);
 
-function highlightText(text, query) {
-  if (!query || !text) return text;
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const regex = new RegExp(`(${escaped})`, "gi");
-  const parts = text.split(regex);
-  return parts.map((part, i) =>
-    regex.test(part) ? (
-      <mark key={i} className="search-highlight">{part}</mark>
-    ) : (
-      part
-    ),
-  );
-}
+  // In-channel message search (distinct from the global ⌘K palette): searches
+  // only the messages of the currently open channel and jumps to a result.
+  const [channelSearchOpen, setChannelSearchOpen] = useState(false);
+  const [csQuery, setCsQuery] = useState("");
+  const [csMessages, setCsMessages] = useState([]);
+  const [csLoading, setCsLoading] = useState(false);
+  const csBoxRef = useRef(null);
+  const csInputRef = useRef(null);
 
-export default function ChatHeader({ activeChannel, onToggleSidebar, workspaceId, messages, usersMap, onSearchSelect }) {
+  // Load this channel's messages when the search panel opens.
+  useEffect(() => {
+    if (!channelSearchOpen || !activeChannel?.id) return;
+    let cancelled = false;
+    setCsLoading(true);
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/chat/channels/${activeChannel.id}/messages?page=1&limit=50`,
+          { headers: authHeaders() },
+        );
+        const data = res.ok ? await res.json() : {};
+        if (!cancelled) setCsMessages(data.content || []); // newest-first
+      } catch {
+        if (!cancelled) setCsMessages([]);
+      } finally {
+        if (!cancelled) setCsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [channelSearchOpen, activeChannel?.id]);
+
+  // Focus the input + close the panel on an outside click.
+  useEffect(() => {
+    if (!channelSearchOpen) return;
+    setTimeout(() => csInputRef.current?.focus(), 30);
+    const onDoc = (e) => {
+      if (csBoxRef.current && !csBoxRef.current.contains(e.target)) setChannelSearchOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [channelSearchOpen]);
+
+  const csResults = useMemo(() => {
+    const q = csQuery.trim().toLowerCase();
+    if (!q) return [];
+    return csMessages
+      .filter((m) => m.type !== "SYSTEM" && (m.content || "").toLowerCase().includes(q))
+      .slice(0, 30);
+  }, [csQuery, csMessages]);
+
+  const toggleChannelSearch = () => {
+    setChannelSearchOpen((o) => {
+      const next = !o;
+      if (next) {
+        setShowPins(false);
+        setIsMenuOpen(false);
+      } else {
+        setCsQuery("");
+      }
+      return next;
+    });
+  };
+
+  // Scroll to a matching message in the list and flash it.
+  const jumpToMessage = (id) => {
+    setChannelSearchOpen(false);
+    setCsQuery("");
+    const el = document.getElementById(`msg-${id}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("msg-flash");
+      setTimeout(() => el.classList.remove("msg-flash"), 1600);
+    }
+  };
+
+  const togglePins = async () => {
+    const next = !showPins;
+    setShowPins(next);
+    if (next) setIsMenuOpen(false); // only one header dropdown open at a time
+    if (next && activeChannel?.id) {
+      try {
+        setPins(await getPins(activeChannel.id));
+      } catch {
+        setPins([]);
+      }
+    }
+  };
   let channelNameForDisplay = "Loading...";
   if (activeChannel !== null) {
     if (activeChannel.name !== undefined) {
@@ -38,120 +129,20 @@ export default function ChatHeader({ activeChannel, onToggleSidebar, workspaceId
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [channelDetails, setChannelDetails] = useState(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  // Search state
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [selectedSearchIndex, setSelectedSearchIndex] = useState(-1);
-  const searchInputRef = useRef(null);
-  const searchDropdownRef = useRef(null);
-  const searchContainerRef = useRef(null);
-
-  // Filter messages based on search query
-  const searchResults = useMemo(() => {
-    if (!searchQuery.trim() || !messages?.length) return [];
-    const q = searchQuery.toLowerCase();
-    return messages.filter(
-      (msg) => msg.content && msg.content.toLowerCase().includes(q),
-    ).slice(0, 20);
-  }, [searchQuery, messages]);
-
-  // Close search dropdown on outside click
-  useEffect(() => {
-    if (!searchOpen) return;
-    const handleClickOutside = (e) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
-        setSearchOpen(false);
-        setSearchQuery("");
-        setSelectedSearchIndex(-1);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [searchOpen]);
-
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-    setSelectedSearchIndex(-1);
-    if (e.target.value.trim()) {
-      setSearchOpen(true);
-    }
-  };
-
-  const handleSearchFocus = () => {
-    if (searchQuery.trim()) {
-      setSearchOpen(true);
-    }
-  };
-
-  const handleSearchKeyDown = (e) => {
-    if (!searchOpen || searchResults.length === 0) return;
-
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setSelectedSearchIndex((prev) =>
-        prev < searchResults.length - 1 ? prev + 1 : 0,
-      );
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setSelectedSearchIndex((prev) =>
-        prev > 0 ? prev - 1 : searchResults.length - 1,
-      );
-    } else if (e.key === "Enter" && selectedSearchIndex >= 0) {
-      e.preventDefault();
-      handleResultClick(searchResults[selectedSearchIndex]);
-    } else if (e.key === "Escape") {
-      setSearchOpen(false);
-      setSearchQuery("");
-      setSelectedSearchIndex(-1);
-    }
-  };
-
-  const handleResultClick = (msg) => {
-    if (onSearchSelect) onSearchSelect(msg.id);
-    setSearchOpen(false);
-    setSearchQuery("");
-    setSelectedSearchIndex(-1);
-  };
-
-  const closeSearch = () => {
-    setSearchOpen(false);
-    setSearchQuery("");
-    setSelectedSearchIndex(-1);
-  };
-
-  const handleCopyInviteLink = async () => {
-    if (!activeChannel?.id) return;
-    const inviteUrl = `${window.location.origin}/chat/join/${activeChannel.id}?workspaceId=${workspaceId}`;
-    try {
-      await navigator.clipboard.writeText(inviteUrl);
-    } catch {
-      const el = document.createElement("textarea");
-      el.value = inviteUrl;
-      document.body.appendChild(el);
-      el.select();
-      document.execCommand("copy");
-      document.body.removeChild(el);
-    }
-    setCopied(true);
-  };
+  // App dialogs / toasts
+  const { confirm, notify } = useDialogs();
 
   const toggleMenu = async () => {
     const newMenuState = !isMenuOpen;
     setIsMenuOpen(newMenuState);
+    if (newMenuState) setShowPins(false); // only one header dropdown open at a time
 
     if (newMenuState === true && activeChannel) {
       setIsLoadingDetails(true);
       try {
         const response = await fetch(`/api/chat/channels/${activeChannel.id}`, {
           method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "X-User-Id": String(getCurrentUserId()),
-            "X-User-Role": "USER",
-          },
+          headers: authHeaders(),
         });
         if (response.ok) {
           const data = await response.json();
@@ -166,9 +157,13 @@ export default function ChatHeader({ activeChannel, onToggleSidebar, workspaceId
   };
 
   const handleLeaveChannel = async () => {
-    const confirmLeave = window.confirm(
-      `Are you sure you want to leave ${channelNameForDisplay}?`,
-    );
+    // Prompt user for confirmation
+    const confirmLeave = await confirm({
+      title: "Leave channel",
+      message: `Are you sure you want to leave ${channelNameForDisplay}?`,
+      confirmText: "Leave",
+      tone: "danger",
+    });
 
     if (confirmLeave) {
       try {
@@ -176,20 +171,15 @@ export default function ChatHeader({ activeChannel, onToggleSidebar, workspaceId
           `/api/chat/channels/${activeChannel.id}/leave`,
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-              "X-User-Id": String(getCurrentUserId()),
-              "X-User-Role": "USER",
-            },
+            headers: authHeaders(),
           },
         );
 
         if (response.ok) {
-          alert("You have left the channel successfully!");
+          notify("You have left the channel", "success");
           setIsMenuOpen(false);
         } else {
-          alert("An error occurred while leaving the channel!");
+          notify("An error occurred while leaving the channel", "error");
         }
       } catch (error) {
         console.error("Error:", error);
@@ -218,79 +208,68 @@ export default function ChatHeader({ activeChannel, onToggleSidebar, workspaceId
   return (
     <div className="chat-header">
       {/* Left Side */}
-      <div className="channel-info">
+      <div className="header-left">
         <button
-          className="header-btn md:hidden"
-          aria-label="Open channels"
+          className="header-btn header-toggle"
           onClick={onToggleSidebar}
-          style={{ display: "flex", alignItems: "center" }}
+          aria-label="Toggle sidebar"
+          title={sidebarOpen ? "Collapse sidebar" : "Show sidebar"}
         >
-          <MenuIcon />
+          {sidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
         </button>
-        <h3>
-          {activeChannel?.type === "ROOM" ? (
-            <MeetingRoomIcon />
-          ) : (
-            <NumbersIcon />
-          )}
-          <span>{channelNameForDisplay}</span>
-        </h3>
-        <span className="margin">|</span>
-        <span className="channel-description">
-          {channelDetails?.description || ""}
-        </span>
+        <div className="channel-info">
+          <h3
+            onClick={() =>
+              activeChannel?.type !== "DIRECT" && activeChannel?.id && setSettingsOpen(true)
+            }
+            title={activeChannel?.type === "DIRECT" ? "" : "Channel settings"}
+            style={activeChannel?.type === "DIRECT" ? { cursor: "default" } : undefined}
+          >
+            {activeChannel?.type === "DIRECT" ? <AtSign size={18} /> : <Hash size={18} />}
+            <span>{channelNameForDisplay}</span>
+          </h3>
+          <span className="margin">|</span>
+          <span className="channel-description">
+            {channelDetails?.description || ""}
+          </span>
+        </div>
       </div>
 
       {/* Right Side */}
       <div className="header-actions">
+        <button className="header-btn header-call" aria-label="Call">
+          <Phone size={18} />
+        </button>
+        <button
+          className={`header-btn ${membersOpen ? "active" : ""}`}
+          onClick={onToggleMembers}
+          aria-label="Toggle members"
+          title={membersOpen ? "Hide members" : "Show members"}
+        >
+          <Users size={18} />
+        </button>
 
-        <div className="header-search" ref={searchContainerRef}>
-          <SearchOutlinedIcon />
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="Search messages..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-            onFocus={handleSearchFocus}
-            onKeyDown={handleSearchKeyDown}
-          />
-          {searchQuery && (
-            <button className="search-clear-btn" onClick={closeSearch}>
-              <CloseIcon sx={{ fontSize: 16 }} />
-            </button>
-          )}
-
-          {searchOpen && searchResults.length > 0 && (
-            <div className="search-results-dropdown" ref={searchDropdownRef}>
-              <div className="search-results-header">
-                {searchResults.length} result{searchResults.length !== 1 ? "s" : ""}
-              </div>
-              {searchResults.map((msg, idx) => {
-                const senderName = (usersMap && usersMap[msg.senderId]) || `User ${msg.senderId}`;
-                const date = new Date(msg.createdAt).toLocaleDateString();
-                return (
-                  <div
-                    key={msg.id}
-                    className={`search-result-item ${idx === selectedSearchIndex ? "selected" : ""}`}
-                    onClick={() => handleResultClick(msg)}
-                  >
-                    <div className="search-result-meta">
-                      <span className="search-result-sender">{senderName}</span>
-                      <span className="search-result-date">{date}</span>
-                    </div>
-                    <div className="search-result-content">
-                      {highlightText(msg.content, searchQuery)}
-                    </div>
+        <div className="info-dropdown-container" style={{ position: "relative" }}>
+          <button
+            className={`header-btn ${showPins ? "active" : ""}`}
+            onClick={togglePins}
+            title="Pinned messages"
+          >
+            <Pin size={18} />
+          </button>
+          {showPins && (
+            <div className="dropdown-menu pins-menu">
+              <div className="pins-title">Pinned messages</div>
+              {pins.length === 0 ? (
+                <div className="pins-empty">No pinned messages yet</div>
+              ) : (
+                pins.map((m) => (
+                  <div key={m.id} className="pins-item">
+                    <span className="pins-sender">User {m.senderId}</span>
+                    <span className="pins-content">{m.content || "(attachment)"}</span>
                   </div>
-                );
-              })}
-            </div>
-          )}
-
-          {searchOpen && searchQuery.trim() && searchResults.length === 0 && (
-            <div className="search-results-dropdown">
-              <div className="search-results-empty">No messages found</div>
+                ))
+              )}
             </div>
           )}
         </div>
@@ -317,7 +296,7 @@ export default function ChatHeader({ activeChannel, onToggleSidebar, workspaceId
           />
 
           <button className="header-btn" aria-label="Info" onClick={toggleMenu}>
-            <InfoOutlinedIcon />
+            <Info size={18} />
           </button>
 
           {activeChannel?.type !== "ROOM" && (
@@ -371,18 +350,83 @@ export default function ChatHeader({ activeChannel, onToggleSidebar, workspaceId
           )}
         </div>
 
+        {/* In-channel search (only this channel's messages) */}
+        <div
+          className="info-dropdown-container channel-search-wrap"
+          style={{ position: "relative" }}
+          ref={csBoxRef}
+        >
+          <button
+            className={`header-btn ${channelSearchOpen ? "active" : ""}`}
+            onClick={toggleChannelSearch}
+            aria-label="Search this channel"
+            title="Search this channel"
+          >
+            <Search size={18} />
+          </button>
+          {channelSearchOpen && (
+            <div className="dropdown-menu channel-search-menu">
+              <div className="cs-input-row">
+                <Search size={15} />
+                <input
+                  ref={csInputRef}
+                  type="text"
+                  placeholder="Search this channel"
+                  value={csQuery}
+                  onChange={(e) => setCsQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Escape" && setChannelSearchOpen(false)}
+                />
+                {csQuery && (
+                  <button className="cs-clear" onClick={() => setCsQuery("")} aria-label="Clear">
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+              <div className="cs-results">
+                {csLoading ? (
+                  <div className="cs-empty">Loading messages…</div>
+                ) : !csQuery.trim() ? (
+                  <div className="cs-empty">Type to search messages in #{channelNameForDisplay}</div>
+                ) : csResults.length === 0 ? (
+                  <div className="cs-empty">No messages match “{csQuery.trim()}”</div>
+                ) : (
+                  csResults.map((m) => (
+                    <button key={m.id} className="cs-item" onClick={() => jumpToMessage(m.id)}>
+                      <span className="cs-item-top">
+                        <span className="cs-sender">User {m.senderId}</span>
+                        <span className="cs-time">
+                          {m.createdAt
+                            ? new Date(m.createdAt).toLocaleDateString([], {
+                                month: "short",
+                                day: "numeric",
+                              })
+                            : ""}
+                        </span>
+                      </span>
+                      <span className="cs-content">{m.content || "(attachment)"}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="header-search" onClick={onOpenSearch} title="Search everything (Ctrl/⌘K)">
+          <Search size={16} />
+          <input type="text" placeholder="Search" readOnly onFocus={onOpenSearch} />
+        </div>
+
+        <NotificationCenter inline onNavigate={onNotificationNavigate} />
       </div>
 
-      <Snackbar
-        open={copied}
-        autoHideDuration={2000}
-        onClose={() => setCopied(false)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert severity="success" variant="filled" sx={{ fontWeight: 600 }}>
-          Invite link copied!
-        </Alert>
-      </Snackbar>
+      <ChannelSettingsModal
+        channelId={activeChannel?.id}
+        workspaceId={workspaceId}
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onUpdated={(ch) => onChannelUpdated?.(ch)}
+      />
     </div>
   );
 }

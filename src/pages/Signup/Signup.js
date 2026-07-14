@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Check, AlertCircle, Sparkles } from "lucide-react";
 
-import Header from "../../components/Header";
-import InputField from "../../components/InputField";
-import Button from "../../components/Button";
-import "./Signup.css";
 import { registerUser } from "../../api/auth";
+import logoWide from "../../assets/logo-wide.png";
+import "../authLayout.css";
+import "./Signup.css";
+
 export default function Signup() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -55,97 +56,176 @@ export default function Signup() {
   };
 
   return (
-    <div className="signup-page">
-      <Header />
+    <div className="auth-shell">
+      <div className="auth-split">
+        {/* ---------- Brand panel ---------- */}
+        <aside className="auth-brand">
+          <Link to="/" className="auth-brand-mark" aria-label="Virtual Office home">
+            <img src={logoWide} alt="Virtual Office" />
+          </Link>
 
-      <main className="signup-main">
-        <div className="signup-left">
-          <div className="signup-box">
-            <h1 className="signup-title">Sign up</h1>
-            <p className="signup-sub">
-              Create an account or <Link to="/login">Login</Link>
+          <div className="auth-brand-body">
+            <span className="auth-brand-eyebrow">
+              <Sparkles size={15} aria-hidden="true" />
+              Get started free
+            </span>
+            <h2 className="auth-brand-title">Move your team into one virtual office.</h2>
+            <p className="auth-brand-text">
+              Create your account in seconds and bring chat, tasks, meetings and a walkable 2D
+              office together — no more juggling apps.
             </p>
-            {error && <p style={{ color: "red" }}>{error}</p>}
-            <form onSubmit={handleSubmit} className="signup-form">
-              <InputField
-                label="Email Address"
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                maxLength={100}
-              />
+            <ul className="auth-brand-list">
+              <li>
+                <Check size={18} aria-hidden="true" /> Free for small teams, no credit card
+              </li>
+              <li>
+                <Check size={18} aria-hidden="true" /> Unlimited channels and shared boards
+              </li>
+              <li>
+                <Check size={18} aria-hidden="true" /> Proximity voice in your own 2D office
+              </li>
+            </ul>
+          </div>
 
-              <InputField
-                label="First Name"
-                type="text"
-                placeholder="Enter your first name"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-                maxLength={100}
-              />
+          <p className="auth-brand-foot">© {new Date().getFullYear()} Virtual Office</p>
+        </aside>
 
-              <InputField
-                label="Last Name"
-                type="text"
-                placeholder="Enter your last name"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                required
-                maxLength={100}
-              />
+        {/* ---------- Form panel ---------- */}
+        <main className="auth-panel">
+          <div className="auth-card auth-card-wide">
+            <Link to="/" className="auth-card-logo" aria-label="Virtual Office home">
+              <img src={logoWide} alt="Virtual Office" />
+            </Link>
 
-              <InputField
-                label="Password"
-                type="password"
-                placeholder="Create a password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+            <div className="auth-head">
+              <h1 className="auth-title">Create your account</h1>
+              <p className="auth-subtitle">
+                Already have one? <Link to="/login">Log in</Link>
+              </p>
+            </div>
 
-              <InputField
-                label="Phone Number"
-                type="text"
-                placeholder="Enter your phone number"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                maxLength={20}
-              />
+            {error && (
+              <div className="auth-alert auth-alert-error" role="alert">
+                <AlertCircle size={18} aria-hidden="true" />
+                <span>{error}</span>
+              </div>
+            )}
 
-              <div className="terms-group">
-                <label className="terms-label">
-                  <input type="checkbox" required />
-                  <span>
-                    You accept the{" "}
-                    <Link to="/privacy-policy" className="terms-link">
-                      privacy policy
-                    </Link>{" "}
-                    and{" "}
-                    <Link to="/terms-of-use" className="terms-link">
-                      terms of use
-                    </Link>
-                  </span>
+            <form onSubmit={handleSubmit} className="auth-form">
+              <div className="auth-field">
+                <label className="auth-label" htmlFor="signup-email">
+                  Email Address
                 </label>
+                <input
+                  id="signup-email"
+                  className="auth-input"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  maxLength={100}
+                  autoComplete="email"
+                />
               </div>
 
-              <Button type="submit" disabled={loading}>
-                {loading ? "Loading..." : "Sign Up"}
-              </Button>
-            </form>
-          </div>
-        </div>
+              <div className="auth-grid-2">
+                <div className="auth-field">
+                  <label className="auth-label" htmlFor="signup-first">
+                    First Name
+                  </label>
+                  <input
+                    id="signup-first"
+                    className="auth-input"
+                    type="text"
+                    placeholder="First name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                    maxLength={100}
+                    autoComplete="given-name"
+                  />
+                </div>
 
-        <div className="signup-right">
-          <img
-            src="/offficeImage.JPG"
-            alt="Office illustration"
-            className="office-img"
-          />
-        </div>
-      </main>
+                <div className="auth-field">
+                  <label className="auth-label" htmlFor="signup-last">
+                    Last Name
+                  </label>
+                  <input
+                    id="signup-last"
+                    className="auth-input"
+                    type="text"
+                    placeholder="Last name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    required
+                    maxLength={100}
+                    autoComplete="family-name"
+                  />
+                </div>
+              </div>
+
+              <div className="auth-field">
+                <label className="auth-label" htmlFor="signup-password">
+                  Password
+                </label>
+                <input
+                  id="signup-password"
+                  className="auth-input"
+                  type="password"
+                  placeholder="Create a password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <div className="auth-field">
+                <label className="auth-label" htmlFor="signup-phone">
+                  Phone Number
+                </label>
+                <input
+                  id="signup-phone"
+                  className="auth-input"
+                  type="text"
+                  placeholder="Enter your phone number"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  maxLength={20}
+                  autoComplete="tel"
+                />
+              </div>
+
+              <label className="auth-check auth-check-start">
+                <input type="checkbox" required />
+                <span>
+                  You accept the{" "}
+                  <Link to="/privacy-policy" className="auth-link">
+                    privacy policy
+                  </Link>{" "}
+                  and{" "}
+                  <Link to="/terms-of-use" className="auth-link">
+                    terms of use
+                  </Link>
+                </span>
+              </label>
+
+              <button
+                type="submit"
+                className="auth-btn auth-btn-primary auth-btn-block"
+                disabled={loading}
+              >
+                {loading ? <span className="auth-spinner" aria-hidden="true" /> : "Sign Up"}
+              </button>
+            </form>
+
+            <p className="auth-alt">
+              Already have an account? <Link to="/login">Log in</Link>
+            </p>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

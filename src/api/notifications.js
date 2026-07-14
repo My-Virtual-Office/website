@@ -1,72 +1,32 @@
-import { getCurrentUserId } from "../utils/auth";
+import { authHeaders } from "../utils/auth";
 
-// Base notifications path based on the backend endpoints
-const API_BASE = "/api/notifications";
+/** Inbox page: { items, unreadCount } (the inbox API is 1-based). */
+export async function getInbox() {
+  const res = await fetch(`/api/notifications?page=1&size=30`, { headers: authHeaders() });
+  if (!res.ok) throw res;
+  const d = await res.json();
+  return { items: d.items ?? d.content ?? [], unreadCount: d.unreadCount ?? 0 };
+}
 
-// Helper function to prepare request headers
-const getHeaders = () => ({
-  "Content-Type": "application/json",
-  "X-User-Id": String(getCurrentUserId()),
-});
+export async function getUnreadCount() {
+  const res = await fetch(`/api/notifications/unread-count`, { headers: authHeaders() });
+  if (!res.ok) return 0;
+  const d = await res.json();
+  return d.unread ?? 0;
+}
 
-// 1. Fetch notifications list (supports pagination)
-export const fetchNotifications = async (page = 1, size = 20) => {
-  const response = await fetch(`${API_BASE}?page=${page}&size=${size}`, {
-    method: "GET",
-    headers: getHeaders(),
-  });
-  if (!response.ok) throw new Error("Failed to fetch notifications");
-  return response.json();
-};
+export async function markAllRead() {
+  await fetch(`/api/notifications/read-all`, { method: "PATCH", headers: authHeaders() });
+}
 
-// 2. Fetch unread notifications count for the badge
-export const fetchUnreadCount = async () => {
-  const response = await fetch(`${API_BASE}/unread-count`, {
-    method: "GET",
-    headers: getHeaders(),
-  });
-  if (!response.ok) throw new Error("Failed to fetch unread count");
-  return response.json();
-};
+export async function deleteNotification(id) {
+  await fetch(`/api/notifications/${id}`, { method: "DELETE", headers: authHeaders() });
+}
 
-// 3. Mark a single notification as read when clicked
-export const markNotificationAsRead = async (id) => {
-  const response = await fetch(`${API_BASE}/${id}/read`, {
-    method: "PATCH",
-    headers: getHeaders(),
-  });
-  if (!response.ok) throw new Error("Failed to mark as read");
-  return response;
-};
-
-// 4. Mark all notifications as read
-export const markAllNotificationsAsRead = async () => {
-  const response = await fetch(`${API_BASE}/read-all`, {
-    method: "PATCH",
-    headers: getHeaders(),
-  });
-  if (!response.ok) throw new Error("Failed to mark all as read");
-  return response;
-};
-
-// 5. Delete a specific notification
-export const deleteNotification = async (id) => {
-  const response = await fetch(`${API_BASE}/${id}`, {
-    method: "DELETE",
-    headers: getHeaders(),
-  });
-  if (!response.ok) throw new Error("Failed to delete notification");
-  return response;
-};
-
-// 6. Fetch WebSocket ticket for real-time connection
-export const getWebSocketTicket = async () => {
-  const response = await fetch(`${API_BASE}/ws-ticket`, {
-    method: "POST",
-    headers: getHeaders(),
-  });
-  if (!response.ok) throw new Error("Failed to get WS ticket");
-
-  const data = await response.json();
-  return data.ticket;
-};
+/** Short-lived ticket for the notifications WebSocket handshake. */
+export async function wsTicket() {
+  const res = await fetch(`/api/notifications/ws-ticket`, { method: "POST", headers: authHeaders() });
+  if (!res.ok) throw res;
+  const d = await res.json();
+  return d.ticket;
+}
