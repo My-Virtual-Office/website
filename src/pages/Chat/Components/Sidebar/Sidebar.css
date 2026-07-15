@@ -28,6 +28,11 @@
   font-weight: 800;
   font-size: 17px;
   letter-spacing: -0.2px;
+  /* The workspace name is user-supplied and can be long; without this it pushes the chevron
+     out of the header. The full name stays available as the title attribute. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .sidebar-header button {
   border: none;
