@@ -353,10 +353,15 @@ export default function Sidebar({
               })}
             </div>
           </div>
+        </div>
 
-          <VoiceBar />
+        {/* Outside .sidebar-main on purpose. These were inside the scroll area, so a long
+            channel list pushed them out of view — the profile row and the voice controls are
+            exactly the things that must stay reachable. .sidebar is a flex column and
+            .sidebar-main is flex:1, so as siblings they pin to the bottom. */}
+        <VoiceBar />
 
-          <div className="user-profile">
+        <div className="user-profile">
             <div
               className="user-info"
               onClick={() => setShowStatusMenu((s) => !s)}
@@ -439,7 +444,6 @@ export default function Sidebar({
               userPhoto={userPhoto}
             />
           </div>
-        </div>
       </div>
 
       <CreateChannelModal
