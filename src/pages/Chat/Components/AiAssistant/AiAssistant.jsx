@@ -9,6 +9,7 @@ import { askAi } from "../../../../api/ai";
 const TOOL_LABEL = {
   list_channels: "listed your channels",
   read_channel: "read the channel’s messages",
+  catch_up: "read your unread messages",
   get_my_tasks: "read your tasks",
   get_events: "read the calendar",
   create_task: "created a task",
@@ -16,12 +17,20 @@ const TOOL_LABEL = {
 };
 const toolPhrase = (t) => TOOL_LABEL[t] || t.replace(/_/g, " ");
 
-// Starter prompts — one per capability, so the first use teaches what it can do.
+// Starter prompts. One per capability, each a real job someone actually does —
+// vague prompts ("summarise #general") produce vague answers and teach nothing
+// about what this can do.
 const SUGGESTIONS = [
-  "Summarise what I missed in #general",
-  "What tasks am I assigned?",
-  "What's on my calendar today?",
-  "Create a task to review the release notes tomorrow at 3pm",
+  { label: "Catch me up — what did I miss?", hint: "Unread only, across your channels",
+    prompt: "Catch me up — what did I miss? Focus on anything that needs me." },
+  { label: "What's due today or overdue?", hint: "Your tasks, triaged",
+    prompt: "What tasks am I assigned that are overdue or due today? List the most urgent first." },
+  { label: "Walk me through my day", hint: "Today's meetings + gaps",
+    prompt: "What's on the calendar today, and where are my free gaps?" },
+  { label: "Summarise today in #release-2-9", hint: "One channel, time-bounded",
+    prompt: "Summarise what was discussed in #release-2-9 today — decisions and blockers only." },
+  { label: "Assign a task in plain English", hint: "Creates it for real",
+    prompt: "Create a high priority task for Karim to fix the analytics timezone bug, due Thursday at 5pm." },
 ];
 
 // Minimal markdown: **bold**, `code`, and - bullets. The model is told to keep
@@ -104,7 +113,10 @@ export default function AiAssistant({ workspaceId }) {
             <p>I can read your channels, tasks and calendar, and create tasks or meetings for you.</p>
             <div className="ai-suggestions">
               {SUGGESTIONS.map((s) => (
-                <button key={s} onClick={() => send(s)} disabled={busy}>{s}</button>
+                <button key={s.label} onClick={() => send(s.prompt)} disabled={busy}>
+                  <span className="ai-sug-label">{s.label}</span>
+                  <span className="ai-sug-hint">{s.hint}</span>
+                </button>
               ))}
             </div>
           </div>

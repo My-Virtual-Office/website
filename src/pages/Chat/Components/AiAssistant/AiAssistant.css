@@ -54,11 +54,14 @@
 .ai-empty p { margin: 0 0 18px; font-size: 13.5px; color: var(--content-muted); }
 .ai-suggestions { display: flex; flex-direction: column; gap: 8px; }
 .ai-suggestions button {
+  display: flex; flex-direction: column; gap: 2px;
   text-align: left; cursor: pointer;
   border: 1px solid var(--border); background: var(--panel-bg); color: var(--content-fg);
-  border-radius: 10px; padding: 11px 13px; font-size: 13.5px;
+  border-radius: 10px; padding: 10px 13px;
   transition: transform 0.1s, border-color 0.14s, background 0.14s;
 }
+.ai-sug-label { font-size: 13.5px; font-weight: 600; color: var(--content-strong); }
+.ai-sug-hint { font-size: 11.5px; color: var(--content-muted); }
 .ai-suggestions button:hover:not(:disabled) {
   background: var(--hover-bg);
   border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
