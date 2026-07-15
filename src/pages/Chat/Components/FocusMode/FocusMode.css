@@ -131,6 +131,14 @@
   border-radius: 999px;
   background: var(--badge-bg);
   font-variant-numeric: tabular-nums;
+  transition: color 0.2s, background 0.2s;
+}
+/* Something is waiting. Enough contrast to notice on a glance, not enough to pull you out of
+   the work — the whole point is that it can wait until you leave. */
+.focus-held.some {
+  color: var(--content-strong);
+  background: var(--hover-bg);
+  font-weight: 700;
 }
 
 .focus-btn {

@@ -37,9 +37,14 @@ const DURATIONS = [
 ];
 const DURATION_KEY = "vo-focus-duration";
 
+/** Total unread messages across every conversation. `unread` is { [id]: { count, mention } }. */
+const unreadTotal = (unread) =>
+  Object.values(unread || {}).reduce((sum, u) => sum + (u?.count || 0), 0);
+
 export default function FocusMode({ workspaceId, channels, members, unread, onExit, onOpenOffice }) {
-  const [held, setHeld] = useState([]);       // everything that is NOT a mention: counted, not shown
+  const [notes, setNotes] = useState([]);       // non-mention notifications: counted, not shown
   const [mentions, setMentions] = useState([]); // the one thing allowed to interrupt
+  const [shownChannels, setShownChannels] = useState([]); // channelIds we surfaced a mention for
   const [askOpen, setAskOpen] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [durationMin, setDurationMin] = useState(() => {
@@ -89,11 +94,35 @@ export default function FocusMode({ workspaceId, channels, members, unread, onEx
       subscribeToNotifications((data) => {
         if (data?.action !== "NEW_NOTIFICATION" || !data.payload) return;
         const n = data.payload;
-        if (n.type === "MENTION") setMentions((m) => [n, ...m].slice(0, 4));
-        else setHeld((h) => [n, ...h]);
+        if (n.type === "MENTION") {
+          setMentions((m) => [n, ...m].slice(0, 4)); // display is capped…
+          // …the accounting is not. The publisher's fields (channelId, refType, messageId) ride
+          // in `data`, not on the notification root — reading n.channelId gets you undefined.
+          setShownChannels((c) => [...c, n.data?.channelId]);
+        } else setNotes((h) => [n, ...h]);
       }),
     [],
   );
+
+  // What "held" actually means. In-app notifications only exist for MENTION, TASK_ASSIGNED and
+  // TASK_REMINDER — and mentions are shown, not held — so counting notifications alone left the
+  // chip reading "0 held" through a session where plenty was piling up. Ordinary chat messages
+  // raise no notification at all; they only move the unread counts, which ChatPage keeps live
+  // even while this is on screen. So count the messages that arrived since focus started, and
+  // add the notifications we suppressed.
+  const unreadAtStart = useRef(null);
+  const nowUnread = unreadTotal(unread);
+  if (unreadAtStart.current === null) unreadAtStart.current = nowUnread;
+  // Clamps at 0: reading elsewhere (a second tab) could otherwise drive this negative.
+  const newUnread = Math.max(0, nowUnread - unreadAtStart.current);
+
+  // A mention arrives twice: once as the banner we showed you, and again inside the unread count
+  // for its channel. Counting it as "held" would be a lie — you saw it. Discount one message per
+  // mention, but only for channels that actually carry unread (a mention in the channel you are
+  // looking at is already read, so there is nothing there to discount).
+  const alreadySeen = shownChannels.filter((id) => (unread?.[id]?.count || 0) > 0).length;
+  const newMessages = Math.max(0, newUnread - alreadySeen);
+  const heldCount = newMessages + notes.length;
 
   useEffect(() => {
     const id = setInterval(() => setElapsed(Math.floor((Date.now() - startedAt.current) / 1000)), 1000);
@@ -115,7 +144,7 @@ export default function FocusMode({ workspaceId, channels, members, unread, onEx
   const longSession = durationMin == null && elapsed >= 90 * 60;
   const almostDone = remaining != null && remaining <= 60;
 
-  const exit = useCallback((auto = false) => onExit?.(held.length, auto), [onExit, held.length]);
+  const exit = useCallback((auto = false) => onExit?.(heldCount, auto), [onExit, heldCount]);
 
   // The session ends itself. Slack lets you set a length; the point of setting one is not having
   // to decide again later, when you are the least able to.
@@ -208,8 +237,17 @@ export default function FocusMode({ workspaceId, channels, members, unread, onEx
 
         <div className="focus-actions">
           {/* Held ≠ hidden: you can see noise exists without being pulled into it. */}
-          <span className="focus-held" title="Held until you leave — nothing is lost">
-            {held.length} held
+          <span
+            className={`focus-held ${heldCount > 0 ? "some" : ""}`}
+            title={
+              heldCount === 0
+                ? "Nothing has come in since you started"
+                : `${newMessages} message${newMessages === 1 ? "" : "s"} and ${notes.length} notification${
+                    notes.length === 1 ? "" : "s"
+                  } — held until you leave, nothing is lost`
+            }
+          >
+            {heldCount} held
           </span>
           <button className={`focus-btn ${askOpen ? "on" : ""}`} onClick={() => setAskOpen((o) => !o)}>
             <Bot size={15} /> Ask AI

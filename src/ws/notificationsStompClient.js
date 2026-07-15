@@ -8,13 +8,14 @@ let client = null;
 let starting = false;
 const listeners = new Set();
 
+// notifications-service registers its STOMP endpoint at `notifications.ws.endpoint`, which is
+// /api/notifications/connect — NOT /ws/notifications, and not on port 8082 directly. The old URL
+// opened a socket that failed its handshake, so every subscriber here (the notifications menu,
+// and Focus Mode's held counter) sat silently receiving nothing. Go through the same proxied
+// host the working bell in NotificationCenter uses, which also keeps this correct over LAN/HTTPS.
 function wsNotificationsUrl(ticket) {
-  if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-    return `ws://localhost:8082/ws/notifications?ticket=${ticket}`;
-  }
-  const wsProtocol =
-    window.location.protocol === "https:" ? "wss:" : "ws:";
-  return `${wsProtocol}//${window.location.host}/ws/notifications?ticket=${ticket}`;
+  const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return `${wsProtocol}//${window.location.host}/api/notifications/connect?ticket=${ticket}`;
 }
 
 function dispatchMessage(message) {
