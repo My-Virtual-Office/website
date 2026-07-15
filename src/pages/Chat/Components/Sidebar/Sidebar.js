@@ -15,7 +15,6 @@ import { statusColor, statusText } from "../../statusMeta";
 import { authHeaders, getCurrentUserId } from "../../../../utils/auth";
 import { useDialogs } from "../../../../components/DialogProvider";
 import ChannelGroups from "./ChannelGroups";
-import VoiceChannels from "./VoiceChannels";
 import VoiceBar from "./VoiceBar";
 
 const initials = (name) =>
@@ -348,13 +347,12 @@ export default function Sidebar({
 
           <ChannelGroups
             channels={channels}
-            activeChannel={activeChannel}
+            activeChannel={activeView === "chat" ? activeChannel : null}
             unread={unread}
+            members={members}
             onSelect={(ch) => setActiveChannel({ id: ch.id, name: ch.name })}
             onCreateChannel={openCreateChannel}
           />
-
-          <VoiceChannels workspaceId={workspaceId} members={members} />
 
           <div className="direct-messages-section">
             <div className="direct-messages-header">
@@ -378,7 +376,10 @@ export default function Sidebar({
                 const partner = dmMembersById.get(Number(otherUserId));
                 const dmDisplayName = dm.name || partner?.name || `User ${otherUserId ?? "?"}`;
 
-                const isActive = activeChannel !== null && activeChannel.id === dm.id;
+                // Only highlight while actually on the chat view — this row stayed
+                // "active" (blue) after navigating to My Desk/Tasks/etc, alongside
+                // whichever nav item lit up for the new view. Same bug as channels.
+                const isActive = activeView === "chat" && activeChannel !== null && activeChannel.id === dm.id;
                 const u = unread[dm.id];
                 const showBadge = !isActive && u && u.count > 0;
                 return (
