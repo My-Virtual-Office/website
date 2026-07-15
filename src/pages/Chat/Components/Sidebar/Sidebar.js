@@ -1,5 +1,5 @@
 import "./Sidebar.css";
-import { ChevronDown, Search, Hash, Plus, Settings, Users, Gamepad2, CalendarDays, ListTodo, LayoutDashboard } from "lucide-react";
+import { ChevronDown, Search, Hash, Plus, Settings, Users, Gamepad2, CalendarDays, ListTodo, LayoutDashboard, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getCurrentUser } from "../../../../api/user";
 import SettingsModal from "../SettingsModal/SettingsModal";
@@ -11,17 +11,21 @@ import { getMyDesk, updateStatus } from "../../../../api/workspace";
 import { statusColor, statusText } from "../../statusMeta";
 import { authHeaders } from "../../../../utils/auth";
 import { useDialogs } from "../../../../components/DialogProvider";
+import VoiceChannels from "./VoiceChannels";
+import VoiceBar from "./VoiceBar";
 
 export default function Sidebar({
   activeChannel,
   setActiveChannel,
   workspaceId,
   activeView,
+  members = [],
   unread = {},
   onOpenContacts,
   onOpenTasks,
   onOpenMeetings,
   onOpenDesk,
+  onOpenAi,
   onOpenSearch,
 }) {
   // Channels state
@@ -229,6 +233,13 @@ export default function Sidebar({
               <LayoutDashboard size={18} />
               <span>My Desk</span>
             </div>
+            <div
+              className={`drafts ${activeView === "ai" ? "active-link" : ""}`}
+              onClick={onOpenAi}
+            >
+              <Sparkles size={18} />
+              <span>Assistant</span>
+            </div>
           </div>
 
           <div className="channels-section">
@@ -269,6 +280,8 @@ export default function Sidebar({
               })}
             </div>
           </div>
+
+          <VoiceChannels workspaceId={workspaceId} members={members} />
 
           <div className="direct-messages-section">
             <div className="direct-messages-header">
@@ -321,6 +334,8 @@ export default function Sidebar({
               })}
             </div>
           </div>
+
+          <VoiceBar />
 
           <div className="user-profile">
             <div

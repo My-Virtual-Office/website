@@ -14,6 +14,7 @@ import ProfilePanel from "./Components/ProfilePanel/ProfilePanel";
 import TasksBoard from "./Components/TasksBoard/TasksBoard";
 import MeetingsModal from "./Components/MeetingsModal/MeetingsModal";
 import MyDesk from "./Components/MyDesk/MyDesk";
+import AiAssistant from "./Components/AiAssistant/AiAssistant";
 import CommandPalette from "./Components/CommandPalette/CommandPalette";
 import ResizeHandle from "../../components/ResizeHandle";
 import { MentionContext } from "./mentionContext";
@@ -502,6 +503,7 @@ export default function ChatPage() {
                 onOpenTasks={() => { setView("tasks"); if (isMobileView()) setSidebarOpen(false); }}
                 onOpenMeetings={() => { setView("meetings"); if (isMobileView()) setSidebarOpen(false); }}
                 onOpenDesk={() => { setView("mydesk"); if (isMobileView()) setSidebarOpen(false); }}
+                onOpenAi={() => { setView("ai"); if (isMobileView()) setSidebarOpen(false); }}
                 onOpenSearch={() => setCmdkOpen(true)}
               />
             </div>
@@ -533,6 +535,8 @@ export default function ChatPage() {
         <MeetingsModal workspaceId={workspaceId} inline />
       ) : view === "mydesk" ? (
         <MyDesk workspaceId={workspaceId} />
+      ) : view === "ai" ? (
+        <AiAssistant workspaceId={workspaceId} />
       ) : (
         <>
           <ChatArea

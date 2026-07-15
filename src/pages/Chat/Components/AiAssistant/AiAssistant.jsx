@@ -1,0 +1,148 @@
+import "./AiAssistant.css";
+import { useState, useRef, useEffect } from "react";
+import { Sparkles, ArrowUp, RotateCcw, AlertTriangle } from "lucide-react";
+import { askAi } from "../../../../api/ai";
+
+// Starter prompts — one per capability, so the first use teaches what it can do.
+const SUGGESTIONS = [
+  "Summarise what I missed in #general",
+  "What tasks am I assigned?",
+  "What's on my calendar today?",
+  "Create a task to review the release notes tomorrow at 3pm",
+];
+
+// Minimal markdown: **bold**, `code`, and - bullets. The model is told to keep
+// it simple, and this avoids pulling a parser in for four cases.
+function render(text) {
+  return String(text)
+    .split("\n")
+    .map((line, i) => {
+      const bullet = /^\s*[-*]\s+/.test(line);
+      const body = line.replace(/^\s*[-*]\s+/, "");
+      const parts = body.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).filter(Boolean);
+      const nodes = parts.map((p, j) => {
+        if (/^\*\*[^*]+\*\*$/.test(p)) return <strong key={j}>{p.slice(2, -2)}</strong>;
+        if (/^`[^`]+`$/.test(p)) return <code key={j}>{p.slice(1, -1)}</code>;
+        return <span key={j}>{p}</span>;
+      });
+      if (bullet) return <li key={i}>{nodes}</li>;
+      if (!line.trim()) return <br key={i} />;
+      return <p key={i}>{nodes}</p>;
+    });
+}
+
+export default function AiAssistant({ workspaceId }) {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const bottomRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ block: "end", behavior: "smooth" }); }, [messages, busy]);
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const send = async (text) => {
+    const content = (text ?? input).trim();
+    if (!content || busy || !workspaceId) return;
+    const next = [...messages, { role: "user", content }];
+    setMessages(next);
+    setInput("");
+    setError(null);
+    setBusy(true);
+    try {
+      const { reply, toolsUsed } = await askAi(workspaceId, next);
+      setMessages([...next, { role: "assistant", content: reply, toolsUsed }]);
+    } catch (e) {
+      setError(e.message);
+      setMessages(next);
+    } finally {
+      setBusy(false);
+      inputRef.current?.focus();
+    }
+  };
+
+  const onKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+  };
+
+  return (
+    <div className="ai">
+      <div className="ai-head">
+        <div className="ai-head-title">
+          <span className="ai-badge"><Sparkles size={15} /></span>
+          <div>
+            <h2>Assistant</h2>
+            <span className="ai-sub">Ask about your chat, tasks and calendar — or tell it to create something.</span>
+          </div>
+        </div>
+        {messages.length > 0 && (
+          <button className="ai-reset" onClick={() => { setMessages([]); setError(null); inputRef.current?.focus(); }}>
+            <RotateCcw size={14} /> New chat
+          </button>
+        )}
+      </div>
+
+      <div className="ai-scroll">
+        {messages.length === 0 && !error && (
+          <div className="ai-empty">
+            <span className="ai-empty-badge"><Sparkles size={22} /></span>
+            <h3>What can I help with?</h3>
+            <p>I can read your channels, tasks and calendar, and create tasks or meetings for you.</p>
+            <div className="ai-suggestions">
+              {SUGGESTIONS.map((s) => (
+                <button key={s} onClick={() => send(s)} disabled={busy}>{s}</button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {messages.map((m, i) => (
+          <div key={i} className={`ai-msg ${m.role}`}>
+            {m.role === "assistant" && <span className="ai-avatar"><Sparkles size={13} /></span>}
+            <div className="ai-bubble">
+              <div className="ai-body">{render(m.content)}</div>
+              {m.toolsUsed?.length > 0 && (
+                <div className="ai-tools" title="Live data the assistant read to answer this">
+                  {[...new Set(m.toolsUsed)].map((t) => <span key={t}>{t.replace(/_/g, " ")}</span>)}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+
+        {busy && (
+          <div className="ai-msg assistant">
+            <span className="ai-avatar"><Sparkles size={13} /></span>
+            <div className="ai-bubble">
+              <div className="ai-typing"><i /><i /><i /></div>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="ai-error">
+            <AlertTriangle size={16} />
+            <div>{error}</div>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      <div className="ai-composer">
+        <textarea
+          ref={inputRef}
+          rows={1}
+          value={input}
+          placeholder="Ask anything, or say “create a task to…”"
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={onKeyDown}
+          disabled={busy}
+        />
+        <button className="ai-send" onClick={() => send()} disabled={busy || !input.trim()} title="Send">
+          <ArrowUp size={17} />
+        </button>
+      </div>
+    </div>
+  );
+}
