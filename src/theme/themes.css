@@ -2,8 +2,13 @@
    Theme tokens. Applied via a data-theme attribute on <html> (see ThemeContext);
    :root is the default.
 
-   Five BRIGHT themes. One architecture — white content, tinted light chrome, a single core hue
-   per theme carrying the accent and the active row. Only the core colours differ:
+   Five BRIGHT themes. One architecture — white content, light sidebar, a single core hue per
+   theme carrying the accent and the active row. Only the core colours differ:
+
+   The workspace RAIL is the one dark surface, on purpose: it is the backmost layer, and at any
+   mid-tone neither dark nor white icons clear AA (dark fails below L=0.80, white only passes
+   from L=0.35 — everything between is a dead zone). So it goes properly dark with white icons,
+   and each theme's active ring is its accent lightened until it reads on that rail.
 
      daylight   amber   (default; the logo's own colour)
      meadow     green
@@ -23,9 +28,9 @@
 :root,
 :root[data-theme="daylight"] {
   /* Left workspace rail */
-  --rail-bg: #c4c9d4;
-  --rail-fg: #43464e;
-  --rail-icon-bg: #acb4c3;
+  --rail-bg: #424957;
+  --rail-fg: #eef0f3;
+  --rail-icon-bg: #586174;
   --rail-active-ring: #eb8829;
 
   /* Channel sidebar */
@@ -79,10 +84,10 @@
 /* Meadow — bright & green. */
 :root[data-theme="meadow"] {
   /* Left workspace rail */
-  --rail-bg: #bedac6;
-  --rail-fg: #3d4a42;
-  --rail-icon-bg: #a4ccaf;
-  --rail-active-ring: #1f7a45;
+  --rail-bg: #425748;
+  --rail-fg: #eef0f3;
+  --rail-icon-bg: #587460;
+  --rail-active-ring: #5cd68f;
 
   /* Channel sidebar */
   --sidebar-bg: #eff6f1;
@@ -135,10 +140,10 @@
 /* Harbor — bright & blue. */
 :root[data-theme="harbor"] {
   /* Left workspace rail */
-  --rail-bg: #b5c7e3;
-  --rail-fg: #3f4650;
-  --rail-icon-bg: #97b1d8;
-  --rail-active-ring: #1668c9;
+  --rail-bg: #424a57;
+  --rail-fg: #eef0f3;
+  --rail-icon-bg: #586374;
+  --rail-active-ring: #5a9ded;
 
   /* Channel sidebar */
   --sidebar-bg: #eff3f9;
@@ -191,10 +196,10 @@
 /* Lilac — bright & violet. */
 :root[data-theme="lilac"] {
   /* Left workspace rail */
-  --rail-bg: #c5b6e2;
-  --rail-fg: #474250;
-  --rail-icon-bg: #ad99d6;
-  --rail-active-ring: #6b46c6;
+  --rail-bg: #494257;
+  --rail-fg: #eef0f3;
+  --rail-icon-bg: #615874;
+  --rail-active-ring: #a18adb;
 
   /* Channel sidebar */
   --sidebar-bg: #f3f0f9;
@@ -247,10 +252,10 @@
 /* Blossom — bright & rose. */
 :root[data-theme="blossom"] {
   /* Left workspace rail */
-  --rail-bg: #e2b6ca;
-  --rail-fg: #4e4148;
-  --rail-icon-bg: #d699b4;
-  --rail-active-ring: #be2d63;
+  --rail-bg: #57424b;
+  --rail-fg: #eef0f3;
+  --rail-icon-bg: #745864;
+  --rail-active-ring: #de739b;
 
   /* Channel sidebar */
   --sidebar-bg: #f9f0f4;
