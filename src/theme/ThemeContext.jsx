@@ -5,8 +5,8 @@ export const THEMES = [
   {
     id: "virtual-office",
     label: "Virtual Office",
-    hint: "Our default — navy & amber",
-    swatch: { rail: "#070a14", sidebar: "#0f1424", content: "#ffffff" },
+    hint: "Our default — charcoal & amber",
+    swatch: { rail: "#0c0c0e", sidebar: "#141518", content: "#ffffff" },
   },
   {
     id: "aubergine",
