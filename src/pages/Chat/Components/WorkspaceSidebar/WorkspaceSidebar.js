@@ -1,5 +1,5 @@
 import "./WorkspaceSidebar.css";
-import { Plus, Palette, Check, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Plus, Palette, Check, PanelLeftClose, PanelLeftOpen, Target } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Popover } from "@mui/material";
@@ -11,6 +11,7 @@ export default function WorkspaceSidebar({
   onSwitch,
   sidebarOpen = true,
   onToggleSidebar,
+  onEnterFocus,
 }) {
   const { theme, setTheme, themes } = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
@@ -46,6 +47,17 @@ export default function WorkspaceSidebar({
       {/* Bottom utilities. Grouped so .rail's space-between still has exactly two children —
           a third top-level child would spread them down the whole rail. */}
       <div className="rail-bottom">
+        {/* Focus mode. On the rail because it must be reachable from every view — the whole
+            point is to leave whatever you are looking at. */}
+        <button
+          className="rail-btn focus"
+          onClick={onEnterFocus}
+          title="Focus mode — hide everything but your desk"
+          aria-label="Enter focus mode"
+        >
+          <Target size={20} />
+        </button>
+
         <button
           className="rail-btn"
           onClick={onToggleSidebar}

@@ -16,8 +16,10 @@ import MeetingsModal from "./Components/MeetingsModal/MeetingsModal";
 import MyDesk from "./Components/MyDesk/MyDesk";
 import AiAssistant from "./Components/AiAssistant/AiAssistant";
 import CommandPalette from "./Components/CommandPalette/CommandPalette";
+import FocusMode from "./Components/FocusMode/FocusMode";
 import ResizeHandle from "../../components/ResizeHandle";
 import { MentionContext } from "./mentionContext";
+import { useDialogs } from "../../components/DialogProvider";
 import { authHeaders, getCurrentUserId } from "../../utils/auth";
 import { syncPublicKey } from "../../utils/e2e";
 import { getMyWorkspaces, getMembers, getTeams } from "../../api/workspace";
@@ -61,6 +63,7 @@ function usePersistentState(key, initial) {
 }
 
 export default function ChatPage() {
+  const { notify } = useDialogs();
   const [activeChannel, setActiveChannel] = useState(null);
   const [stompClient, setStompClient] = useState(null);
   const [view, setView] = useState("chat"); // "chat" | "contacts"
@@ -408,6 +411,8 @@ export default function ChatPage() {
 
   // Collapsible + resizable side panels (persisted).
   const [sidebarOpen, setSidebarOpen] = usePersistentState("vo-sidebar-open", true);
+  // Persisted: a reload must not quietly dump you back into a full sidebar of badges.
+  const [focusMode, setFocusMode] = usePersistentState("vo-focus-mode", false);
   const [membersOpen, setMembersOpen] = usePersistentState("vo-members-open", true);
   const [sidebarWidth, setSidebarWidth] = usePersistentState("vo-sidebar-w", 260);
   const [membersWidth, setMembersWidth] = usePersistentState("vo-members-w", 240);
@@ -475,6 +480,26 @@ export default function ChatPage() {
     };
   }, []);
 
+  // Focus mode replaces the page rather than hiding parts of it: a chat pane that is merely
+  // off-screen still fetches, still badges, still tempts. One surface, nothing behind it.
+  if (focusMode) {
+    return (
+      <FocusMode
+        workspaceId={workspaceId}
+        channels={dirChannels}
+        members={dirMembers}
+        unread={unread}
+        onOpenOffice={openOffice}
+        onExit={(heldCount) => {
+          setFocusMode(false);
+          if (heldCount > 0) {
+            notify(`Focus ended — ${heldCount} notification${heldCount === 1 ? "" : "s"} waited for you`, "info");
+          }
+        }}
+      />
+    );
+  }
+
   return (
     <MentionContext.Provider
       value={{
@@ -510,6 +535,7 @@ export default function ChatPage() {
           onSwitch={switchWorkspace}
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen((o) => !o)}
+          onEnterFocus={() => setFocusMode(true)}
         />
 
         {sidebarOpen && (
