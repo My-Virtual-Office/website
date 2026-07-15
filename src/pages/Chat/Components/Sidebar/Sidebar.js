@@ -22,6 +22,7 @@ export default function Sidebar({
   activeChannel,
   setActiveChannel,
   workspaceId,
+  workspaceName = "",
   activeView,
   members = [],
   unread = {},
@@ -198,7 +199,9 @@ export default function Sidebar({
     <div className="sidebar-container">
       <div className="sidebar">
         <div className="sidebar-header">
-          <span>Virtual-Office</span>
+          {/* The workspace you are in, not the product — this is the workspace switcher's header.
+              Falls back to the product name only while the workspace list is still loading. */}
+          <span title={workspaceName || "Virtual Office"}>{workspaceName || "Virtual Office"}</span>
           <button>
             <ChevronDown size={18} />
           </button>

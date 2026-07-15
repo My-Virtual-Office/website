@@ -171,6 +171,16 @@ export default function ChatPage() {
   // The user's active workspace id (membership lives here; required for channels).
   const [workspaceId, setWorkspaceId] = useState(null);
   const [workspaces, setWorkspaces] = useState([]);
+  // The workspace you are actually in. Slack/Discord name the workspace here, not the product —
+  // with several workspaces open, "Virtual-Office" in every tab and sidebar tells you nothing.
+  const activeWorkspaceName = workspaces.find((w) => w.id === workspaceId)?.name || "";
+  // Name the browser tab after the workspace, so several open at once are tellable apart.
+  // index.html ships "Virtual Office" as the title, which is what shows until this resolves.
+  useEffect(() => {
+    document.title = activeWorkspaceName
+      ? `${activeWorkspaceName} | Virtual Office`
+      : "Virtual Office";
+  }, [activeWorkspaceName]);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const workName = searchParams.get("work_name");
@@ -507,6 +517,7 @@ export default function ChatPage() {
                 activeChannel={activeChannel}
                 setActiveChannel={selectChannel}
                 workspaceId={workspaceId}
+                workspaceName={activeWorkspaceName}
                 activeView={view}
                 members={dirMembers}
                 unread={unread}
