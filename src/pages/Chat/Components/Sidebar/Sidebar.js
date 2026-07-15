@@ -1,5 +1,5 @@
 import "./Sidebar.css";
-import { ChevronDown, Search, Hash, Plus, Settings, Users, Gamepad2, CalendarDays, ListTodo, LayoutDashboard, Sparkles, Check, UserPlus, Copy, Target } from "lucide-react";
+import { ChevronDown, Search, Plus, Settings, Users, Gamepad2, CalendarDays, ListTodo, LayoutDashboard, Sparkles, Check, UserPlus, Copy, Target } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { Menu, MenuItem, Divider } from "@mui/material";
 import { useNavigate } from "react-router-dom";
@@ -14,6 +14,7 @@ import { getMyDesk, updateStatus } from "../../../../api/workspace";
 import { statusColor, statusText } from "../../statusMeta";
 import { authHeaders, getCurrentUserId } from "../../../../utils/auth";
 import { useDialogs } from "../../../../components/DialogProvider";
+import ChannelGroups from "./ChannelGroups";
 import VoiceChannels from "./VoiceChannels";
 import VoiceBar from "./VoiceBar";
 
@@ -345,44 +346,13 @@ export default function Sidebar({
             </div>
           </div>
 
-          <div className="channels-section">
-            <div className="channels-header">
-              <span>CHANNELS</span>
-              <button onClick={openCreateChannel}>
-                <Plus size={16} />
-              </button>
-            </div>
-
-            <div className="channels-list">
-              {channels.map((channel) => {
-                const isActive = activeChannel !== null && activeChannel.id === channel.id;
-                const u = unread[channel.id];
-                const showBadge = !isActive && u && u.count > 0;
-                return (
-                  <div
-                    key={channel.id}
-                    className={`channel-item ${isActive ? "active" : ""} ${showBadge ? "unread" : ""}`}
-                    onClick={() => {
-                      setActiveChannel({
-                        id: channel.id,
-                        name: channel.name,
-                      });
-                    }}
-                  >
-                    <span>
-                      <Hash size={16} />
-                    </span>
-                    <span className="channel-name">{channel.name}</span>
-                    {showBadge && (
-                      <span className={`unread-badge ${u.mention ? "mention" : ""}`}>
-                        {u.count > 99 ? "99+" : u.count}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <ChannelGroups
+            channels={channels}
+            activeChannel={activeChannel}
+            unread={unread}
+            onSelect={(ch) => setActiveChannel({ id: ch.id, name: ch.name })}
+            onCreateChannel={openCreateChannel}
+          />
 
           <VoiceChannels workspaceId={workspaceId} members={members} />
 

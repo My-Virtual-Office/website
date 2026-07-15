@@ -1,0 +1,95 @@
+/* Discord-style channel categories + pinned section. Inherits the sidebar tokens. */
+.cg-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.cg-group {
+  margin-top: 2px;
+}
+.cg-cat-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px 4px 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--sidebar-fg-muted);
+}
+.cg-cat-head:hover {
+  color: var(--sidebar-fg);
+}
+.cg-cat-head svg {
+  flex: none;
+}
+.cg-cat-name {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cg-cat-count {
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.6;
+}
+.cg-cat-del {
+  margin-left: auto;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 4px;
+  border-radius: 4px;
+  opacity: 0;
+}
+.cg-cat-head:hover .cg-cat-del {
+  opacity: 0.7;
+}
+.cg-cat-del:hover {
+  opacity: 1;
+  background: var(--sidebar-hover);
+}
+
+/* The "…" affordance on a channel row — only on hover, so rows stay clean. */
+.channel-item .cg-more {
+  margin-left: auto;
+  display: none;
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: var(--sidebar-fg-muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  flex: none;
+}
+.channel-item:hover .cg-more {
+  display: flex;
+}
+.channel-item .cg-more:hover {
+  color: var(--sidebar-fg);
+  background: var(--sidebar-hover);
+}
+/* A pin/hash icon wrapper so the row layout matches the old markup. */
+.channel-item .cg-hash {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+/* When the "…" shows on hover, an unread badge shouldn't fight it for the slot. */
+.channel-item:hover .unread-badge {
+  margin-right: 2px;
+}
+
+.cg-menu-label {
+  padding: 4px 16px 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--content-muted, #616061);
+}
