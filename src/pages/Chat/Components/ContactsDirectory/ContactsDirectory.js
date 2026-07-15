@@ -1,6 +1,6 @@
 import "./ContactsDirectory.css";
 import { useState, useEffect, useCallback } from "react";
-import { Search, UserPlus, Users, Copy, Check, Mail } from "lucide-react";
+import { Search, UserPlus, Users, Copy, Check, Mail, ChevronRight, ChevronDown } from "lucide-react";
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Button,
 } from "@mui/material";
@@ -23,6 +23,10 @@ export default function ContactsDirectory({ workspaceId }) {
   const [teams, setTeams] = useState([]);
   const [users, setUsers] = useState({});
   const [filter, setFilter] = useState("all");
+  // "people" is the flat directory; "teams" groups the same people by their team.
+  // Kept separate from `filter` because Teams is a different view, not a fourth role.
+  const [view, setView] = useState("people");
+  const [openTeams, setOpenTeams] = useState(() => new Set()); // team ids expanded
   const [q, setQ] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -78,17 +82,47 @@ export default function ContactsDirectory({ workspaceId }) {
   const initials = (m) =>
     name(m).split(/\s+/).map((s) => s[0]).slice(0, 2).join("").toUpperCase() || "?";
 
+  const matchesQuery = (m) => {
+    if (!q) return true;
+    const hay = `${name(m)} ${email(m)} ${m.title || ""}`.toLowerCase();
+    return hay.includes(q.toLowerCase());
+  };
+
   const rows = members.filter((m) => {
     if (filter !== "all") {
       const isAdminRole = m.role === "ADMIN" || m.role === "OWNER";
       if (filter === "ADMIN" ? !isAdminRole : m.role !== filter) return false;
     }
-    if (q) {
-      const hay = `${name(m)} ${email(m)} ${m.title || ""}`.toLowerCase();
-      if (!hay.includes(q.toLowerCase())) return false;
-    }
-    return true;
+    return matchesQuery(m);
   });
+
+  // Every team, plus the people who are in none — an unassigned pile is the thing
+  // an admin most wants to see here, and hiding it would make the counts lie.
+  const teamGroups = [
+    ...teams.map((t) => ({
+      key: String(t.id),
+      name: t.name,
+      description: t.description,
+      people: members.filter((m) => m.teamId === t.id).filter(matchesQuery),
+    })),
+    {
+      key: "none",
+      name: "No team",
+      description: "Not assigned to a team yet",
+      people: members.filter((m) => !m.teamId).filter(matchesQuery),
+    },
+  ].filter((g) => {
+    if (g.key === "none" && g.people.length === 0) return false; // nothing to nag about
+    return q ? g.people.length > 0 : true; // while searching, only teams with a hit
+  });
+
+  const toggleTeam = (key) =>
+    setOpenTeams((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
 
   const sendInvite = async () => {
     try {
@@ -146,12 +180,86 @@ export default function ContactsDirectory({ workspaceId }) {
 
       <div className="contacts-filters">
         {FILTERS.map((f) => (
-          <button key={f.key} className={filter === f.key ? "active" : ""} onClick={() => setFilter(f.key)}>
+          <button
+            key={f.key}
+            className={view === "people" && filter === f.key ? "active" : ""}
+            onClick={() => { setView("people"); setFilter(f.key); }}
+          >
             {f.label}
           </button>
         ))}
+        <span className="contacts-filters-sep" />
+        <button
+          className={`contacts-teams-pill ${view === "teams" ? "active" : ""}`}
+          onClick={() => setView("teams")}
+          aria-pressed={view === "teams"}
+        >
+          <Users size={14} /> Teams
+        </button>
       </div>
 
+      {view === "teams" ? (
+        <div className="contacts-table-wrap">
+          <div className="teams-list">
+            {teamGroups.map((g) => {
+              const open = openTeams.has(g.key);
+              return (
+                <div className={`team-card ${open ? "open" : ""}`} key={g.key}>
+                  <div className="team-row">
+                    <span className={`team-icon ${g.key === "none" ? "muted" : ""}`}>
+                      <Users size={15} />
+                    </span>
+                    <div className="team-meta">
+                      <span className="team-name">{g.name}</span>
+                      {g.description && <span className="team-desc">{g.description}</span>}
+                    </div>
+                    <span className="team-count">
+                      {g.people.length} {g.people.length === 1 ? "person" : "people"}
+                    </span>
+                    <button
+                      className="team-open"
+                      onClick={() => toggleTeam(g.key)}
+                      aria-expanded={open}
+                    >
+                      {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                      {open ? "Close" : "Open"}
+                    </button>
+                  </div>
+
+                  {open && (
+                    <div className="team-people">
+                      {g.people.map((m) => (
+                        <div className="team-person" key={m.id}>
+                          <span className="c-avatar">
+                            {m.personalImageUrl ? <img src={m.personalImageUrl} alt="" /> : initials(m)}
+                          </span>
+                          <div className="team-person-meta">
+                            <span className="c-name">{name(m)}</span>
+                            <span className="team-person-title">{m.title || "—"}</span>
+                          </div>
+                          <span className={`c-role ${(m.role || "").toLowerCase()}`}>{m.role}</span>
+                          <span className="team-person-status">
+                            <span className={`c-dot ${m.isOnline ? "online" : ""}`} />
+                            {m.isOnline ? "Active" : "Away"}
+                          </span>
+                        </div>
+                      ))}
+                      {g.people.length === 0 && (
+                        <div className="team-empty">No one in this team yet.</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {teamGroups.length === 0 && (
+              <div className="c-empty" style={{ padding: 24 }}>
+                {q ? "No team has anyone matching." : "No teams yet."}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
       <div className="contacts-table-wrap">
         <table className="contacts-table">
           <thead>
@@ -193,8 +301,13 @@ export default function ContactsDirectory({ workspaceId }) {
           </tbody>
         </table>
       </div>
+      )}
 
-      <div className="contacts-footer">Total: {rows.length}</div>
+      <div className="contacts-footer">
+        {view === "teams"
+          ? `Teams: ${teams.length} · People: ${members.length}`
+          : `Total: ${rows.length}`}
+      </div>
 
       {/* Invite modal */}
       <Dialog open={!!invite} onClose={() => setInvite(null)}
