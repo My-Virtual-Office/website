@@ -490,11 +490,11 @@ export default function ChatPage() {
         members={dirMembers}
         unread={unread}
         onOpenOffice={openOffice}
-        onExit={(heldCount) => {
+        onExit={(heldCount, auto) => {
           setFocusMode(false);
-          if (heldCount > 0) {
-            notify(`Focus ended — ${heldCount} notification${heldCount === 1 ? "" : "s"} waited for you`, "info");
-          }
+          const held = heldCount > 0 ? ` — ${heldCount} notification${heldCount === 1 ? "" : "s"} waited for you` : "";
+          if (auto) notify(`Focus session finished${held}`, "success");
+          else if (heldCount > 0) notify(`Focus ended${held}`, "info");
         }}
       />
     );
@@ -546,6 +546,8 @@ export default function ChatPage() {
                 setActiveChannel={selectChannel}
                 workspaceId={workspaceId}
                 workspaceName={activeWorkspaceName}
+                workspaces={workspaces}
+                onSwitchWorkspace={switchWorkspace}
                 activeView={view}
                 members={dirMembers}
                 unread={unread}
@@ -584,7 +586,7 @@ export default function ChatPage() {
       ) : view === "meetings" ? (
         <MeetingsModal workspaceId={workspaceId} inline />
       ) : view === "mydesk" ? (
-        <MyDesk workspaceId={workspaceId} />
+        <MyDesk workspaceId={workspaceId} onEnterFocus={() => setFocusMode(true)} />
       ) : view === "ai" ? (
         <AiAssistant
           workspaceId={workspaceId}

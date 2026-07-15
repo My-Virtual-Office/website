@@ -35,22 +35,86 @@
   letter-spacing: -0.2px;
   color: var(--content-strong);
 }
+.focus-mark {
+  flex-shrink: 0;
+}
+
+/* Keeps Exit visually its own thing rather than the first item in a row of labels. */
+.focus-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  margin: 0 2px;
+}
+
+.focus-duration {
+  position: relative;
+}
+
 .focus-clock {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   margin-left: 6px;
-  padding: 2px 8px;
+  padding: 3px 8px;
   border-radius: 999px;
+  border: 1px solid transparent;
   background: var(--badge-bg);
   color: var(--badge-fg);
   font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
   font-variant-numeric: tabular-nums; /* the clock must not jitter in the corner of your eye */
 }
+.focus-clock:hover {
+  border-color: var(--border);
+}
 /* Past 90 minutes the research says take a break — say so, don't enforce it. */
-.focus-clock.long {
+.focus-clock.long,
+.focus-clock.soon {
   background: var(--accent);
   color: var(--accent-fg);
+}
+
+.focus-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 6px;
+  z-index: 3;
+  min-width: 168px;
+  padding: 5px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  box-shadow: var(--overlay-shadow);
+}
+.focus-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 7px 9px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--content-fg);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.focus-menu-item:hover {
+  background: var(--hover-bg);
+}
+.focus-menu-item.on {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+.focus-menu-note {
+  padding: 6px 9px 3px;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--content-muted);
 }
 
 .focus-actions {

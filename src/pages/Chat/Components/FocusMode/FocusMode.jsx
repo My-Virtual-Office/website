@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Target, Bot, Gamepad2, X, AtSign, Clock } from "lucide-react";
+import { Target, Bot, Gamepad2, X, AtSign, Clock, ChevronDown } from "lucide-react";
 import MyDesk from "../MyDesk/MyDesk";
 import AiAssistant from "../AiAssistant/AiAssistant";
 import { subscribeToNotifications } from "../../../../ws/notificationsStompClient";
@@ -24,11 +24,33 @@ import "./FocusMode.css";
  *  - Held notifications are counted, never dropped. The count stays visible so you know noise
  *    exists without being pulled into it, and it is reported on exit.
  */
+/**
+ * Session lengths. 90 is the practical ceiling for one sustained block, so it is the longest
+ * timed option rather than an arbitrary big number. `null` = open-ended: some work does not fit
+ * a box, and forcing a countdown on it would be its own distraction.
+ */
+const DURATIONS = [
+  { min: 30, label: "30 min" },
+  { min: 60, label: "60 min" },
+  { min: 90, label: "90 min" },
+  { min: null, label: "Until I exit" },
+];
+const DURATION_KEY = "vo-focus-duration";
+
 export default function FocusMode({ workspaceId, channels, members, unread, onExit, onOpenOffice }) {
   const [held, setHeld] = useState([]);       // everything that is NOT a mention: counted, not shown
   const [mentions, setMentions] = useState([]); // the one thing allowed to interrupt
   const [askOpen, setAskOpen] = useState(false);
   const [elapsed, setElapsed] = useState(0);
+  const [durationMin, setDurationMin] = useState(() => {
+    try {
+      const raw = localStorage.getItem(DURATION_KEY);
+      return raw === null ? null : JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  });
+  const [pickerOpen, setPickerOpen] = useState(false);
   const startedAt = useRef(Date.now());
   const prevStatus = useRef(null);
 
@@ -78,38 +100,110 @@ export default function FocusMode({ workspaceId, channels, members, unread, onEx
     return () => clearInterval(id);
   }, []);
 
+  // Counts DOWN against a chosen length, UP when open-ended. A countdown is a commitment you can
+  // see; a stopwatch is just a fact.
+  const remaining = durationMin == null ? null : Math.max(0, durationMin * 60 - elapsed);
+
   const clock = useMemo(() => {
-    const m = Math.floor(elapsed / 60);
-    const s = elapsed % 60;
+    const secs = remaining == null ? elapsed : remaining;
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
     return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-  }, [elapsed]);
+  }, [elapsed, remaining]);
 
-  // 90 min is the practical ceiling for one sustained block — mark it rather than enforce it.
-  const longSession = elapsed >= 90 * 60;
+  // Open-ended sessions get a nudge at the 90-minute mark instead of a countdown.
+  const longSession = durationMin == null && elapsed >= 90 * 60;
+  const almostDone = remaining != null && remaining <= 60;
 
-  const exit = useCallback(() => onExit?.(held.length), [onExit, held.length]);
+  const exit = useCallback((auto = false) => onExit?.(held.length, auto), [onExit, held.length]);
 
-  // Esc leaves. A mode you cannot get out of by reflex is a trap.
+  // The session ends itself. Slack lets you set a length; the point of setting one is not having
+  // to decide again later, when you are the least able to.
+  useEffect(() => {
+    if (remaining === 0) exit(true);
+  }, [remaining, exit]);
+
+  const pickDuration = (min) => {
+    setDurationMin(min);
+    setPickerOpen(false);
+    try {
+      localStorage.setItem(DURATION_KEY, JSON.stringify(min));
+    } catch {
+      /* a remembered preference is a nicety, not a requirement */
+    }
+    // Choosing a length restarts the block — otherwise picking "30 min" 40 minutes in would
+    // end the session instantly.
+    startedAt.current = Date.now();
+    setElapsed(0);
+  };
+
+  // Esc leaves. A mode you cannot get out of by reflex is a trap. It unwinds one layer at a time,
+  // so Esc on an open menu closes the menu rather than ending the session by surprise.
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === "Escape") {
-        if (askOpen) setAskOpen(false);
-        else exit();
-      }
+      if (e.key !== "Escape") return;
+      if (pickerOpen) setPickerOpen(false);
+      else if (askOpen) setAskOpen(false);
+      else exit(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [askOpen, exit]);
+  }, [askOpen, pickerOpen, exit]);
+
+  // Click anywhere else to dismiss the duration menu.
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const onDoc = (e) => {
+      if (!e.target.closest(".focus-duration")) setPickerOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [pickerOpen]);
 
   return (
     <div className="focus-root" role="region" aria-label="Focus mode">
       <div className="focus-bar">
         <div className="focus-id">
-          <Target size={16} />
+          {/* Exit sits first, top-left: the way out of a mode should be the most findable thing
+              in it, not tucked behind the controls you entered it to avoid. */}
+          <button className="focus-btn exit" onClick={() => exit(false)} title="Leave focus mode (Esc)">
+            <X size={15} /> Exit focus
+          </button>
+
+          <span className="focus-sep" aria-hidden="true" />
+
+          <Target size={16} className="focus-mark" />
           <span className="focus-title">Focus</span>
-          <span className={`focus-clock ${longSession ? "long" : ""}`} title={longSession ? "Past 90 minutes — a break is due" : "Time in focus"}>
-            <Clock size={13} /> {clock}
-          </span>
+
+          {/* The clock is the duration control — the obvious place to ask "how long?". */}
+          <div className="focus-duration">
+            <button
+              className={`focus-clock ${longSession ? "long" : ""} ${almostDone ? "soon" : ""}`}
+              onClick={() => setPickerOpen((o) => !o)}
+              title={durationMin == null ? "Open-ended — click to set a length" : `${durationMin} min session — click to change`}
+              aria-haspopup="menu"
+              aria-expanded={pickerOpen}
+            >
+              <Clock size={13} /> {clock}
+              <ChevronDown size={12} />
+            </button>
+
+            {pickerOpen && (
+              <div className="focus-menu" role="menu">
+                {DURATIONS.map((d) => (
+                  <button
+                    key={d.label}
+                    role="menuitem"
+                    className={`focus-menu-item ${d.min === durationMin ? "on" : ""}`}
+                    onClick={() => pickDuration(d.min)}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+                <div className="focus-menu-note">90 min is about as long as one block holds.</div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="focus-actions">
@@ -122,9 +216,6 @@ export default function FocusMode({ workspaceId, channels, members, unread, onEx
           </button>
           <button className="focus-btn" onClick={onOpenOffice}>
             <Gamepad2 size={15} /> Virtual Office
-          </button>
-          <button className="focus-btn exit" onClick={exit}>
-            <X size={15} /> Exit focus
           </button>
         </div>
       </div>

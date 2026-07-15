@@ -1,6 +1,6 @@
 import "./MyDesk.css";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Plus, Check, Trash2, StickyNote, Pencil, Eraser, ListTodo, Flag, Play, Pause, RotateCcw, Timer, X, GripVertical, Search, Settings2, CalendarDays, Clock } from "lucide-react";
+import { Plus, Check, Trash2, StickyNote, Pencil, Eraser, ListTodo, Flag, Play, Pause, RotateCcw, Timer, X, GripVertical, Search, Settings2, CalendarDays, Clock, Target } from "lucide-react";
 import {
   getMyTasks, createTask, updateTask, deleteTask,
   TASK_STATUSES, STATUS_LABEL, STATUS_COLOR, PRIORITY_COLOR,
@@ -17,7 +17,9 @@ const NOTE_COLORS = ["#fde68a", "#fca5a5", "#a7f3d0", "#bfdbfe", "#ddd6fe", "#fb
 const load = (k, def) => { try { const v = localStorage.getItem(k); return v == null ? def : JSON.parse(v); } catch { return def; } };
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* ignore */ } };
 
-export default function MyDesk({ workspaceId }) {
+// `onEnterFocus` is only passed by the normal view — inside focus mode the desk renders without it,
+// so the button that enters focus never shows up in the mode it enters.
+export default function MyDesk({ workspaceId, onEnterFocus }) {
   const { notify } = useDialogs();
   const me = getCurrentUserId();
   const [tasks, setTasks] = useState([]);
@@ -146,9 +148,16 @@ export default function MyDesk({ workspaceId }) {
             {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
           </span>
         </div>
-        <div className="desk-progress">
-          <span>{doneCount}/{focus.length} done today</span>
-          <div className="desk-bar"><div style={{ width: `${focus.length ? (doneCount / focus.length) * 100 : 0}%` }} /></div>
+        <div className="desk-head-right">
+          {onEnterFocus && (
+            <button className="desk-focus-btn" onClick={onEnterFocus} title="Focus mode — this desk, full screen, notifications held">
+              <Target size={15} /> Focus
+            </button>
+          )}
+          <div className="desk-progress">
+            <span>{doneCount}/{focus.length} done today</span>
+            <div className="desk-bar"><div style={{ width: `${focus.length ? (doneCount / focus.length) * 100 : 0}%` }} /></div>
+          </div>
         </div>
       </div>
 

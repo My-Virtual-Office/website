@@ -23,6 +23,31 @@
   letter-spacing: -0.3px;
 }
 .desk-date { font-size: 13.5px; color: var(--content-muted); font-weight: 600; }
+.desk-head-right { display: flex; align-items: center; gap: 14px; }
+
+/* Entering focus from the desk you are about to focus on. Quiet by default — it earns attention
+   on hover, rather than competing with the work it is meant to protect. */
+.desk-focus-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  color: var(--content-fg);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.desk-focus-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+
 .desk-progress { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; min-width: 180px; }
 .desk-progress > span { font-size: 12.5px; font-weight: 700; color: var(--content-muted); }
 .desk-bar { width: 180px; height: 8px; border-radius: 999px; background: var(--hover-bg); overflow: hidden; }
