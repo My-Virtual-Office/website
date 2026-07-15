@@ -547,7 +547,12 @@ export default function ChatPage() {
       ) : view === "mydesk" ? (
         <MyDesk workspaceId={workspaceId} />
       ) : view === "ai" ? (
-        <AiAssistant workspaceId={workspaceId} />
+        <AiAssistant
+          workspaceId={workspaceId}
+          channels={dirChannels}
+          members={dirMembers}
+          unread={unread}
+        />
       ) : (
         <>
           <ChatArea

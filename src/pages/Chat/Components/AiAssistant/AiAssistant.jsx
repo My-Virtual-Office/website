@@ -1,7 +1,8 @@
 import "./AiAssistant.css";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Sparkles, ArrowUp, RotateCcw, AlertTriangle, Search } from "lucide-react";
 import { askAi } from "../../../../api/ai";
+import { getCurrentUserId } from "../../../../utils/auth";
 
 // The service reports the tools it called so an answer can be traced back to
 // real data. Show that as plain language — the raw function names are an
@@ -17,21 +18,39 @@ const TOOL_LABEL = {
 };
 const toolPhrase = (t) => TOOL_LABEL[t] || t.replace(/_/g, " ");
 
-// Starter prompts. One per capability, each a real job someone actually does —
-// vague prompts ("summarise #general") produce vague answers and teach nothing
-// about what this can do.
-const SUGGESTIONS = [
-  { label: "Catch me up — what did I miss?", hint: "Unread only, across your channels",
-    prompt: "Catch me up — what did I miss? Focus on anything that needs me." },
-  { label: "What's due today or overdue?", hint: "Your tasks, triaged",
-    prompt: "What tasks am I assigned that are overdue or due today? List the most urgent first." },
-  { label: "Walk me through my day", hint: "Today's meetings + gaps",
-    prompt: "What's on the calendar today, and where are my free gaps?" },
-  { label: "Summarise today in #release-2-9", hint: "One channel, time-bounded",
-    prompt: "Summarise what was discussed in #release-2-9 today — decisions and blockers only." },
-  { label: "Assign a task in plain English", hint: "Creates it for real",
-    prompt: "Create a high priority task for Karim to fix the analytics timezone bug, due Thursday at 5pm." },
-];
+// Starter prompts are built from the signed-in user's OWN workspace: a
+// hardcoded "#release-2-9" is invisible to anyone not on that project, and the
+// assistant (correctly) replies "that channel does not exist" — a broken first
+// impression. Pick a channel they can actually see, preferring whatever they
+// have most unread in, and a real teammate to assign work to.
+function buildSuggestions({ channels, members, unread, meId }) {
+  const byUnread = [...(channels || [])]
+    .map((c) => ({ ...c, n: unread?.[c.id]?.count || 0 }))
+    .sort((a, b) => b.n - a.n);
+  const busiest = byUnread.find((c) => c.n > 0) || byUnread.find((c) => c.name === "general") || byUnread[0];
+  const ch = busiest?.name;
+  const mate = (members || []).find((m) => Number(m.userId) !== Number(meId) && m.name);
+
+  const out = [
+    { label: "Give me a morning briefing", hint: "Unread + today's meetings + what's overdue",
+      prompt: "Give me a morning briefing: what I missed, my meetings today, and anything overdue on my plate." },
+    { label: "Is anything waiting on me?", hint: "Scans your unread for asks and blockers",
+      prompt: "Across all my channels, is there anything waiting on me or blocked on my approval? Be specific about who asked and where." },
+    { label: "What's due today or overdue?", hint: "Your tasks, most urgent first",
+      prompt: "What tasks am I assigned that are overdue or due today? List the most urgent first." },
+  ];
+  if (ch) {
+    out.push({ label: `Catch me up on #${ch}`, hint: busiest.n ? `${busiest.n} unread` : "Only what you haven't read",
+      prompt: `Catch me up on #${ch} — what did I miss? Focus on anything that needs me.` });
+  }
+  out.push({ label: "Draft my standup update", hint: "From your real tasks and messages",
+    prompt: "Draft my standup update: what I've been working on, what's next, and any blockers." });
+  if (mate) {
+    out.push({ label: "Assign work in plain English", hint: "Creates a real task",
+      prompt: `Create a high priority task for ${mate.name.split(" ")[0]} to fix the analytics timezone bug, due Thursday at 5pm.` });
+  }
+  return out;
+}
 
 // Minimal markdown: **bold**, `code`, and - bullets. The model is told to keep
 // it simple, and this avoids pulling a parser in for four cases.
@@ -53,7 +72,12 @@ function render(text) {
     });
 }
 
-export default function AiAssistant({ workspaceId }) {
+export default function AiAssistant({ workspaceId, channels, members, unread }) {
+  const meId = getCurrentUserId();
+  const suggestions = useMemo(
+    () => buildSuggestions({ channels, members, unread, meId }),
+    [channels, members, unread, meId],
+  );
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -112,7 +136,7 @@ export default function AiAssistant({ workspaceId }) {
             <h3>What can I help with?</h3>
             <p>I can read your channels, tasks and calendar, and create tasks or meetings for you.</p>
             <div className="ai-suggestions">
-              {SUGGESTIONS.map((s) => (
+              {suggestions.map((s) => (
                 <button key={s.label} onClick={() => send(s.prompt)} disabled={busy}>
                   <span className="ai-sug-label">{s.label}</span>
                   <span className="ai-sug-hint">{s.hint}</span>
