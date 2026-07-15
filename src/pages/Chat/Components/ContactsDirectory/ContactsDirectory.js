@@ -26,6 +26,7 @@ export default function ContactsDirectory({ workspaceId }) {
   const [q, setQ] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
 
+  const [loadError, setLoadError] = useState("");
   const [invite, setInvite] = useState(null); // {email, role} | null
   const [inviteLink, setInviteLink] = useState("");
   const [copied, setCopied] = useState(false);
@@ -42,7 +43,17 @@ export default function ContactsDirectory({ workspaceId }) {
       setMembers(Array.isArray(desks) ? desks : []);
       setTeams(Array.isArray(teamList) ? teamList : []);
       setIsAdmin(myDesk?.role === "ADMIN" || myDesk?.role === "OWNER");
+      setLoadError("");
     } catch (e) {
+      // Drop what we were showing. Keeping it meant that when this workspace's directory failed
+      // (403), the PREVIOUS workspace's people stayed on screen — together with a stale isAdmin
+      // that kept the Invite button visible. Inviting then hit the real workspace and came back
+      // "not an active member", which reads as "invite is broken" rather than "you are not in
+      // this workspace". Say that plainly instead of only logging it to the console.
+      setMembers([]);
+      setTeams([]);
+      setIsAdmin(false);
+      setLoadError(e?.response?.data?.message || "Could not load this workspace's people");
       console.error("Failed to load contacts", e);
     }
     try {
@@ -126,6 +137,12 @@ export default function ContactsDirectory({ workspaceId }) {
           )}
         </div>
       </div>
+
+      {loadError && (
+        <div className="contacts-error" role="alert">
+          {loadError}
+        </div>
+      )}
 
       <div className="contacts-filters">
         {FILTERS.map((f) => (

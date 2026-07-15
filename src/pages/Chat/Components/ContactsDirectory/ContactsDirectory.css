@@ -248,3 +248,15 @@
   display: flex;
   align-items: center;
 }
+
+/* Shown when the directory can't be loaded — e.g. you have no active desk in this workspace.
+   Without it the table just sat empty (or, worse, kept the previous workspace's rows). */
+.contacts-error {
+  margin: 8px 16px 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e01e5a;
+  background: rgba(224, 30, 90, 0.1);
+  color: #e01e5a;
+  font-size: 13px;
+}
