@@ -5,23 +5,15 @@
    Five BRIGHT themes. One architecture — white content, light sidebar, a single core hue per
    theme carrying the accent and the active row. Only the core colours differ:
 
-   The workspace RAIL is one NEUTRAL dark surface, IDENTICAL in every theme (#2c2c2f). It is the
-   app frame, not part of the palette — Discord (#202225) and VS Code (#333) do the same.
-   Tinting it was tried and looked wrong: at L~30% a low saturation is neither a hue nor a
-   neutral, so 'rose' came out as mauve sludge (#57424b). Slack gets away with a tinted rail only
-   because its sidebar is a deep saturated aubergine; ours are near-white, so the tint lands in
-   the mud. Mid-tones are also unusable here — dark icons fail below L=0.80 and white only passes
-   from L=0.35, so anything between fails AA either way.
+   The workspace RAIL is the theme's own hue taken DEEP — Slack's mechanism, measured off their
+   aubergine: same hue as the theme, S=76.5%, L=13.3% (rail #3a083c against sidebar #3f0e40 is
+   ΔH -1, ΔS +12%, ΔL -2%). It is not a grey and not a tint; high saturation at low lightness is
+   what makes it read rich.
 
-     daylight   amber   (default; the logo's own colour)
-     meadow     green
-     harbor     blue
-     lilac      violet
-     blossom    rose
-
-   Generated and contrast-checked together: every pair clears WCAG AA, and each theme's active-row
-   text (ink vs white) was picked BY MEASUREMENT, not by eye — that is why Daylight uses ink on its
-   amber (white-on-amber is 2.6:1) while the darker accents take white.
+   Slack derives the rail from its SIDEBAR because theirs is a deep saturated aubergine (L=15%).
+   Ours are near-white (L~95%), so the hue comes from the ACCENT instead — same idea, same numbers,
+   our palette. Deriving from our sidebar was tried and produced mud (#57424b "rose"): at L~30% a
+   14% saturation is neither a hue nor a neutral. The saturation was the fault, not the mechanism.
 
    Adding one? Copy a whole block and change the colours. A partial block inherits nothing: these
    are flat custom properties on :root, not a cascade of defaults.
@@ -31,9 +23,9 @@
 :root,
 :root[data-theme="daylight"] {
   /* Left workspace rail */
-  --rail-bg: #2c2c2f;
-  --rail-fg: #e7e8ea;
-  --rail-icon-bg: #3e3e42;
+  --rail-bg: #3c2108;
+  --rail-fg: #ffffff;
+  --rail-icon-bg: #633c17;
   --rail-active-ring: #ffffff;
 
   /* Channel sidebar */
@@ -87,9 +79,9 @@
 /* Meadow — bright & green. */
 :root[data-theme="meadow"] {
   /* Left workspace rail */
-  --rail-bg: #2c2c2f;
-  --rail-fg: #e7e8ea;
-  --rail-icon-bg: #3e3e42;
+  --rail-bg: #083c1e;
+  --rail-fg: #ffffff;
+  --rail-icon-bg: #176337;
   --rail-active-ring: #ffffff;
 
   /* Channel sidebar */
@@ -143,9 +135,9 @@
 /* Harbor — bright & blue. */
 :root[data-theme="harbor"] {
   /* Left workspace rail */
-  --rail-bg: #2c2c2f;
-  --rail-fg: #e7e8ea;
-  --rail-icon-bg: #3e3e42;
+  --rail-bg: #08203c;
+  --rail-fg: #ffffff;
+  --rail-icon-bg: #173a63;
   --rail-active-ring: #ffffff;
 
   /* Channel sidebar */
@@ -199,9 +191,9 @@
 /* Lilac — bright & violet. */
 :root[data-theme="lilac"] {
   /* Left workspace rail */
-  --rail-bg: #2c2c2f;
-  --rail-fg: #e7e8ea;
-  --rail-icon-bg: #3e3e42;
+  --rail-bg: #17083c;
+  --rail-fg: #ffffff;
+  --rail-icon-bg: #2d1763;
   --rail-active-ring: #ffffff;
 
   /* Channel sidebar */
@@ -255,9 +247,9 @@
 /* Blossom — bright & rose. */
 :root[data-theme="blossom"] {
   /* Left workspace rail */
-  --rail-bg: #2c2c2f;
-  --rail-fg: #e7e8ea;
-  --rail-icon-bg: #3e3e42;
+  --rail-bg: #3c081b;
+  --rail-fg: #ffffff;
+  --rail-icon-bg: #631734;
   --rail-active-ring: #ffffff;
 
   /* Channel sidebar */
