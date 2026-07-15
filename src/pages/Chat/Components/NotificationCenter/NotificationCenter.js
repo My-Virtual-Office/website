@@ -48,12 +48,19 @@ export default function NotificationCenter({ inline = false, onNavigate }) {
     let cancelled = false;
     (async () => {
       try {
-        const ticket = await wsTicket();
-        if (cancelled || !ticket) return;
         const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
         client = new Client({
-          brokerURL: `${wsProtocol}//${window.location.host}/api/notifications/connect?ticket=${ticket}`,
           reconnectDelay: 4000,
+          // The ws-ticket is short-lived (60s) and single-use, so it must be
+          // minted per connection attempt. Baking one into brokerURL meant every
+          // reconnect replayed a spent ticket and was rejected 401 forever —
+          // the notification socket never came back after the first drop.
+          // (Same fix as the chat client in ChatPage.)
+          beforeConnect: async () => {
+            const t = await wsTicket();
+            if (!t) throw new Error("no ws ticket");
+            client.brokerURL = `${wsProtocol}//${window.location.host}/api/notifications/connect?ticket=${t}`;
+          },
           onConnect: () => {
             client.subscribe("/user/queue/notifications", (msg) => {
               try {
@@ -67,6 +74,10 @@ export default function NotificationCenter({ inline = false, onNavigate }) {
             });
           },
         });
+        if (cancelled) return;
+        // Seed brokerURL so activate() enters the connect loop; beforeConnect
+        // swaps in a freshly minted ticket before each attempt.
+        client.brokerURL = `${wsProtocol}//${window.location.host}/api/notifications/connect`;
         client.activate();
       } catch {
         /* notifications WS unavailable */
