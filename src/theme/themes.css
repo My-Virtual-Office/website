@@ -411,3 +411,35 @@
   --scroll-thumb: #4b4851;
   --overlay-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
 }
+
+/* ── Scrollbars, everywhere, matching the active theme ────────────────────────
+   --scroll-thumb was already defined per theme but only two components actually
+   used it (MessagesList, MembersList) — every other scrollable area (sidebar,
+   People/Teams, task board, meeting list, modals) fell through to the browser's
+   plain default scrollbar. One global rule covers all of them at once; anything
+   still setting its own ::-webkit-scrollbar locally overrides this by CSS
+   specificity/order, so nothing already-styled needs to change. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--content-strong);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
