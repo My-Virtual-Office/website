@@ -1,7 +1,20 @@
 import "./AiAssistant.css";
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, ArrowUp, RotateCcw, AlertTriangle } from "lucide-react";
+import { Sparkles, ArrowUp, RotateCcw, AlertTriangle, Search } from "lucide-react";
 import { askAi } from "../../../../api/ai";
+
+// The service reports the tools it called so an answer can be traced back to
+// real data. Show that as plain language — the raw function names are an
+// implementation detail and shouldn't leak into the UI.
+const TOOL_LABEL = {
+  list_channels: "listed your channels",
+  read_channel: "read the channel’s messages",
+  get_my_tasks: "read your tasks",
+  get_events: "read the calendar",
+  create_task: "created a task",
+  create_event: "created an event",
+};
+const toolPhrase = (t) => TOOL_LABEL[t] || t.replace(/_/g, " ");
 
 // Starter prompts — one per capability, so the first use teaches what it can do.
 const SUGGESTIONS = [
@@ -103,8 +116,11 @@ export default function AiAssistant({ workspaceId }) {
             <div className="ai-bubble">
               <div className="ai-body">{render(m.content)}</div>
               {m.toolsUsed?.length > 0 && (
-                <div className="ai-tools" title="Live data the assistant read to answer this">
-                  {[...new Set(m.toolsUsed)].map((t) => <span key={t}>{t.replace(/_/g, " ")}</span>)}
+                <div className="ai-tools">
+                  <Search size={11} aria-hidden="true" />
+                  <span>
+                    Based on live data — {[...new Set(m.toolsUsed)].map(toolPhrase).join(", ")}
+                  </span>
                 </div>
               )}
             </div>

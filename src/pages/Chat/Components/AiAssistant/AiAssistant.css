@@ -93,13 +93,23 @@
 }
 .ai-msg.user .ai-body code { background: rgba(255, 255, 255, 0.22); }
 
-/* Which live data was read — makes the answer auditable rather than magic. */
-.ai-tools { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
-.ai-tools span {
-  font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;
-  color: var(--content-muted); background: var(--hover-bg);
-  border-radius: 999px; padding: 2px 8px;
+/* Provenance for the answer — which live data was read. This is a caption, not
+   a control: an uppercase pill read as a clickable button and invited clicks
+   that went nowhere, so it's deliberately quiet, lowercase, and separated from
+   the message body by a hairline rule. */
+.ai-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--content-muted);
+  cursor: default;
 }
+.ai-tools svg { flex-shrink: 0; opacity: 0.8; }
 
 /* Typing indicator */
 .ai-typing { display: flex; gap: 4px; padding: 4px 2px; }
