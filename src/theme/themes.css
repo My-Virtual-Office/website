@@ -5,7 +5,68 @@
    matching classic Slack. [data-theme="light"] and [data-theme="dark"] override.
    ============================================================================= */
 
+/* Virtual Office — the default, and the only theme that is ours.
+   Colours are taken from the product logo (an isometric office "V"): the deep navy frame
+   (#0b0e1c), the amber floor/desks (#eb8829) and the teal glass (#3590ac). Every other theme
+   here, aubergine included, is somebody else's palette.
+   The active row and primary buttons put INK on amber, never white: white-on-amber is 2.6:1,
+   which fails WCAG AA. Ink-on-amber is 7.4:1. */
 :root,
+:root[data-theme="virtual-office"] {
+  /* Left workspace rail */
+  --rail-bg: #070a14;
+  --rail-fg: #aab6ce;
+  --rail-icon-bg: #142d46;
+  --rail-active-ring: #eb8829;
+
+  /* Channel sidebar */
+  --sidebar-bg: #0f1424;
+  --sidebar-heading: #ffffff;
+  --sidebar-fg: #aab6ce;
+  --sidebar-fg-muted: #8592ad;
+  --sidebar-hover: #18203a;
+  --sidebar-active-bg: #eb8829;
+  --sidebar-active-fg: #0b0e1c;
+  --sidebar-border: #222c47;
+  --sidebar-unread: #ffffff;
+
+  /* Main content (messages) */
+  --content-bg: #ffffff;
+  --content-fg: #14171f;
+  --content-strong: #0b0e1c;
+  --content-muted: #5b6478;
+  --border: #e6e9f0;
+  --hover-bg: #f6f8fb;
+  --panel-bg: #ffffff;
+
+  /* Composer / inputs */
+  --input-bg: #ffffff;
+  --input-border: #8b93a7;
+  --input-fg: #14171f;
+  --input-muted: #5b6478;
+  --input-toolbar-bg: #f6f8fb;
+
+  /* Accents */
+  --accent: #eb8829;          /* brand amber (primary actions) */
+  --accent-hover: #d9761c;
+  --accent-fg: #0b0e1c;       /* ink, not white — see the note above */
+  --link: #1f6feb;
+
+  /* Chrome */
+  --badge-bg: #e6e9f0;
+  --badge-fg: #5b6478;
+  --danger: #e0245e;
+  --danger-hover: #b8194b;
+
+  /* Presence */
+  --online: #2bac76;
+  --away: #ecb22e;
+  --offline: #949494;
+
+  --scroll-thumb: #c3cad8;
+  --overlay-shadow: 0 8px 24px rgba(11, 14, 28, 0.22);
+}
+
 :root[data-theme="aubergine"] {
   /* Left workspace rail */
   --rail-bg: #3a083c;

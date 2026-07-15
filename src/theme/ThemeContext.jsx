@@ -1,7 +1,13 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 
-/** Available Slack-style themes (id must match a block in themes.css). */
+/** Available themes (id must match a block in themes.css). The first is the default. */
 export const THEMES = [
+  {
+    id: "virtual-office",
+    label: "Virtual Office",
+    hint: "Our default — navy & amber",
+    swatch: { rail: "#070a14", sidebar: "#0f1424", content: "#ffffff" },
+  },
   {
     id: "aubergine",
     label: "Aubergine",
@@ -83,7 +89,8 @@ export const THEMES = [
 ];
 
 const STORAGE_KEY = "vo-theme";
-const DEFAULT_THEME = "aubergine";
+// Our own palette, not Slack's. Aubergine stays in THEMES for anyone who prefers it.
+const DEFAULT_THEME = "virtual-office";
 
 const ThemeContext = createContext(null);
 
