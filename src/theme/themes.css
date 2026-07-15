@@ -1,28 +1,31 @@
 /* =============================================================================
-   Theme tokens. Applied via a data-theme attribute on <html> (see ThemeContext),
-   and :root is the default.
+   Theme tokens. Applied via a data-theme attribute on <html> (see ThemeContext);
+   :root is the default.
 
-   Five themes, every one filling the same token contract — only the core colours differ:
-     daylight       bright canvas + amber   (default; ours)
-     virtual-office charcoal + amber        (ours — the dark half of the same identity)
-     aubergine      plum + green            (classic Slack)
-     nord           arctic blue-grey        (all-dark)
-     gruvbox        warm retro              (all-dark)
+   Five BRIGHT themes. One architecture — white content, tinted light chrome, a single core hue
+   per theme carrying the accent and the active row. Only the core colours differ:
 
-   Adding one? Copy a whole block and change the colours — a partial block inherits nothing,
-   since these are flat custom properties on :root rather than a cascade of defaults.
+     daylight   amber   (default; the logo's own colour)
+     meadow     green
+     harbor     blue
+     lilac      violet
+     blossom    rose
+
+   Generated and contrast-checked together: every pair clears WCAG AA, and each theme's active-row
+   text (ink vs white) was picked BY MEASUREMENT, not by eye — that is why Daylight uses ink on its
+   amber (white-on-amber is 2.6:1) while the darker accents take white.
+
+   Adding one? Copy a whole block and change the colours. A partial block inherits nothing: these
+   are flat custom properties on :root, not a cascade of defaults.
    ============================================================================= */
 
-/* Daylight — the default. Bright canvas; amber (#eb8829, the logo's own floor/desk colour) is
-   the single brand hue and the greys are deliberately NEUTRAL so nothing reads blue.
-   The active row and primary buttons put INK on amber, never white: white-on-amber is 2.6:1 and
-   fails WCAG AA, ink-on-amber is 7.6:1. */
+/* Daylight — our default — bright & amber. */
 :root,
 :root[data-theme="daylight"] {
   /* Left workspace rail */
   --rail-bg: #e7e9eb;
-  --rail-fg: #4a4d55;
-  --rail-icon-bg: #d8dbdf;
+  --rail-fg: #43464e;
+  --rail-icon-bg: #e8eaed;
   --rail-active-ring: #eb8829;
 
   /* Channel sidebar */
@@ -56,10 +59,10 @@
   --accent: #eb8829;
   --accent-hover: #d9761c;
   --accent-fg: #0b0b0d;
-  --link: #1257c9;            /* darker than the dark themes' link: it sits on white here */
+  --link: #1257c9;
 
   /* Chrome */
-  --badge-bg: #e2e4e8;
+  --badge-bg: #dcdfe3;
   --badge-fg: #5f6169;
   --danger: #d01c50;
   --danger-hover: #b01743;
@@ -73,24 +76,24 @@
   --overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
 }
 
-/* Virtual Office — the dark half of the same identity: same neutral greys, same amber. */
-:root[data-theme="virtual-office"] {
+/* Meadow — bright & green. */
+:root[data-theme="meadow"] {
   /* Left workspace rail */
-  --rail-bg: #0c0c0e;
-  --rail-fg: #b9bcc2;
-  --rail-icon-bg: #26272c;
-  --rail-active-ring: #eb8829;
+  --rail-bg: #dfe9e2;
+  --rail-fg: #3d4a42;
+  --rail-icon-bg: #e2ede6;
+  --rail-active-ring: #1f7a45;
 
   /* Channel sidebar */
-  --sidebar-bg: #141518;
-  --sidebar-heading: #ffffff;
-  --sidebar-fg: #b9bcc2;
-  --sidebar-fg-muted: #8d9098;
-  --sidebar-hover: #212227;
-  --sidebar-active-bg: #eb8829;
-  --sidebar-active-fg: #0b0b0d;
-  --sidebar-border: #2b2d33;
-  --sidebar-unread: #ffffff;
+  --sidebar-bg: #eff6f1;
+  --sidebar-heading: #15161a;
+  --sidebar-fg: #3d4a42;
+  --sidebar-fg-muted: #63736a;
+  --sidebar-hover: #e2ede6;
+  --sidebar-active-bg: #1f7a45;
+  --sidebar-active-fg: #ffffff;
+  --sidebar-border: #d3e2d8;
+  --sidebar-unread: #15161a;
 
   /* Main content (messages) */
   --content-bg: #ffffff;
@@ -109,16 +112,16 @@
   --input-toolbar-bg: #f7f7f8;
 
   /* Accents */
-  --accent: #eb8829;          /* brand amber (primary actions) */
-  --accent-hover: #d9761c;
-  --accent-fg: #0b0b0d;       /* ink, not white — see the note above */
-  --link: #1f6feb;
+  --accent: #1f7a45;
+  --accent-hover: #186538;
+  --accent-fg: #ffffff;
+  --link: #1257c9;
 
   /* Chrome */
-  --badge-bg: #e7e7e9;
+  --badge-bg: #d3e2d8;
   --badge-fg: #5f6169;
-  --danger: #e0245e;
-  --danger-hover: #b8194b;
+  --danger: #d01c50;
+  --danger-hover: #b01743;
 
   /* Presence */
   --online: #2bac76;
@@ -126,103 +129,173 @@
   --offline: #949494;
 
   --scroll-thumb: #c6c7ca;
-  --overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  --overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
 }
 
-:root[data-theme="aubergine"] {
+/* Harbor — bright & blue. */
+:root[data-theme="harbor"] {
   /* Left workspace rail */
-  --rail-bg: #3a083c;
-  --rail-fg: #cfc3cf;
-  --rail-icon-bg: #4a154b;
-  --rail-active-ring: #ffffff;
+  --rail-bg: #dfe6f0;
+  --rail-fg: #3f4650;
+  --rail-icon-bg: #e2e9f3;
+  --rail-active-ring: #1668c9;
 
   /* Channel sidebar */
-  --sidebar-bg: #3f0e40;
-  --sidebar-heading: #ffffff;
-  --sidebar-fg: #cfc3cf;
-  --sidebar-fg-muted: #bca8bc;
-  --sidebar-hover: #350d36;
-  --sidebar-active-bg: #1164a3;
+  --sidebar-bg: #eff3f9;
+  --sidebar-heading: #15161a;
+  --sidebar-fg: #3f4650;
+  --sidebar-fg-muted: #666e7c;
+  --sidebar-hover: #e2e9f3;
+  --sidebar-active-bg: #1668c9;
   --sidebar-active-fg: #ffffff;
-  --sidebar-border: #522653;
-  --sidebar-unread: #ffffff;
+  --sidebar-border: #d3dced;
+  --sidebar-unread: #15161a;
 
   /* Main content (messages) */
   --content-bg: #ffffff;
-  --content-fg: #1d1c1d;
-  --content-strong: #1d1c1d;
-  --content-muted: #616061;
-  --border: #e8e8e8;
-  --hover-bg: #f8f8f8;
+  --content-fg: #17181c;
+  --content-strong: #0b0b0d;
+  --content-muted: #5f6169;
+  --border: #e7e7e9;
+  --hover-bg: #f7f7f8;
   --panel-bg: #ffffff;
 
   /* Composer / inputs */
   --input-bg: #ffffff;
-  --input-border: #8d8d8d;
-  --input-fg: #1d1c1d;
-  --input-muted: #616061;
-  --input-toolbar-bg: #f8f8f8;
+  --input-border: #8c8e94;
+  --input-fg: #17181c;
+  --input-muted: #5f6169;
+  --input-toolbar-bg: #f7f7f8;
 
   /* Accents */
-  --accent: #007a5a;          /* Slack green (primary actions) */
-  --accent-hover: #148567;
+  --accent: #1668c9;
+  --accent-hover: #1256a8;
   --accent-fg: #ffffff;
-  --link: #1264a3;
+  --link: #1256a8;
 
   /* Chrome */
-  --badge-bg: #e8e8e8;
-  --badge-fg: #616061;
-  --danger: #e01e5a;
-  --danger-hover: #b4123f;
+  --badge-bg: #d3dced;
+  --badge-fg: #5f6169;
+  --danger: #d01c50;
+  --danger-hover: #b01743;
 
   /* Presence */
   --online: #2bac76;
   --away: #ecb22e;
   --offline: #949494;
 
-  --scroll-thumb: #bcbcbc;
-  --overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  --scroll-thumb: #c6c7ca;
+  --overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
 }
 
-:root[data-theme="nord"] {
-  /* Left workspace rail (narrow icon bar) */
-  --rail-bg: #272c36; --rail-fg: #d8dee9; --rail-icon-bg: #3b4252; --rail-active-ring: #eceff4;
+/* Lilac — bright & violet. */
+:root[data-theme="lilac"] {
+  /* Left workspace rail */
+  --rail-bg: #e6e1f0;
+  --rail-fg: #474250;
+  --rail-icon-bg: #e8e3f3;
+  --rail-active-ring: #6b46c6;
+
   /* Channel sidebar */
-  --sidebar-bg: #2e3440; --sidebar-heading: #eceff4; --sidebar-fg: #d8dee9; --sidebar-fg-muted: #9aa5b8;
-  --sidebar-hover: #272c36; --sidebar-active-bg: #4d6a8d; --sidebar-active-fg: #eceff4;
-  --sidebar-border: #434c5e; --sidebar-unread: #eceff4;
-  /* Main content (messages / boards) */
-  --content-bg: #2e3440; --content-fg: #e5e9f0; --content-strong: #eceff4; --content-muted: #9aa5b8;
-  --border: #434c5e; --hover-bg: #3b4252; --panel-bg: #3b4252;
+  --sidebar-bg: #f3f0f9;
+  --sidebar-heading: #15161a;
+  --sidebar-fg: #474250;
+  --sidebar-fg-muted: #6f6880;
+  --sidebar-hover: #e8e3f3;
+  --sidebar-active-bg: #6b46c6;
+  --sidebar-active-fg: #ffffff;
+  --sidebar-border: #dcd5ed;
+  --sidebar-unread: #15161a;
+
+  /* Main content (messages) */
+  --content-bg: #ffffff;
+  --content-fg: #17181c;
+  --content-strong: #0b0b0d;
+  --content-muted: #5f6169;
+  --border: #e7e7e9;
+  --hover-bg: #f7f7f8;
+  --panel-bg: #ffffff;
+
   /* Composer / inputs */
-  --input-bg: #3b4252; --input-border: #4c566a; --input-fg: #eceff4; --input-muted: #9aa5b8; --input-toolbar-bg: #2e3440;
+  --input-bg: #ffffff;
+  --input-border: #8c8e94;
+  --input-fg: #17181c;
+  --input-muted: #5f6169;
+  --input-toolbar-bg: #f7f7f8;
+
   /* Accents */
-  --accent: #88c0d0; --accent-hover: #9bccdb; --accent-fg: #2e3440; --link: #88c0d0;
+  --accent: #6b46c6;
+  --accent-hover: #5a37ab;
+  --accent-fg: #ffffff;
+  --link: #5a37ab;
+
   /* Chrome */
-  --badge-bg: #4c566a; --badge-fg: #eceff4; --danger: #bf616a; --danger-hover: #a5535b;
+  --badge-bg: #dcd5ed;
+  --badge-fg: #5f6169;
+  --danger: #d01c50;
+  --danger-hover: #b01743;
+
   /* Presence */
-  --online: #a3be8c; --away: #ebcb8b; --offline: #6b7488;
-  --scroll-thumb: #4c566a; --overlay-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --online: #2bac76;
+  --away: #ecb22e;
+  --offline: #949494;
+
+  --scroll-thumb: #c6c7ca;
+  --overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
 }
 
-:root[data-theme="gruvbox"] {
-  /* Left workspace rail (narrow icon bar) */
-  --rail-bg: #1d2021; --rail-fg: #a89984; --rail-icon-bg: #282828; --rail-active-ring: #fbf1c7;
+/* Blossom — bright & rose. */
+:root[data-theme="blossom"] {
+  /* Left workspace rail */
+  --rail-bg: #f0e1e8;
+  --rail-fg: #4e4148;
+  --rail-icon-bg: #f3e3ea;
+  --rail-active-ring: #be2d63;
+
   /* Channel sidebar */
-  --sidebar-bg: #282828; --sidebar-heading: #fbf1c7; --sidebar-fg: #ebdbb2; --sidebar-fg-muted: #a89984;
-  --sidebar-hover: #3c3836; --sidebar-active-bg: #504945; --sidebar-active-fg: #ebdbb2;
-  --sidebar-border: #3c3836; --sidebar-unread: #fbf1c7;
-  /* Main content (messages / boards) */
-  --content-bg: #282828; --content-fg: #ebdbb2; --content-strong: #fbf1c7; --content-muted: #a89984;
-  --border: #3c3836; --hover-bg: #3c3836; --panel-bg: #32302f;
-  /* Composer / inputs */
-  --input-bg: #32302f; --input-border: #504945; --input-fg: #ebdbb2; --input-muted: #a89984; --input-toolbar-bg: #3c3836;
-  /* Accents */
-  --accent: #fe8019; --accent-hover: #d65d0e; --accent-fg: #282828; --link: #83a598;
-  /* Chrome */
-  --badge-bg: #504945; --badge-fg: #ebdbb2; --danger: #fb4934; --danger-hover: #cc241d;
-  /* Presence */
-  --online: #b8bb26; --away: #fabd2f; --offline: #928374;
-  --scroll-thumb: #504945; --overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-}
+  --sidebar-bg: #f9f0f4;
+  --sidebar-heading: #15161a;
+  --sidebar-fg: #4e4148;
+  --sidebar-fg-muted: #7a6771;
+  --sidebar-hover: #f3e3ea;
+  --sidebar-active-bg: #be2d63;
+  --sidebar-active-fg: #ffffff;
+  --sidebar-border: #ecd5e0;
+  --sidebar-unread: #15161a;
 
+  /* Main content (messages) */
+  --content-bg: #ffffff;
+  --content-fg: #17181c;
+  --content-strong: #0b0b0d;
+  --content-muted: #5f6169;
+  --border: #e7e7e9;
+  --hover-bg: #f7f7f8;
+  --panel-bg: #ffffff;
+
+  /* Composer / inputs */
+  --input-bg: #ffffff;
+  --input-border: #8c8e94;
+  --input-fg: #17181c;
+  --input-muted: #5f6169;
+  --input-toolbar-bg: #f7f7f8;
+
+  /* Accents */
+  --accent: #be2d63;
+  --accent-hover: #9f2352;
+  --accent-fg: #ffffff;
+  --link: #1257c9;
+
+  /* Chrome */
+  --badge-bg: #ecd5e0;
+  --badge-fg: #5f6169;
+  --danger: #d01c50;
+  --danger-hover: #b01743;
+
+  /* Presence */
+  --online: #2bac76;
+  --away: #ecb22e;
+  --offline: #949494;
+
+  --scroll-thumb: #c6c7ca;
+  --overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
