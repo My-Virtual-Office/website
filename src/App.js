@@ -9,10 +9,14 @@ import VerifyEmail from "./pages/VerifyEmail/VerifyEmail";
 import Onboarding from "./pages/Onboarding/Onboarding";
 import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
 import PrivateRoute from "./components/PrivateRoute";
+import { VoiceProvider } from "./voice/VoiceContext";
 
 function App() {
   return (
-    <Routes>
+    // Above the router: staying connected to a voice channel while moving between
+    // chat, tasks and the dashboard is the whole point of a voice channel.
+    <VoiceProvider>
+      <Routes>
       <Route path="/">
         <Route index="true" element={<Home />} />
         <Route path="login" element={<Login />} />
@@ -21,10 +25,12 @@ function App() {
         <Route path="forgot-password" element={<ForgotPassword />} />
         <Route path="onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
         <Route path="chat" element={<PrivateRoute><ChatPage /></PrivateRoute>} />
+        <Route path="chat/join/:channelId" element={<PrivateRoute><JoinChannel /></PrivateRoute>} />
         <Route path="workspace" element={<PrivateRoute><ChatPage /></PrivateRoute>} />
         <Route path="dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-      </Route>
-    </Routes>
+        </Route>
+      </Routes>
+    </VoiceProvider>
   );
 }
 

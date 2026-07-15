@@ -3,8 +3,6 @@
 // matching how the containerized nginx serves the app in production.
 const { createProxyMiddleware } = require("http-proxy-middleware");
 
-let wsUpgradeInitialized = false;
-
 module.exports = function (app) {
   // Pass the path context as the FIRST arg so http-proxy-middleware scopes its
   // WebSocket `upgrade` handler to /api only. Mounting with app.use("/api", ...)
@@ -32,20 +30,21 @@ module.exports = function (app) {
     }),
   );
 
-  const roomsProxy = createProxyMiddleware({
-    target: "http://localhost:8086",
-    changeOrigin: true,
-  });
+  app.use(
+    "/api/rooms",
+    createProxyMiddleware({
+      target: "http://localhost:8086",
+      changeOrigin: true,
+    }),
+  );
 
-  wsRoutes.push({ path: "/ws/rooms", proxy: roomsProxy });
-
-  app.use("/api/rooms", (req, res, next) => {
-    return roomsProxy(req, res, next);
-  });
-
-  app.use("/ws/rooms", (req, res, next) => {
-    const server = req.socket?.server;
-    if (server) ensureWsUpgrade(server);
-    return roomsProxy(req, res, next);
-  });
+  // room-service's STOMP endpoint, mirroring the nginx.conf /ws/rooms block used in production.
+  // Scoped to /ws/rooms (not /ws) so webpack's own HMR socket at /ws is left alone.
+  app.use(
+    createProxyMiddleware("/ws/rooms", {
+      target: "http://localhost:8086",
+      changeOrigin: true,
+      ws: true,
+    }),
+  );
 };

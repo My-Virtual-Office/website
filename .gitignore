@@ -21,3 +21,13 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# ── Internal / private notes (do not publish) ────────────────────────────────
+# Mirrors the umbrella repo's .gitignore. These sub-repos are cloned standalone, so without
+# repeating the patterns here a plain `git add -A` would publish them.
+AI Meta/
+**/AI Meta/
+Team-names.md
+**/Team-names.md
+assests/
+**/assests/

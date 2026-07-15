@@ -24,6 +24,16 @@ export async function getChannel(channelId) {
   return res.json();
 }
 
+/** Join a channel by id — backs the /chat/join/:channelId invite link. */
+export async function joinChannel(channelId) {
+  const res = await fetch(`/api/chat/channels/${channelId}/join`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  if (res.status === 400) throw new Error("Cannot join this channel");
+  if (!res.ok) throw new Error("Failed to join channel");
+}
+
 /** Unread count + mention flag for a channel: { unreadCount, lastReadMessageId, mentioned }. */
 export async function getUnread(channelId) {
   const res = await fetch(`/api/chat/channels/${channelId}/unread`, { headers: authHeaders() });

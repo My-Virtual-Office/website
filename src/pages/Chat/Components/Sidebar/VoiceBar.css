@@ -1,0 +1,93 @@
+.voice-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  margin: 0 8px 4px;
+  border-radius: 8px;
+  background: var(--sidebar-hover);
+  border: 1px solid var(--sidebar-border);
+}
+
+.voice-bar-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.voice-bar-icon {
+  color: #2eb67d;
+  flex-shrink: 0;
+}
+
+.voice-bar-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  min-width: 0;
+}
+
+.voice-bar-state {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2eb67d;
+}
+
+.voice-bar-room {
+  font-size: 12px;
+  color: var(--sidebar-fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voice-bar-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.voice-bar-btn {
+  border: none;
+  background: transparent;
+  color: var(--sidebar-fg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  padding: 5px;
+}
+.voice-bar-btn:hover {
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-fg);
+}
+.voice-bar-btn.muted {
+  color: #e01e5a;
+}
+.voice-bar-btn.hangup:hover {
+  background: #e01e5a;
+  color: #fff;
+}
+
+.voice-bar-error {
+  background: rgba(224, 30, 90, 0.12);
+  border-color: #e01e5a;
+}
+
+.voice-bar-error-text {
+  font-size: 12px;
+  color: #e01e5a;
+  line-height: 1.3;
+}
+
+.voice-bar-error button {
+  border: none;
+  background: transparent;
+  color: #e01e5a;
+  cursor: pointer;
+  font-size: 13px;
+  flex-shrink: 0;
+}
