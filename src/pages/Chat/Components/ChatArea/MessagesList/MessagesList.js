@@ -263,7 +263,19 @@ export default function MessagesList({ activeChannel, stompClient, dmPartner, me
               grouped={grouped}
               onOpenThread={onOpenThread}
               unread={isUnread}
-              thread={threadMap[String(message.id)]}
+              thread={
+                threadMap[String(message.id)]
+                  ? {
+                      ...threadMap[String(message.id)],
+                      // Resolve replier ids to real people here, where the directory lives.
+                      // The indicator was rendering /avatar1.jpg for everyone.
+                      replierPeople: threadMap[String(message.id)].repliers.map((uid) => {
+                        const m = senderOf(uid);
+                        return { id: uid, name: m?.name || `User ${uid}`, avatar: m?.avatar };
+                      }),
+                    }
+                  : undefined
+              }
             />
           </Fragment>
         );

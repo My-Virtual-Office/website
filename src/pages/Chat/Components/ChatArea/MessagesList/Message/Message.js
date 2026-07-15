@@ -25,6 +25,10 @@ import { useMentions } from "../../../../mentionContext";
 // Frequent emojis for Slack-style 1-click reactions on hover.
 const QUICK_EMOJIS = ["👍", "✅", "😂", "❤️", "🎉"];
 
+// Initials for a thread replier with no photo — a real fallback beats a fake face.
+const threadInitials = (name) =>
+  (name || "?").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
+
 /** Highlight @mention, #channel, and #<number> (task) tokens, making them clickable. */
 function renderContent(text, onMention, onChannel, onTask) {
   if (!text) return null;
@@ -343,9 +347,17 @@ export default function Message({ message, stompClient, grouped, onOpenThread, u
             title="View thread"
           >
             <span className="thread-indicator-avatars">
-              {thread.repliers.slice(0, 3).map((uid, i) => (
-                <img key={uid ?? i} src="/avatar1.jpg" alt="" />
-              ))}
+              {(thread.replierPeople || thread.repliers.map((uid) => ({ id: uid, name: `User ${uid}` })))
+                .slice(0, 3)
+                .map((p, i) =>
+                  p.avatar ? (
+                    <img key={p.id ?? i} src={p.avatar} alt={p.name} title={p.name} />
+                  ) : (
+                    <span key={p.id ?? i} className="thread-indicator-initial" title={p.name}>
+                      {threadInitials(p.name)}
+                    </span>
+                  ),
+                )}
             </span>
             <span className="thread-indicator-count">
               {thread.count} {thread.count === 1 ? "reply" : "replies"}

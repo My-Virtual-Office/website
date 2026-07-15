@@ -1,8 +1,7 @@
 import "./MeetingsModal.css";
 import { useState, useEffect, useCallback } from "react";
 import {
-  X, Plus, Trash2, Calendar, Clock, Bell, Users, ChevronLeft, ChevronRight, List, LayoutGrid,
-} from "lucide-react";
+  X, Plus, Trash2, Calendar, Clock, Bell, Users, ChevronLeft, ChevronRight, List, LayoutGrid, Check } from "lucide-react";
 import { createEvent, updateEvent, getEvents, deleteEvent } from "../../../../api/calendar";
 import { getMembers } from "../../../../api/workspace";
 import { getAllUsers } from "../../../../api/user";
@@ -17,6 +16,20 @@ const REMINDER_OPTIONS = [
   { v: "30", label: "30 min before" },
   { v: "60", label: "1 hour before" },
 ];
+
+// Event colours. The first ("" = default) is the app blue used when no colour is
+// set, so old events and quick-created ones keep the look they have now.
+const EVENT_COLORS = [
+  { v: "", hex: "#1164a3", label: "Default blue" },
+  { v: "#7c3aed", hex: "#7c3aed", label: "Purple" },
+  { v: "#0f9d58", hex: "#0f9d58", label: "Green" },
+  { v: "#e8710a", hex: "#e8710a", label: "Orange" },
+  { v: "#d93025", hex: "#d93025", label: "Red" },
+  { v: "#00838f", hex: "#00838f", label: "Teal" },
+  { v: "#616161", hex: "#616161", label: "Graphite" },
+];
+export const eventHex = (color) =>
+  (EVENT_COLORS.find((c) => c.v === color) || EVENT_COLORS[0]).hex;
 
 const pad2 = (n) => String(n).padStart(2, "0");
 
@@ -55,6 +68,7 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
   const [start, setStart] = useState(localInput(5));
   const [end, setEnd] = useState(localInput(35));
   const [busy, setBusy] = useState(true);
+  const [color, setColor] = useState(""); // "" = default blue
   const [reminder, setReminder] = useState("10");
   const [people, setPeople] = useState([]); // [{userId, name, email}]
   const [attendeeIds, setAttendeeIds] = useState(() => new Set());
@@ -120,6 +134,7 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
   const onPickSlot = (startDate, endDate) => {
     setEditing(null);
     setTitle("");
+    setColor("");
     setAttendeeIds(new Set());
     setStart(toLocalInput(startDate));
     setEnd(toLocalInput(endDate));
@@ -133,6 +148,7 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
     setStart(toLocalInput(new Date(ev.startTime)));
     setEnd(toLocalInput(new Date(ev.endTime)));
     setBusy(ev.busy !== false);
+    setColor(ev.color || "");
     setReminder(ev.reminderMinutes != null ? String(ev.reminderMinutes) : "");
     setAttendeeIds(new Set(ev.attendeeUserIds || []));
     setQuickOpen(true);
@@ -167,6 +183,7 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
         startTime: new Date(start).toISOString(),
         endTime: new Date(end).toISOString(),
         busy,
+        color: color || null,
         reminderMinutes: reminder ? Number(reminder) : null,
         attendees,
       };
@@ -176,6 +193,7 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
         await createEvent({ workspaceId, ...body });
       }
       setTitle("");
+      setColor("");
       setAttendeeIds(new Set());
       setQuickOpen(false);
       setEditing(null);
@@ -252,6 +270,26 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
             </div>
           )}
 
+          <div className="meet-colors">
+            <span className="meet-colors-label">Color</span>
+            <div className="meet-colors-swatches">
+              {EVENT_COLORS.map((c) => (
+                <button
+                  key={c.v || "default"}
+                  type="button"
+                  className={`meet-swatch ${color === c.v ? "active" : ""}`}
+                  style={{ background: c.hex }}
+                  onClick={() => setColor(c.v)}
+                  title={c.label}
+                  aria-label={c.label}
+                  aria-pressed={color === c.v}
+                >
+                  {color === c.v && <Check size={13} />}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <label className="meet-busy">
             <input type="checkbox" checked={busy} onChange={(e) => setBusy(e.target.checked)} />
             Set me to “In a meeting” during this event
@@ -274,6 +312,7 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
           .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
           .map((e) => (
             <div className="meet-row" key={e.id}>
+              <span className="meet-row-color" style={{ background: eventHex(e.color) }} />
               <div className="meet-row-main">
                 <span className="meet-row-title">{e.title}</span>
                 <span className="meet-row-time">
@@ -331,6 +370,7 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
             events={events}
             onPick={onPickSlot}
             selected={selectedSlot}
+            showSelected={quickOpen}
             onDelete={remove}
             onEventClick={openEdit}
           />

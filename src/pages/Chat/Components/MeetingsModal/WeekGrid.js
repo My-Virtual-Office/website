@@ -68,7 +68,7 @@ function layoutColumns(dayEvents) {
  * Google-Calendar-style week grid. Drag on a day column to pick a meeting's start→end;
  * existing events render as positioned, side-by-side blocks. `onPick(start, end)` fires on release.
  */
-export default function WeekGrid({ weekStart, events, onPick, selected, onDelete, onEventClick }) {
+export default function WeekGrid({ weekStart, events, onPick, selected, showSelected = false, onDelete, onEventClick }) {
   const [drag, setDrag] = useState(null); // { dayIdx, startMin, endMin }
   const colRefs = useRef([]);
   const bodyRef = useRef(null);
@@ -125,7 +125,11 @@ export default function WeekGrid({ weekStart, events, onPick, selected, onDelete
         label: `${fmtMin(drag.startMin)} – ${fmtMin(drag.endMin)}`,
       };
     }
-    if (selected && sameDay(new Date(selected.start), days[dayIdx])) {
+    // The committed-slot highlight is only meaningful while you're actually
+    // creating or editing (the popup is open). Drawn persistently, it sat on the
+    // grid at the form's default now+5..now+35 slot and its time label overlapped
+    // whatever event happened to be there.
+    if (showSelected && selected && sameDay(new Date(selected.start), days[dayIdx])) {
       const s = new Date(selected.start);
       const e = new Date(selected.end);
       const sMin = s.getHours() * 60 + s.getMinutes();
@@ -201,8 +205,8 @@ export default function WeekGrid({ weekStart, events, onPick, selected, onDelete
                 return (
                   <div
                     key={ev.id}
-                    className={`wk-ev ${ev.busy ? "busy" : "free"} ${compact ? "compact" : ""}`}
-                    style={{ top, height, left, width }}
+                    className={`wk-ev ${ev.busy ? "busy" : "free"} ${compact ? "compact" : ""} ${ev.color ? "tinted" : ""}`}
+                    style={{ top, height, left, width, ...(ev.color ? { background: ev.color, borderColor: ev.color } : {}) }}
                     onMouseDown={(stop) => stop.stopPropagation()}
                     onClick={() => onEventClick?.(ev)}
                     title={`${ev.title} · ${s.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} — click to edit`}

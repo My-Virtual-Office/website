@@ -623,3 +623,51 @@
   .meet-page .wk { min-width: 640px; flex: 1; min-height: 0; }
   .meet-weekhint { display: none; }
 }
+
+/* ── Per-event colour ─────────────────────────────────────────────────────── */
+.meet-colors {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+.meet-colors-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--content-muted, #616061);
+}
+.meet-colors-swatches {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.meet-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  padding: 0;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08) inset;
+}
+.meet-swatch.active {
+  border-color: var(--content-strong, #1d1c1d);
+}
+.meet-row-color {
+  width: 4px;
+  align-self: stretch;
+  border-radius: 3px;
+  flex: none;
+  margin-right: 10px;
+}
+/* Tinted week-grid blocks: the inline background wins; keep text legible on any hue. */
+.wk-ev.tinted {
+  color: #fff;
+}
+.wk-ev.tinted .wk-ev-time {
+  color: rgba(255, 255, 255, 0.85);
+}
