@@ -5,10 +5,13 @@
    Five BRIGHT themes. One architecture — white content, light sidebar, a single core hue per
    theme carrying the accent and the active row. Only the core colours differ:
 
-   The workspace RAIL is the one dark surface, on purpose: it is the backmost layer, and at any
-   mid-tone neither dark nor white icons clear AA (dark fails below L=0.80, white only passes
-   from L=0.35 — everything between is a dead zone). So it goes properly dark with white icons,
-   and each theme's active ring is its accent lightened until it reads on that rail.
+   The workspace RAIL is one NEUTRAL dark surface, IDENTICAL in every theme (#2c2c2f). It is the
+   app frame, not part of the palette — Discord (#202225) and VS Code (#333) do the same.
+   Tinting it was tried and looked wrong: at L~30% a low saturation is neither a hue nor a
+   neutral, so 'rose' came out as mauve sludge (#57424b). Slack gets away with a tinted rail only
+   because its sidebar is a deep saturated aubergine; ours are near-white, so the tint lands in
+   the mud. Mid-tones are also unusable here — dark icons fail below L=0.80 and white only passes
+   from L=0.35, so anything between fails AA either way.
 
      daylight   amber   (default; the logo's own colour)
      meadow     green
@@ -28,10 +31,10 @@
 :root,
 :root[data-theme="daylight"] {
   /* Left workspace rail */
-  --rail-bg: #424957;
-  --rail-fg: #eef0f3;
-  --rail-icon-bg: #586174;
-  --rail-active-ring: #eb8829;
+  --rail-bg: #2c2c2f;
+  --rail-fg: #e7e8ea;
+  --rail-icon-bg: #3e3e42;
+  --rail-active-ring: #ffffff;
 
   /* Channel sidebar */
   --sidebar-bg: #f4f5f7;
@@ -84,10 +87,10 @@
 /* Meadow — bright & green. */
 :root[data-theme="meadow"] {
   /* Left workspace rail */
-  --rail-bg: #425748;
-  --rail-fg: #eef0f3;
-  --rail-icon-bg: #587460;
-  --rail-active-ring: #5cd68f;
+  --rail-bg: #2c2c2f;
+  --rail-fg: #e7e8ea;
+  --rail-icon-bg: #3e3e42;
+  --rail-active-ring: #ffffff;
 
   /* Channel sidebar */
   --sidebar-bg: #eff6f1;
@@ -140,10 +143,10 @@
 /* Harbor — bright & blue. */
 :root[data-theme="harbor"] {
   /* Left workspace rail */
-  --rail-bg: #424a57;
-  --rail-fg: #eef0f3;
-  --rail-icon-bg: #586374;
-  --rail-active-ring: #5a9ded;
+  --rail-bg: #2c2c2f;
+  --rail-fg: #e7e8ea;
+  --rail-icon-bg: #3e3e42;
+  --rail-active-ring: #ffffff;
 
   /* Channel sidebar */
   --sidebar-bg: #eff3f9;
@@ -196,10 +199,10 @@
 /* Lilac — bright & violet. */
 :root[data-theme="lilac"] {
   /* Left workspace rail */
-  --rail-bg: #494257;
-  --rail-fg: #eef0f3;
-  --rail-icon-bg: #615874;
-  --rail-active-ring: #a18adb;
+  --rail-bg: #2c2c2f;
+  --rail-fg: #e7e8ea;
+  --rail-icon-bg: #3e3e42;
+  --rail-active-ring: #ffffff;
 
   /* Channel sidebar */
   --sidebar-bg: #f3f0f9;
@@ -252,10 +255,10 @@
 /* Blossom — bright & rose. */
 :root[data-theme="blossom"] {
   /* Left workspace rail */
-  --rail-bg: #57424b;
-  --rail-fg: #eef0f3;
-  --rail-icon-bg: #745864;
-  --rail-active-ring: #de739b;
+  --rail-bg: #2c2c2f;
+  --rail-fg: #e7e8ea;
+  --rail-icon-bg: #3e3e42;
+  --rail-active-ring: #ffffff;
 
   /* Channel sidebar */
   --sidebar-bg: #f9f0f4;
