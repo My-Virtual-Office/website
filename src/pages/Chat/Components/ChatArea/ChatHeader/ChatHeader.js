@@ -22,6 +22,7 @@ export default function ChatHeader({
   workspaceId,
   sidebarOpen,
   membersOpen,
+  members,
   onToggleSidebar,
   onToggleMembers,
   onChannelUpdated,
@@ -31,6 +32,13 @@ export default function ChatHeader({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showPins, setShowPins] = useState(false);
   const [pins, setPins] = useState([]);
+
+  // Resolve a userId to a real person. Falls back to "User <id>" only when the
+  // directory hasn't loaded or the sender is no longer a workspace member.
+  const nameOf = useMemo(() => {
+    const byId = new Map((members || []).map((m) => [Number(m.userId), m.name]));
+    return (id) => byId.get(Number(id)) || `User ${id}`;
+  }, [members]);
 
   // In-channel message search (distinct from the global ⌘K palette): searches
   // only the messages of the currently open channel and jumps to a result.
@@ -125,20 +133,26 @@ export default function ChatHeader({
       channelNameForDisplay = activeChannel.name;
     }
   }
-
+  // Menu state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Channel details state
   const [channelDetails, setChannelDetails] = useState(null);
+  // Loading state
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   // App dialogs / toasts
   const { confirm, notify } = useDialogs();
 
+  // Toggle info menu
   const toggleMenu = async () => {
     const newMenuState = !isMenuOpen;
     setIsMenuOpen(newMenuState);
     if (newMenuState) setShowPins(false); // only one header dropdown open at a time
 
+    // Fetch channel details when opening the menu
     if (newMenuState === true && activeChannel) {
       setIsLoadingDetails(true);
+
       try {
         const response = await fetch(`/api/chat/channels/${activeChannel.id}`, {
           method: "GET",
@@ -156,6 +170,7 @@ export default function ChatHeader({
     }
   };
 
+  // Handle leaving the channel
   const handleLeaveChannel = async () => {
     // Prompt user for confirmation
     const confirmLeave = await confirm({
@@ -178,30 +193,13 @@ export default function ChatHeader({
         if (response.ok) {
           notify("You have left the channel", "success");
           setIsMenuOpen(false);
+          // TODO: Notify Sidebar to remove the channel from the list
         } else {
           notify("An error occurred while leaving the channel", "error");
         }
       } catch (error) {
         console.error("Error:", error);
       }
-    }
-  };
-
-
-
-  const [isDarkMode, setIsDarkMode] = useState(
-    document.body.classList.contains("dark-mode"),
-  );
-
-  const toggleDarkMode = () => {
-    if (document.body.classList.contains("dark-mode")) {
-      document.body.classList.remove("dark-mode");
-      localStorage.setItem("theme", "light");
-      setIsDarkMode(false);
-    } else {
-      document.body.classList.add("dark-mode");
-      localStorage.setItem("theme", "dark");
-      setIsDarkMode(true);
     }
   };
 
@@ -265,7 +263,7 @@ export default function ChatHeader({
               ) : (
                 pins.map((m) => (
                   <div key={m.id} className="pins-item">
-                    <span className="pins-sender">User {m.senderId}</span>
+                    <span className="pins-sender">{nameOf(m.senderId)}</span>
                     <span className="pins-content">{m.content || "(attachment)"}</span>
                   </div>
                 ))
@@ -278,32 +276,9 @@ export default function ChatHeader({
           className="info-dropdown-container"
           style={{ position: "relative" }}
         >
-          <Switch
-            checked={isDarkMode}
-            onChange={toggleDarkMode}
-            className="theme-switch-mui"
-            icon={
-              <span className="mui-switch-icon-wrapper">
-                <WbSunnyOutlinedIcon className="sunny-icon" />
-              </span>
-            }
-            checkedIcon={
-              <span className="mui-switch-icon-wrapper">
-                <NightsStayOutlinedIcon className="moon-icon" />
-              </span>
-            }
-            inputProps={{ "aria-label": "Toggle Theme" }}
-          />
-
           <button className="header-btn" aria-label="Info" onClick={toggleMenu}>
             <Info size={18} />
           </button>
-
-          {activeChannel?.type !== "ROOM" && (
-            <button className="header-btn" aria-label="Copy invite link" onClick={handleCopyInviteLink}>
-              <ContentCopyIcon />
-            </button>
-          )}
 
           {isMenuOpen && (
             <div className="dropdown-menu expanded-menu">
@@ -329,7 +304,7 @@ export default function ChatHeader({
                     <div className="inline-members-tags">
                       {channelDetails.members?.map((mId) => (
                         <span key={mId} className="inline-tag">
-                          User {mId}
+                          {nameOf(mId)}
                         </span>
                       ))}
                     </div>
@@ -393,7 +368,7 @@ export default function ChatHeader({
                   csResults.map((m) => (
                     <button key={m.id} className="cs-item" onClick={() => jumpToMessage(m.id)}>
                       <span className="cs-item-top">
-                        <span className="cs-sender">User {m.senderId}</span>
+                        <span className="cs-sender">{nameOf(m.senderId)}</span>
                         <span className="cs-time">
                           {m.createdAt
                             ? new Date(m.createdAt).toLocaleDateString([], {

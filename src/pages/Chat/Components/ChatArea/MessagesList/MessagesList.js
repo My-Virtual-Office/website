@@ -1,6 +1,6 @@
 import "./MessagesList.css";
 import Message from "./Message/Message";
-import { useState, useEffect, useCallback, useRef, Fragment } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, Fragment } from "react";
 import { authHeaders } from "../../../../../utils/auth";
 import { getUnread, markRead, getChannelThreads, getThreadMessages } from "../../../../../api/chat";
 
@@ -41,8 +41,16 @@ const dayLabel = (d) => {
   return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
 };
 
-export default function MessagesList({ activeChannel, stompClient, dmPartner, onViewProfile, onOpenThread }) {
+export default function MessagesList({ activeChannel, stompClient, dmPartner, members, onViewProfile, onOpenThread }) {
   const [messages, setMessages] = useState([]);
+
+  // Messages arrive carrying only a senderId — resolve it to the person's real
+  // name and picture from the workspace directory. Without this every row falls
+  // back to "User <id>" and the default avatar.
+  const senderOf = useMemo(() => {
+    const byId = new Map((members || []).map((m) => [Number(m.userId), m]));
+    return (id) => byId.get(Number(id));
+  }, [members]);
   // Id of the first unread message — where the "New" divider is drawn.
   const [firstUnreadId, setFirstUnreadId] = useState(null);
   // Map of rootMessageId -> { threadId, count, repliers } so a root message can
@@ -81,6 +89,7 @@ export default function MessagesList({ activeChannel, stompClient, dmPartner, on
   loadThreadsRef.current = loadThreads;
 
   useEffect(() => {
+    // Do nothing if no active channel
     if (!activeChannel?.id) return;
     setFirstUnreadId(null);
     setThreadMap({});
@@ -126,13 +135,18 @@ export default function MessagesList({ activeChannel, stompClient, dmPartner, on
       }
     };
 
-    setMessages([]);
+    fetchMessages();
+
+    // 2. Subscribe to real-time events for this channel
+    let subscription = null;
 
     if (stompClient && stompClient.connected) {
       subscription = stompClient.subscribe(
-        `/topic/channel/${channelId}`,
+        `/topic/channel/${activeChannel.id}`,
         (messageOutput) => {
+          // Parse the raw text body into a JS object
           const event = JSON.parse(messageOutput.body);
+
           if (event.action === "NEW_MESSAGE") {
             // Thread replies live in the thread panel, never in the public channel
             // feed — but a reply changes a root message's "N replies" indicator.
@@ -151,9 +165,7 @@ export default function MessagesList({ activeChannel, stompClient, dmPartner, on
           ) {
             // Replace the message with the updated payload (edit / reactions / pin)
             setMessages((prev) =>
-              prev.map((msg) =>
-                msg.id === event.payload.id ? event.payload : msg,
-              ),
+              prev.map((msg) => (msg.id === event.payload.id ? event.payload : msg))
             );
           } else if (event.action === "DELETE_MESSAGE") {
             setMessages((prev) =>
@@ -164,38 +176,8 @@ export default function MessagesList({ activeChannel, stompClient, dmPartner, on
       );
     }
 
-    const fetchMessages = async () => {
-      try {
-        const response = await fetch(
-          `/api/chat/channels/${channelId}/messages?page=1&limit=50`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-              "X-User-Id": String(getCurrentUserId()),
-              "X-User-Role": "USER",
-            },
-          },
-        );
-        if (response.ok) {
-          const data = await response.json();
-          const history = data.content ? [...data.content].reverse() : [];
-          if (!isCancelled) {
-            setMessages((prev) => mergeMessages(prev, history));
-          }
-        } else {
-          console.error("Failed to fetch messages from server");
-        }
-      } catch (error) {
-        console.error("Error fetching messages:", error);
-      }
-    };
-
-    fetchMessages();
-
+    // 3. Cleanup: Unsubscribe when changing channels or unmounting
     return () => {
-      isCancelled = true;
       if (subscription) {
         subscription.unsubscribe();
       }
@@ -247,7 +229,11 @@ export default function MessagesList({ activeChannel, stompClient, dmPartner, on
               </div>
             )}
             <Message
-              message={message}
+              message={{
+                ...message,
+                user: message.user || senderOf(message.senderId)?.name,
+                avatar: message.avatar || senderOf(message.senderId)?.avatar,
+              }}
               stompClient={stompClient}
               grouped={grouped}
               onOpenThread={onOpenThread}

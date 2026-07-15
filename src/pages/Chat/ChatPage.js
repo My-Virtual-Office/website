@@ -7,8 +7,6 @@ import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Menu } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Client } from "@stomp/stompjs";
-import { fetchChatTicket, wsChatUrl } from "../../ws/chatStompClient";
-import { fetchRoomTicket, wsRoomUrl } from "../../ws/roomStompClient";
 import MembersList from "./Components/MembersList/MembersList";
 import ContactsDirectory from "./Components/ContactsDirectory/ContactsDirectory";
 import ThreadPanel from "./Components/ThreadPanel/ThreadPanel";
@@ -61,11 +59,7 @@ function usePersistentState(key, initial) {
 }
 
 export default function ChatPage() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const joinChannelId = location.state?.joinChannelId || null;
   const [activeChannel, setActiveChannel] = useState(null);
-  const [activeWorkspace, setActiveWorkspace] = useState(null);
   const [stompClient, setStompClient] = useState(null);
   const [view, setView] = useState("chat"); // "chat" | "contacts"
   const [activeThread, setActiveThread] = useState(null); // {threadId, rootMessage, channelId}
@@ -502,6 +496,7 @@ export default function ChatPage() {
                 setActiveChannel={selectChannel}
                 workspaceId={workspaceId}
                 activeView={view}
+                members={dirMembers}
                 unread={unread}
                 onOpenContacts={() => { setView("contacts"); if (isMobileView()) setSidebarOpen(false); }}
                 onOpenTasks={() => { setView("tasks"); if (isMobileView()) setSidebarOpen(false); }}
@@ -546,6 +541,7 @@ export default function ChatPage() {
             stompClient={stompClient}
             sidebarOpen={sidebarOpen}
             membersOpen={membersOpen}
+            members={dirMembers}
             dmPartner={dmPartner}
             onViewProfile={() => (dmPartner ? setProfileMember(dmPartner) : setMembersOpen(true))}
             onOpenSearch={() => setCmdkOpen(true)}

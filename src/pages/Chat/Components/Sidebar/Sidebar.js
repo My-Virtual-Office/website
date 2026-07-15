@@ -26,8 +26,6 @@ export default function Sidebar({
 }) {
   // Channels state
   const [channels, setChannels] = useState([]);
-  // Rooms state
-  const [rooms, setRooms] = useState([]);
   // DMs state
   const [dms, setDms] = useState([]);
   // user state
@@ -107,66 +105,26 @@ export default function Sidebar({
           },
         );
 
-        if (channelList.length === 0) {
-          const defaultNames = ["general", "random", "announcements"];
-          for (const name of defaultNames) {
-            try {
-              await createChannel(name, workspaceId);
-            } catch (err) {
-              console.error(`Failed to create default channel "${name}":`, err);
+        if (response.ok) {
+          const data = await response.json();
+          setChannels(data.content || []);
+
+          // Set active channel to the first channel if none is selected
+          if (data.content !== undefined) {
+            if (data.content.length > 0) {
+              if (activeChannel === null) {
+                let firstChannelId = data.content[0].id;
+                let firstChannelName = data.content[0].name;
+
+                setActiveChannel({
+                  id: firstChannelId,
+                  name: firstChannelName,
+                });
+              }
             }
           }
-          channelList = await fetchChannelsApi(workspaceId);
-          setChannels(channelList);
-        }
-
-        if (joinChannelId) {
-          const joined = channelList.find((ch) => ch.id === joinChannelId);
-          if (joined) {
-            setActiveChannel({
-              id: joined.id,
-              name: joined.name,
-              type: joined.type || "GROUP",
-            });
-            return;
-          }
-
-          try {
-            const directRes = await fetch(
-              `/api/chat/channels/${joinChannelId}`,
-              {
-                method: "GET",
-                headers: {
-                  "Content-Type": "application/json",
-                  "X-User-Id": String(getCurrentUserId()),
-                  "X-User-Role": "USER",
-                },
-              },
-            );
-            if (directRes.ok) {
-              const joinedChannel = await directRes.json();
-              setChannels((prev) => {
-                if (prev.some((c) => c.id === joinedChannel.id)) return prev;
-                return [...prev, joinedChannel];
-              });
-              setActiveChannel({
-                id: joinedChannel.id,
-                name: joinedChannel.name,
-                type: joinedChannel.type || "GROUP",
-              });
-              return;
-            }
-          } catch (fetchErr) {
-            console.error("Failed to fetch joined channel directly:", fetchErr);
-          }
-        }
-
-        if (activeChannel === null && channelList.length > 0) {
-          setActiveChannel({
-            id: channelList[0].id,
-            name: channelList[0].name,
-            type: channelList[0].type || "GROUP",
-          });
+        } else {
+          console.error("Failed to fetch channels");
         }
       } catch (error) {
         console.error("Error fetching channels:", error);
@@ -186,16 +144,6 @@ export default function Sidebar({
         }
       } catch (error) {
         console.error("Error fetching DMs:", error);
-      }
-    };
-
-    const fetchRoomsList = async () => {
-      try {
-        if (!workspaceId) return;
-        const roomsData = await fetchRooms(workspaceId);
-        setRooms(roomsData);
-      } catch (error) {
-        console.error("Error fetching rooms:", error);
       }
     };
 
@@ -230,17 +178,12 @@ export default function Sidebar({
   //   avatar: "/user.jpg",
   //   status: "Set Status",
   // };
-  const handleCloseDm = (e, dmId) => {
-    e.stopPropagation();
-    setDms((prev) => prev.filter((dm) => dm.id !== dmId));
-  };
 
-  console.log("Current User ID extracted from token:", getCurrentUserId());
   return (
     <div className="sidebar-container">
       <div className="sidebar">
         <div className="sidebar-header">
-          <span>{activeWorkspace?.name || "Virtual-Office"}</span>
+          <span>Virtual-Office</span>
           <button>
             <ChevronDown size={18} />
           </button>
@@ -327,35 +270,6 @@ export default function Sidebar({
             </div>
           </div>
 
-          <div className="rooms-section">
-            <div className="rooms-header">
-              <span>ROOMS</span>
-              <button onClick={handleCreateRoom}>
-                <AddIcon />
-              </button>
-            </div>
-            <div className="rooms-list">
-              {rooms.map((room) => (
-                <div
-                  key={room.id}
-                  className={`room-item ${activeChannel !== null && activeChannel.id === room.id ? "active" : ""}`}
-                  onClick={() => {
-                    setActiveChannel({
-                      id: room.id,
-                      name: room.name,
-                      type: "ROOM",
-                    });
-                  }}
-                >
-                  <span>
-                    <MeetingRoomIcon />
-                  </span>
-                  <span className="room-name">{room.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
           <div className="direct-messages-section">
             <div className="direct-messages-header">
               <span>DIRECT MESSAGES</span>
@@ -371,11 +285,10 @@ export default function Sidebar({
             <div className="direct-messages-list">
               {dms.map((dm) => {
                 // Find the other user's ID to use as DM name
-                const currentId = getCurrentUserId();
-                const otherUserId = dm.members?.find((m) => m !== currentId);
+                const otherUserId = dm.members?.find((m) => m !== 1);
                 const dmDisplayName = dm.name
                   ? dm.name
-                  : (`User ${otherUserId || "X"}`);
+                  : `User ${otherUserId || "X"}`;
 
                 const isActive = activeChannel !== null && activeChannel.id === dm.id;
                 const u = unread[dm.id];
@@ -434,11 +347,11 @@ export default function Sidebar({
                       width: "100%",
                       height: "100%",
                       borderRadius: "50%",
-                      backgroundColor: "var(--accent-bg-active)",
+                      backgroundColor: "#e5e7ff",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      color: "var(--accent-color)",
+                      color: "#5048e5",
                       fontWeight: "700",
                       fontSize: "14px",
                     }}
@@ -490,15 +403,6 @@ export default function Sidebar({
               user={user}
               onUpdate={fetchUser}
               userPhoto={userPhoto}
-            />
-
-            {/* Invite Dialog */}
-            <InviteDialog
-              open={isInviteOpen}
-              onClose={() => setInviteDialogChannel(null)}
-              channelId={inviteDialogChannel?.id}
-              channelName={inviteDialogChannel?.name}
-              workspaceId={workspaceId}
             />
           </div>
         </div>

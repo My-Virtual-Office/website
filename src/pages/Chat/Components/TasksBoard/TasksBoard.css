@@ -199,7 +199,17 @@
   font-size: 11px;
 }
 
-.tb-band { margin-bottom: 6px; }
+/* Each due band (Overdue / Today / Tomorrow / …) sits on its own subtle surface
+   so the sections read as distinct instead of one continuous sheet. The mix is
+   relative to the content colours, so it stays a touch darker on light themes
+   and a touch lighter on dark ones. Cards (--panel-bg) then pop off the band. */
+.tb-band {
+  margin-bottom: 12px;
+  padding: 2px 10px 8px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--content-fg) 4%, var(--content-bg));
+}
 .tb-band-head {
   display: flex; align-items: center; gap: 6px;
   width: 100%;
@@ -225,7 +235,9 @@
   margin-bottom: 10px;
 }
 .tb-col {
-  min-height: 50vh; /* each day band is a comfortable drop zone (~50% of screen) */
+  /* Enough to stay an easy drop target, but bands now have a visible surface so
+     a 50vh floor would leave huge empty blocks under short lanes. */
+  min-height: 110px;
   padding: 6px;
   border-radius: 12px;
   display: flex; flex-direction: column; gap: 10px;

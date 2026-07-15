@@ -385,7 +385,28 @@
 .breathe-hint { font-size: 13px; color: var(--content-muted); }
 
 /* Today's agenda (calendar events) */
-.desk-agenda .agenda-list { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+/* Capped to roughly the "Take a Break" card's height (150px ring + presets +
+   controls) so a busy day doesn't stretch the column — the rest scrolls. */
+.desk-agenda .agenda-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+  max-height: 258px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.desk-agenda .agenda-list::-webkit-scrollbar { width: 8px; }
+.desk-agenda .agenda-list::-webkit-scrollbar-track { background: transparent; }
+.desk-agenda .agenda-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.desk-agenda .agenda-list::-webkit-scrollbar-thumb:hover { background-color: var(--content-muted); background-clip: content-box; }
 .agenda-item {
   display: grid;
   grid-template-columns: 52px 14px 1fr auto;

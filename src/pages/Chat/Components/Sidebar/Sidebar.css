@@ -218,25 +218,29 @@
   min-width: 0;
 }
 
-/* Unread channels/DMs: brighter, bolder name + a count badge */
+/* Unread channels/DMs: brighter, bolder name + a count badge.
+   --sidebar-unread is the per-theme "emphasised sidebar foreground" (white on the
+   dark themes, near-black on light) — every theme defines it. */
 .channel-item.unread .channel-name,
 .dm-item.unread .dm-name {
   font-weight: 700;
-  color: var(--sidebar-strong, var(--content-strong));
+  color: var(--sidebar-unread);
 }
 .channel-item.unread svg {
-  color: var(--sidebar-strong, var(--content-strong));
+  color: var(--sidebar-unread);
 }
+/* Badge inverts the sidebar: a solid bright pill with the sidebar colour punched
+   out of it, so the count stays legible on every theme. */
 .unread-badge {
   flex-shrink: 0;
   min-width: 18px;
   height: 18px;
   padding: 0 6px;
   border-radius: 9px;
-  background: var(--sidebar-fg-muted);
-  color: var(--sidebar-active-fg, #fff);
+  background: var(--sidebar-unread);
+  color: var(--sidebar-bg);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 18px;
   text-align: center;
 }

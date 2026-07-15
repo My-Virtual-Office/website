@@ -8,6 +8,7 @@ export default function ChatArea({
   stompClient,
   sidebarOpen,
   membersOpen,
+  members,
   dmPartner,
   onViewProfile,
   onOpenSearch,
@@ -24,6 +25,7 @@ export default function ChatArea({
         workspaceId={workspaceId}
         sidebarOpen={sidebarOpen}
         membersOpen={membersOpen}
+        members={members}
         onOpenSearch={onOpenSearch}
         onNotificationNavigate={onNotificationNavigate}
         onToggleSidebar={onToggleSidebar}
@@ -34,6 +36,7 @@ export default function ChatArea({
         activeChannel={activeChannel}
         stompClient={stompClient}
         dmPartner={dmPartner}
+        members={members}
         onViewProfile={onViewProfile}
         onOpenThread={onOpenThread}
       />

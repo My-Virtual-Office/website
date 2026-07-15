@@ -103,13 +103,6 @@ export default function MessageInput({ activeChannel, workspaceId, stompClient }
 
   const onEmojiClick = (emojiObject) => {
     setMessage((prev) => prev + emojiObject.emoji);
-    // setShowEmojiPicker(false);
-  };
-
-  const handleClickAway = (event) => {
-    if (event.target.closest('[aria-label="Add emoji"]')) {
-      return;
-    }
     setShowEmojiPicker(false);
   };
 
@@ -359,16 +352,9 @@ export default function MessageInput({ activeChannel, workspaceId, stompClient }
       )}
 
       {showEmojiPicker && (
-        <ClickAwayListener onClickAway={handleClickAway}>
-          <div className="emoji-picker-wrapper">
-            <EmojiPicker
-              onEmojiClick={onEmojiClick}
-              theme={
-                document.body.classList.contains("dark-mode") ? "dark" : "light"
-              }
-            />
-          </div>
-        </ClickAwayListener>
+        <div className="emoji-picker-wrapper">
+          <EmojiPicker onEmojiClick={onEmojiClick} />
+        </div>
       )}
     </div>
   );
