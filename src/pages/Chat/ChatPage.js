@@ -557,6 +557,7 @@ export default function ChatPage() {
                 onOpenDesk={() => { setView("mydesk"); if (isMobileView()) setSidebarOpen(false); }}
                 onOpenAi={() => { setView("ai"); if (isMobileView()) setSidebarOpen(false); }}
                 onOpenSearch={() => setCmdkOpen(true)}
+                onEnterFocus={() => setFocusMode(true)}
               />
             </div>
             <ResizeHandle

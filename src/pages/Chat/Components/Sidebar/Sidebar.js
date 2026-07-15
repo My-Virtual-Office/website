@@ -1,6 +1,8 @@
 import "./Sidebar.css";
-import { ChevronDown, Search, Hash, Plus, Settings, Users, Gamepad2, CalendarDays, ListTodo, LayoutDashboard, Sparkles } from "lucide-react";
+import { ChevronDown, Search, Hash, Plus, Settings, Users, Gamepad2, CalendarDays, ListTodo, LayoutDashboard, Sparkles, Check, UserPlus, Copy, Target } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
+import { Menu, MenuItem, Divider } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../../../../api/user";
 
 import SettingsModal from "../SettingsModal/SettingsModal";
@@ -23,6 +25,8 @@ export default function Sidebar({
   setActiveChannel,
   workspaceId,
   workspaceName = "",
+  workspaces = [],
+  onSwitchWorkspace,
   activeView,
   members = [],
   unread = {},
@@ -32,6 +36,7 @@ export default function Sidebar({
   onOpenDesk,
   onOpenAi,
   onOpenSearch,
+  onEnterFocus,
 }) {
   // Channels state
   const [channels, setChannels] = useState([]);
@@ -39,6 +44,28 @@ export default function Sidebar({
   const [dms, setDms] = useState([]);
   // user state
   const [user, setUser] = useState(null);
+  // Workspace menu (the header chevron)
+  const [wsMenuAnchor, setWsMenuAnchor] = useState(null);
+  const closeWsMenu = () => setWsMenuAnchor(null);
+  const navigate = useNavigate();
+
+  // Deep-link to THIS workspace. ChatPage resolves ?work_name=<slug> on load, so the
+  // link lands the recipient in the right workspace rather than their default one.
+  // Only useful to someone who is already a member — inviting is a separate item.
+  const copyWorkspaceLink = async () => {
+    const slug = workspaces.find((w) => w.id === workspaceId)?.slug;
+    const url = slug
+      ? `${window.location.origin}/chat?work_name=${encodeURIComponent(slug)}`
+      : window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      notify("Workspace link copied", "success");
+    } catch {
+      // Clipboard needs a secure origin — over plain http on a LAN IP it throws.
+      notify("Couldn't copy — your browser blocked the clipboard here", "error");
+    }
+    closeWsMenu();
+  };
   // Settings Modal state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   // user photo state
@@ -202,14 +229,76 @@ export default function Sidebar({
           {/* The workspace you are in, not the product — this is the workspace switcher's header.
               Falls back to the product name only while the workspace list is still loading. */}
           <span title={workspaceName || "Virtual Office"}>{workspaceName || "Virtual Office"}</span>
-          <button>
+          <button
+            onClick={(e) => setWsMenuAnchor(e.currentTarget)}
+            aria-haspopup="menu"
+            aria-expanded={!!wsMenuAnchor}
+            aria-label="Workspace menu"
+            title="Workspace menu"
+          >
             <ChevronDown size={18} />
           </button>
         </div>
 
+        {/* The chevron promised a menu and did nothing. The rail switches workspaces by
+            icon; this is where the same list gets names, plus the workspace-level actions. */}
+        <Menu
+          anchorEl={wsMenuAnchor}
+          open={!!wsMenuAnchor}
+          onClose={closeWsMenu}
+          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+          transformOrigin={{ vertical: "top", horizontal: "left" }}
+          slotProps={{ paper: { sx: { borderRadius: 2, minWidth: 260, mt: 0.5 } } }}
+        >
+          <div className="ws-menu-head">
+            <span className="ws-menu-name">{workspaceName || "Virtual Office"}</span>
+            <span className="ws-menu-sub">
+              {members.length} {members.length === 1 ? "member" : "members"}
+            </span>
+          </div>
+          <Divider />
+
+          {workspaces.length > 1 && (
+            <div className="ws-menu-label">Switch workspace</div>
+          )}
+          {workspaces.map((ws) => (
+            <MenuItem
+              key={ws.id}
+              selected={ws.id === workspaceId}
+              onClick={() => {
+                if (ws.id !== workspaceId) onSwitchWorkspace?.(ws);
+                closeWsMenu();
+              }}
+            >
+              <span className="ws-menu-badge">{initials(ws.name)}</span>
+              <span className="ws-menu-item-name">{ws.name}</span>
+              {ws.id === workspaceId && <Check size={15} className="ws-menu-check" />}
+            </MenuItem>
+          ))}
+          {workspaces.length > 0 && <Divider />}
+
+          <MenuItem onClick={() => { onOpenContacts?.(); closeWsMenu(); }}>
+            <UserPlus size={15} className="ws-menu-icon" /> Invite people
+          </MenuItem>
+          <MenuItem onClick={copyWorkspaceLink}>
+            <Copy size={15} className="ws-menu-icon" /> Copy link to this workspace
+          </MenuItem>
+          <MenuItem onClick={() => { navigate("/onboarding"); closeWsMenu(); }}>
+            <Plus size={15} className="ws-menu-icon" /> Create or join a workspace
+          </MenuItem>
+        </Menu>
+
         <button className="virtual-office-btn" onClick={openVirtualOffice}>
           <Gamepad2 size={19} />
           <span>Enter Virtual Office</span>
+        </button>
+
+        {/* The two ways to leave the chat surface, side by side: go be with people, or go be
+            alone with the work. Secondary styling — this one is about removing things, so it
+            shouldn't shout as loudly as the office button above it. */}
+        <button className="working-mode-btn" onClick={onEnterFocus}>
+          <Target size={18} />
+          <span>Enter Working Mode</span>
         </button>
 
         <div className="sidebar-main">
