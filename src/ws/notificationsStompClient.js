@@ -1,5 +1,7 @@
 import { Client } from "@stomp/stompjs";
-import { getWebSocketTicket } from "../api/notifications";
+// api/notifications exports wsTicket, not getWebSocketTicket — the old name resolved to
+// undefined, so ensureClient() threw on the first call and live notifications never arrived.
+import { wsTicket as getWebSocketTicket } from "../api/notifications";
 import { getCurrentUserId } from "../utils/auth";
 
 let client = null;
