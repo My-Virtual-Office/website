@@ -9,6 +9,7 @@ export default function ChatArea({
   sidebarOpen,
   membersOpen,
   members,
+  e2eKey,
   dmPartner,
   onViewProfile,
   onOpenSearch,
@@ -37,6 +38,7 @@ export default function ChatArea({
         stompClient={stompClient}
         dmPartner={dmPartner}
         members={members}
+        e2eKey={e2eKey}
         onViewProfile={onViewProfile}
         onOpenThread={onOpenThread}
       />
@@ -44,6 +46,8 @@ export default function ChatArea({
         activeChannel={activeChannel}
         workspaceId={workspaceId}
         stompClient={stompClient}
+        dmPartner={dmPartner}
+        e2eKey={e2eKey}
       ></MessageInput>
     </div>
   );

@@ -19,6 +19,7 @@ import CommandPalette from "./Components/CommandPalette/CommandPalette";
 import ResizeHandle from "../../components/ResizeHandle";
 import { MentionContext } from "./mentionContext";
 import { authHeaders, getCurrentUserId } from "../../utils/auth";
+import { syncPublicKey } from "../../utils/e2e";
 import { getMyWorkspaces, getMembers, getTeams } from "../../api/workspace";
 import {
   getChannelThreads,
@@ -67,6 +68,9 @@ export default function ChatPage() {
 
   // Workspace directory used to resolve @mention / #channel clicks.
   const [dirMembers, setDirMembers] = useState([]);
+  // Our E2E keypair for direct messages. The private half is generated in this
+  // browser and never leaves it — see utils/e2e.js.
+  const [e2eKey, setE2eKey] = useState(null);
   const [dirChannels, setDirChannels] = useState([]);
   const [profileMember, setProfileMember] = useState(null);
   const [focusTask, setFocusTask] = useState(null); // task # to focus in the board
@@ -237,6 +241,7 @@ export default function ChatPage() {
           nameById[u.id] = {
             name: `${u.firstName || ""} ${u.lastName || ""}`.trim(),
             email: u.email,
+            e2ePublicKey: u.e2ePublicKey || null,
           };
         });
         const enriched = desks
@@ -250,6 +255,7 @@ export default function ChatPage() {
               team: teams.find((t) => t.id === m.teamId)?.name || "",
               role: m.role,
               email: nameById[m.userId]?.email || m.workEmail || "",
+              e2ePublicKey: nameById[m.userId]?.e2ePublicKey || null,
               avatar: m.personalImageUrl || "",
               online: m.isOnline,
               // Every handle form the composer might have inserted for this person
@@ -262,6 +268,11 @@ export default function ChatPage() {
             };
           });
         setDirMembers(enriched);
+        // Ensure this browser has a keypair and the server has our public half.
+        const me = Number(getCurrentUserId());
+        syncPublicKey(me, nameById[me]?.e2ePublicKey || null)
+          .then((kp) => { if (!cancelled && kp) setE2eKey(kp); })
+          .catch(() => { /* E2E unavailable (insecure context) — DMs stay plaintext */ });
         setDirChannels(channels.map((c) => ({ id: c.id, name: c.name })));
         setConvoIds([...channels.map((c) => c.id), ...dms.map((d) => d.id)]);
       } catch {
@@ -546,6 +557,7 @@ export default function ChatPage() {
             sidebarOpen={sidebarOpen}
             membersOpen={membersOpen}
             members={dirMembers}
+            e2eKey={e2eKey}
             dmPartner={dmPartner}
             onViewProfile={() => (dmPartner ? setProfileMember(dmPartner) : setMembersOpen(true))}
             onOpenSearch={() => setCmdkOpen(true)}

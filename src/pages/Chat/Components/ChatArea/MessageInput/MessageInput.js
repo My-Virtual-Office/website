@@ -2,6 +2,7 @@ import "./MessageInput.css";
 import { Plus, Smile, SendHorizontal, X, Paperclip, Hash, AtSign, Clock } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
 import { useState, useRef, useEffect } from "react";
+import { encryptFor } from "../../../../../utils/e2e";
 import { useDialogs } from "../../../../../components/DialogProvider";
 import { uploadAttachment, fileUrl, getChannels, scheduleMessage } from "../../../../../api/chat";
 import { getMembers } from "../../../../../api/workspace";
@@ -18,7 +19,7 @@ function detectToken(value, caret) {
   return { kind: m[1], query: m[2], tokenStart: caret - m[2].length - 1 };
 }
 
-export default function MessageInput({ activeChannel, workspaceId, stompClient }) {
+export default function MessageInput({ activeChannel, workspaceId, stompClient, dmPartner, e2eKey }) {
   const [message, setMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [attachments, setAttachments] = useState([]);
@@ -166,8 +167,19 @@ export default function MessageInput({ activeChannel, workspaceId, stompClient }
   const removeAttachment = (fileId) =>
     setAttachments((prev) => prev.filter((a) => a.fileId !== fileId));
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if ((!message.trim() && attachments.length === 0) || !activeChannel?.id) return;
+
+    // Direct messages are end-to-end encrypted in the browser: the server only
+    // ever stores `vo1:<iv>:<ciphertext>`. Channels stay plaintext on purpose —
+    // search, history and the assistant need to read them.
+    let outgoing = message;
+    const isDm = activeChannel?.type === "DIRECT";
+    if (isDm && e2eKey?.privateKey && dmPartner?.e2ePublicKey) {
+      const sealed = await encryptFor(e2eKey.privateKey, dmPartner.e2ePublicKey, message);
+      if (sealed) outgoing = sealed;
+      else return notify("Couldn't encrypt this message — not sent.", "error");
+    }
 
     if (stompClient && stompClient.connected) {
       // Only send mentions whose handle still appears in the final text.
@@ -178,7 +190,7 @@ export default function MessageInput({ activeChannel, workspaceId, stompClient }
         destination: "/app/chat/send",
         body: JSON.stringify({
           channelId: activeChannel.id,
-          content: message,
+          content: outgoing,
           threadId: null,
           replyToId: null,
           mentions,

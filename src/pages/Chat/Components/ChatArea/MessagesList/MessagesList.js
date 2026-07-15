@@ -3,6 +3,7 @@ import Message from "./Message/Message";
 import { useState, useEffect, useCallback, useMemo, useRef, Fragment } from "react";
 import { authHeaders } from "../../../../../utils/auth";
 import { getUnread, markRead, getChannelThreads, getThreadMessages } from "../../../../../api/chat";
+import { isEncrypted, decryptFrom } from "../../../../../utils/e2e";
 
 const initials = (name) =>
   (name || "?").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
@@ -41,8 +42,26 @@ const dayLabel = (d) => {
   return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
 };
 
-export default function MessagesList({ activeChannel, stompClient, dmPartner, members, onViewProfile, onOpenThread }) {
+export default function MessagesList({ activeChannel, stompClient, dmPartner, members, e2eKey, onViewProfile, onOpenThread }) {
   const [messages, setMessages] = useState([]);
+
+  // Decrypted DM bodies, keyed by message id. Ciphertext is what's stored; the
+  // plaintext only ever exists in this browser's memory.
+  const [clear, setClear] = useState({});
+  useEffect(() => {
+    if (!e2eKey?.privateKey || !dmPartner?.e2ePublicKey) return;
+    let alive = true;
+    const todo = messages.filter((m) => isEncrypted(m.content) && clear[m.id] === undefined);
+    if (todo.length === 0) return;
+    (async () => {
+      const out = {};
+      for (const m of todo) {
+        out[m.id] = (await decryptFrom(e2eKey.privateKey, dmPartner.e2ePublicKey, m.content)) ?? null;
+      }
+      if (alive) setClear((p) => ({ ...p, ...out }));
+    })();
+    return () => { alive = false; };
+  }, [messages, e2eKey, dmPartner, clear]);
 
   // Messages arrive carrying only a senderId — resolve it to the person's real
   // name and picture from the workspace directory. Without this every row falls
@@ -231,6 +250,12 @@ export default function MessagesList({ activeChannel, stompClient, dmPartner, me
             <Message
               message={{
                 ...message,
+                content: isEncrypted(message.content)
+                  ? (clear[message.id] ?? (clear[message.id] === null
+                      ? "🔒 Can't decrypt this message on this device"
+                      : "🔒 Decrypting…"))
+                  : message.content,
+                encrypted: isEncrypted(message.content),
                 user: message.user || senderOf(message.senderId)?.name,
                 avatar: message.avatar || senderOf(message.senderId)?.avatar,
               }}
