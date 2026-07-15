@@ -2,7 +2,7 @@
    Theme tokens. Applied via a data-theme attribute on <html> (see ThemeContext);
    :root is the default.
 
-   Five BRIGHT themes. One architecture — white content, light sidebar, a single core hue per
+   Seven themes. One architecture — white content, light sidebar, a single core hue per
    theme carrying the accent and the active row. Only the core colours differ:
 
    The workspace RAIL is the theme's own hue taken DEEP — Slack's mechanism, measured off their
@@ -298,4 +298,116 @@
 
   --scroll-thumb: #c6c7ca;
   --overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+
+/* Midnight — dark & amber. Dark sidebar AND dark content; rail is the same hue taken deep. */
+:root[data-theme="midnight"] {
+  /* Left workspace rail */
+  --rail-bg: #1b0f04;
+  --rail-fg: #ffffff;
+  --rail-icon-bg: #523214;
+  --rail-active-ring: #ffffff;
+
+  /* Channel sidebar */
+  --sidebar-bg: #2a2622;
+  --sidebar-heading: #ffffff;
+  --sidebar-fg: #cac7c4;
+  --sidebar-fg-muted: #9e9994;
+  --sidebar-hover: #3a3531;
+  --sidebar-active-bg: #eb8829;
+  --sidebar-active-fg: #0b0b0d;
+  --sidebar-border: #4a453f;
+  --sidebar-unread: #ffffff;
+
+  /* Main content (messages) */
+  --content-bg: #2d2a28;
+  --content-fg: #e9e8e7;
+  --content-strong: #ffffff;
+  --content-muted: #a8a39f;
+  --border: #47423e;
+  --hover-bg: #3c3834;
+  --panel-bg: #34302d;
+
+  /* Composer / inputs */
+  --input-bg: #393532;
+  --input-border: #56514d;
+  --input-fg: #e9e8e7;
+  --input-muted: #a8a39f;
+  --input-toolbar-bg: #3c3834;
+
+  /* Accents */
+  --accent: #eb8829;
+  --accent-hover: #dc7615;
+  --accent-fg: #0b0b0d;
+  --link: #f1b67e;
+
+  /* Chrome */
+  --badge-bg: #4a453f;
+  --badge-fg: #e9e8e7;
+  --danger: #f2557d;
+  --danger-hover: #d93b64;
+
+  /* Presence */
+  --online: #3fd08a;
+  --away: #f0c04a;
+  --offline: #7c7f88;
+
+  --scroll-thumb: #514c48;
+  --overlay-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+}
+
+/* Obsidian — dark & violet. Dark sidebar AND dark content; rail is the same hue taken deep. */
+:root[data-theme="obsidian"] {
+  /* Left workspace rail */
+  --rail-bg: #0b041b;
+  --rail-fg: #ffffff;
+  --rail-icon-bg: #271452;
+  --rail-active-ring: #ffffff;
+
+  /* Channel sidebar */
+  --sidebar-bg: #25222a;
+  --sidebar-heading: #ffffff;
+  --sidebar-fg: #c6c4ca;
+  --sidebar-fg-muted: #97949e;
+  --sidebar-hover: #34313a;
+  --sidebar-active-bg: #8b5cf6;
+  --sidebar-active-fg: #0b0b0d;
+  --sidebar-border: #433f4a;
+  --sidebar-unread: #ffffff;
+
+  /* Main content (messages) */
+  --content-bg: #29282d;
+  --content-fg: #e8e7e9;
+  --content-strong: #ffffff;
+  --content-muted: #a19fa8;
+  --border: #403e47;
+  --hover-bg: #37343c;
+  --panel-bg: #2f2d34;
+
+  /* Composer / inputs */
+  --input-bg: #343239;
+  --input-border: #504d56;
+  --input-fg: #e8e7e9;
+  --input-muted: #a19fa8;
+  --input-toolbar-bg: #37343c;
+
+  /* Accents */
+  --accent: #8b5cf6;
+  --accent-hover: #733af4;
+  --accent-fg: #0b0b0d;
+  --link: #a17ef1;
+
+  /* Chrome */
+  --badge-bg: #433f4a;
+  --badge-fg: #e8e7e9;
+  --danger: #f2557d;
+  --danger-hover: #d93b64;
+
+  /* Presence */
+  --online: #3fd08a;
+  --away: #f0c04a;
+  --offline: #7c7f88;
+
+  --scroll-thumb: #4b4851;
+  --overlay-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
 }

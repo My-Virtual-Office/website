@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 
-/** The five themes we ship (id must match a block in themes.css). The first is the default. */
+/** The seven themes we ship (id must match a block in themes.css). The first is the default. */
 export const THEMES = [
   {
     id: "daylight",
@@ -31,6 +31,18 @@ export const THEMES = [
     label: "Blossom",
     hint: "Bright & rose",
     swatch: { rail: "#3c081b", sidebar: "#f9f0f4", content: "#ffffff" },
+  },
+  {
+    id: "midnight",
+    label: "Midnight",
+    hint: "Dark & amber",
+    swatch: { rail: "#1b0f04", sidebar: "#2a2622", content: "#2d2a28" },
+  },
+  {
+    id: "obsidian",
+    label: "Obsidian",
+    hint: "Dark & violet",
+    swatch: { rail: "#0b041b", sidebar: "#25222a", content: "#29282d" },
   },
 ];
 
