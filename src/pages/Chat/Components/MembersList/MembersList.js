@@ -252,7 +252,7 @@ export default function MembersList({ workspaceId }) {
             <UserPlus size={17} />
             <span>Invite Member</span>
           </button>
-        </div> */}
+        </div>
       </div>
 
       {/* Invite modal */}

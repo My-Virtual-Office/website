@@ -1,10 +1,16 @@
 import "./ThreadPanel.css";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { X, SendHorizontal } from "lucide-react";
 import Message from "../ChatArea/MessagesList/Message/Message";
 import { getThreadMessages } from "../../../../api/chat";
 
-export default function ThreadPanel({ thread, stompClient, onClose }) {
+export default function ThreadPanel({ thread, stompClient, members, onClose }) {
+  // Replies arrive as raw DTOs carrying only senderId — resolve them the same
+  // way MessagesList does, or every reply renders as "User <id>".
+  const senderOf = useMemo(() => {
+    const byId = new Map((members || []).map((m) => [Number(m.userId), m]));
+    return (id) => byId.get(Number(id));
+  }, [members]);
   const { threadId, rootMessage, channelId } = thread || {};
   const [replies, setReplies] = useState([]);
   const [text, setText] = useState("");
@@ -87,7 +93,15 @@ export default function ThreadPanel({ thread, stompClient, onClose }) {
           <span>{replies.length} {replies.length === 1 ? "reply" : "replies"}</span>
         </div>
         {replies.map((m) => (
-          <Message key={m.id} message={m} stompClient={stompClient} />
+          <Message
+            key={m.id}
+            message={{
+              ...m,
+              user: m.user || senderOf(m.senderId)?.name,
+              avatar: m.avatar || senderOf(m.senderId)?.avatar,
+            }}
+            stompClient={stompClient}
+          />
         ))}
         <div ref={bottomRef} />
       </div>

@@ -165,8 +165,8 @@ body.msg-menu-active .message:not(.menu-open) .message-actions {
 }
 .reaction-pill.mine {
   background: color-mix(in srgb, var(--sidebar-active-bg) 15%, transparent);
-  border-color: var(--sidebar-active-bg);
-  color: var(--sidebar-active-bg);
+  border-color: var(--content-strong);
+  color: var(--content-strong);
 }
 .reaction-count {
   font-weight: 700;

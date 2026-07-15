@@ -1,7 +1,8 @@
 import "./Sidebar.css";
 import { ChevronDown, Search, Hash, Plus, Settings, Users, Gamepad2, CalendarDays, ListTodo, LayoutDashboard, Sparkles } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { getCurrentUser } from "../../../../api/user";
+
 import SettingsModal from "../SettingsModal/SettingsModal";
 import CreateChannelModal from "../CreateChannelModal/CreateChannelModal";
 import DmPickerModal from "../DmPickerModal/DmPickerModal";
@@ -9,10 +10,13 @@ import StatusMenu from "../StatusMenu/StatusMenu";
 import { getUserPhoto } from "../../../../api/user";
 import { getMyDesk, updateStatus } from "../../../../api/workspace";
 import { statusColor, statusText } from "../../statusMeta";
-import { authHeaders } from "../../../../utils/auth";
+import { authHeaders, getCurrentUserId } from "../../../../utils/auth";
 import { useDialogs } from "../../../../components/DialogProvider";
 import VoiceChannels from "./VoiceChannels";
 import VoiceBar from "./VoiceBar";
+
+const initials = (name) =>
+  (name || "?").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
 
 export default function Sidebar({
   activeChannel,
@@ -47,6 +51,13 @@ export default function Sidebar({
   // My desk in this workspace (carries my presence status) + status picker.
   const [myDesk, setMyDesk] = useState(null);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  // Resolve DM partners against the workspace directory (DM channels carry no name).
+  const meId = getCurrentUserId();
+  const dmMembersById = useMemo(
+    () => new Map((members || []).map((m) => [Number(m.userId), m])),
+    [members],
+  );
+
   const [showDmPicker, setShowDmPicker] = useState(false);
 
   useEffect(() => {
@@ -297,11 +308,13 @@ export default function Sidebar({
 
             <div className="direct-messages-list">
               {dms.map((dm) => {
-                // Find the other user's ID to use as DM name
-                const otherUserId = dm.members?.find((m) => m !== 1);
-                const dmDisplayName = dm.name
-                  ? dm.name
-                  : `User ${otherUserId || "X"}`;
+                // DM channels are stored without a name, so resolve the other
+                // participant against the directory. (The id was previously
+                // compared against a hardcoded 1, which labelled every DM with
+                // the signed-in user's own id for anyone whose id wasn't 1.)
+                const otherUserId = dm.members?.find((m) => Number(m) !== Number(meId));
+                const partner = dmMembersById.get(Number(otherUserId));
+                const dmDisplayName = dm.name || partner?.name || `User ${otherUserId ?? "?"}`;
 
                 const isActive = activeChannel !== null && activeChannel.id === dm.id;
                 const u = unread[dm.id];
@@ -319,9 +332,12 @@ export default function Sidebar({
                     }}
                   >
                     <div className="dm-avatar">
-                      {/* Temporary avatar */}
-                      <img src="/avatar1.jpg" alt={dmDisplayName} />
-                      <span className="status-dot online"></span>
+                      {partner?.avatar ? (
+                        <img src={partner.avatar} alt="" />
+                      ) : (
+                        <span className="dm-initials">{initials(dmDisplayName)}</span>
+                      )}
+                      <span className={`status-dot ${partner?.online ? "online" : ""}`}></span>
                     </div>
                     <span className="dm-name">{dmDisplayName}</span>
                     {showBadge && (

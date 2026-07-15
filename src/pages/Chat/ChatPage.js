@@ -597,6 +597,7 @@ export default function ChatPage() {
                 <ThreadPanel
                   thread={activeThread}
                   stompClient={stompClient}
+                  members={dirMembers}
                   onClose={() => setActiveThread(null)}
                 />
               </div>

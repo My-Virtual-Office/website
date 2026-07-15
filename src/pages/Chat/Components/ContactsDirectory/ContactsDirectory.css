@@ -96,7 +96,7 @@
 .contacts-filters button.active {
   background: var(--sidebar-active-bg);
   color: #fff;
-  border-color: var(--sidebar-active-bg);
+  border-color: var(--content-strong);
 }
 
 .contacts-table-wrap {
@@ -142,7 +142,7 @@
   align-items: center;
   justify-content: center;
   background: color-mix(in srgb, var(--sidebar-active-bg) 18%, var(--content-bg));
-  color: var(--sidebar-active-bg);
+  color: var(--content-strong);
   font-weight: 700;
   font-size: 12px;
   overflow: hidden;
@@ -175,7 +175,7 @@
 }
 .c-role.admin {
   background: color-mix(in srgb, var(--sidebar-active-bg) 18%, transparent);
-  color: var(--sidebar-active-bg);
+  color: var(--content-strong);
 }
 .c-dot {
   display: inline-block;
