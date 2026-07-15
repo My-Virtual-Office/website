@@ -1,11 +1,17 @@
 import "./WorkspaceSidebar.css";
-import { Plus, Palette, Check } from "lucide-react";
+import { Plus, Palette, Check, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Popover } from "@mui/material";
 import { useTheme } from "../../../../theme/ThemeContext";
 
-export default function WorkspaceSidebar({ workspaces = [], activeId, onSwitch }) {
+export default function WorkspaceSidebar({
+  workspaces = [],
+  activeId,
+  onSwitch,
+  sidebarOpen = true,
+  onToggleSidebar,
+}) {
   const { theme, setTheme, themes } = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -37,13 +43,28 @@ export default function WorkspaceSidebar({ workspaces = [], activeId, onSwitch }
         </button>
       </div>
 
-      <button
-        className={`rail-theme ${open ? "active" : ""}`}
-        onClick={(e) => setAnchorEl(e.currentTarget)}
-        title="Themes"
-      >
-        <Palette size={20} />
-      </button>
+      {/* Bottom utilities. Grouped so .rail's space-between still has exactly two children —
+          a third top-level child would spread them down the whole rail. */}
+      <div className="rail-bottom">
+        <button
+          className="rail-btn"
+          onClick={onToggleSidebar}
+          title={sidebarOpen ? "Hide channel sidebar" : "Show channel sidebar"}
+          aria-label={sidebarOpen ? "Hide channel sidebar" : "Show channel sidebar"}
+          aria-pressed={!sidebarOpen}
+        >
+          {sidebarOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
+        </button>
+
+        <button
+          className={`rail-btn ${open ? "active" : ""}`}
+          onClick={(e) => setAnchorEl(e.currentTarget)}
+          title="Themes"
+          aria-label="Themes"
+        >
+          <Palette size={20} />
+        </button>
+      </div>
 
       <Popover
         open={open}
@@ -85,7 +106,9 @@ export default function WorkspaceSidebar({ workspaces = [], activeId, onSwitch }
                 <span className="theme-menu-label">{t.label}</span>
                 <span className="theme-menu-hint">{t.hint}</span>
               </span>
-              {t.id === theme && <Check size={16} color="#1264a3" strokeWidth={3} />}
+              {/* The tick follows the theme being previewed — a hardcoded blue here was the one
+                  colour in the picker that ignored the theme it was picking. */}
+              {t.id === theme && <Check size={16} color="var(--accent)" strokeWidth={3} />}
             </button>
           ))}
         </div>

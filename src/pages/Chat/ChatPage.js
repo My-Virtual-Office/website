@@ -508,6 +508,8 @@ export default function ChatPage() {
           workspaces={workspaces}
           activeId={workspaceId}
           onSwitch={switchWorkspace}
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen((o) => !o)}
         />
 
         {sidebarOpen && (
