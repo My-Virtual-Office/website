@@ -23,9 +23,9 @@
 :root,
 :root[data-theme="daylight"] {
   /* Left workspace rail */
-  --rail-bg: #e7e9eb;
+  --rail-bg: #c4c9d4;
   --rail-fg: #43464e;
-  --rail-icon-bg: #e8eaed;
+  --rail-icon-bg: #acb4c3;
   --rail-active-ring: #eb8829;
 
   /* Channel sidebar */
@@ -79,9 +79,9 @@
 /* Meadow — bright & green. */
 :root[data-theme="meadow"] {
   /* Left workspace rail */
-  --rail-bg: #dfe9e2;
+  --rail-bg: #bedac6;
   --rail-fg: #3d4a42;
-  --rail-icon-bg: #e2ede6;
+  --rail-icon-bg: #a4ccaf;
   --rail-active-ring: #1f7a45;
 
   /* Channel sidebar */
@@ -135,9 +135,9 @@
 /* Harbor — bright & blue. */
 :root[data-theme="harbor"] {
   /* Left workspace rail */
-  --rail-bg: #dfe6f0;
+  --rail-bg: #b5c7e3;
   --rail-fg: #3f4650;
-  --rail-icon-bg: #e2e9f3;
+  --rail-icon-bg: #97b1d8;
   --rail-active-ring: #1668c9;
 
   /* Channel sidebar */
@@ -191,9 +191,9 @@
 /* Lilac — bright & violet. */
 :root[data-theme="lilac"] {
   /* Left workspace rail */
-  --rail-bg: #e6e1f0;
+  --rail-bg: #c5b6e2;
   --rail-fg: #474250;
-  --rail-icon-bg: #e8e3f3;
+  --rail-icon-bg: #ad99d6;
   --rail-active-ring: #6b46c6;
 
   /* Channel sidebar */
@@ -247,9 +247,9 @@
 /* Blossom — bright & rose. */
 :root[data-theme="blossom"] {
   /* Left workspace rail */
-  --rail-bg: #f0e1e8;
+  --rail-bg: #e2b6ca;
   --rail-fg: #4e4148;
-  --rail-icon-bg: #f3e3ea;
+  --rail-icon-bg: #d699b4;
   --rail-active-ring: #be2d63;
 
   /* Channel sidebar */

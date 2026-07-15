@@ -6,31 +6,31 @@ export const THEMES = [
     id: "daylight",
     label: "Daylight",
     hint: "Our default — bright & amber",
-    swatch: { rail: "#e7e9eb", sidebar: "#f4f5f7", content: "#ffffff" },
+    swatch: { rail: "#c4c9d4", sidebar: "#f4f5f7", content: "#ffffff" },
   },
   {
     id: "meadow",
     label: "Meadow",
     hint: "Bright & green",
-    swatch: { rail: "#dfe9e2", sidebar: "#eff6f1", content: "#ffffff" },
+    swatch: { rail: "#bedac6", sidebar: "#eff6f1", content: "#ffffff" },
   },
   {
     id: "harbor",
     label: "Harbor",
     hint: "Bright & blue",
-    swatch: { rail: "#dfe6f0", sidebar: "#eff3f9", content: "#ffffff" },
+    swatch: { rail: "#b5c7e3", sidebar: "#eff3f9", content: "#ffffff" },
   },
   {
     id: "lilac",
     label: "Lilac",
     hint: "Bright & violet",
-    swatch: { rail: "#e6e1f0", sidebar: "#f3f0f9", content: "#ffffff" },
+    swatch: { rail: "#c5b6e2", sidebar: "#f3f0f9", content: "#ffffff" },
   },
   {
     id: "blossom",
     label: "Blossom",
     hint: "Bright & rose",
-    swatch: { rail: "#f0e1e8", sidebar: "#f9f0f4", content: "#ffffff" },
+    swatch: { rail: "#e2b6ca", sidebar: "#f9f0f4", content: "#ffffff" },
   },
 ];
 
