@@ -1,7 +1,8 @@
 import "./MeetingsModal.css";
 import { useState, useEffect, useCallback } from "react";
 import {
-  X, Plus, Trash2, Calendar, Clock, Bell, Users, ChevronLeft, ChevronRight, List, LayoutGrid, Check } from "lucide-react";
+  X, Plus, Trash2, Calendar, Clock, Bell, Users, ChevronLeft, ChevronRight, List, LayoutGrid, Check,
+  Link2, AlignLeft, Repeat } from "lucide-react";
 import { createEvent, updateEvent, getEvents, deleteEvent } from "../../../../api/calendar";
 import { getMembers } from "../../../../api/workspace";
 import { getAllUsers } from "../../../../api/user";
@@ -30,6 +31,11 @@ const EVENT_COLORS = [
 ];
 export const eventHex = (color) =>
   (EVENT_COLORS.find((c) => c.v === color) || EVENT_COLORS[0]).hex;
+
+const WEEKDAYS = [
+  { d: 0, label: "S" }, { d: 1, label: "M" }, { d: 2, label: "T" }, { d: 3, label: "W" },
+  { d: 4, label: "T" }, { d: 5, label: "F" }, { d: 6, label: "S" },
+];
 
 const pad2 = (n) => String(n).padStart(2, "0");
 
@@ -69,6 +75,15 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
   const [end, setEnd] = useState(localInput(35));
   const [busy, setBusy] = useState(true);
   const [color, setColor] = useState(""); // "" = default blue
+  const [description, setDescription] = useState("");
+  const [meetingLink, setMeetingLink] = useState("");
+  // Repeat is client-side expansion, not a live recurrence rule: picking "weekly"
+  // creates N independent events up front (the same way the seed's own recurring
+  // events are pre-expanded). Editing one occurrence later only edits that one —
+  // simple, and avoids "this event / this and following / all" edit semantics.
+  const [repeatOn, setRepeatOn] = useState(false);
+  const [repeatDays, setRepeatDays] = useState(() => new Set());
+  const [repeatWeeks, setRepeatWeeks] = useState(4);
   const [reminder, setReminder] = useState("10");
   const [people, setPeople] = useState([]); // [{userId, name, email}]
   const [attendeeIds, setAttendeeIds] = useState(() => new Set());
@@ -135,6 +150,10 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
     setEditing(null);
     setTitle("");
     setColor("");
+    setDescription("");
+    setMeetingLink("");
+    setRepeatOn(false);
+    setRepeatDays(new Set());
     setAttendeeIds(new Set());
     setStart(toLocalInput(startDate));
     setEnd(toLocalInput(endDate));
@@ -149,6 +168,9 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
     setEnd(toLocalInput(new Date(ev.endTime)));
     setBusy(ev.busy !== false);
     setColor(ev.color || "");
+    setDescription(ev.description || "");
+    setMeetingLink(ev.meetingLink || "");
+    setRepeatOn(false); // editing is always a single occurrence — never re-expand
     setReminder(ev.reminderMinutes != null ? String(ev.reminderMinutes) : "");
     setAttendeeIds(new Set(ev.attendeeUserIds || []));
     setQuickOpen(true);
@@ -170,6 +192,31 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
     return isNaN(s) || isNaN(e) ? null : { start: s, end: e };
   })();
 
+  // Every occurrence of a repeated meeting, as concrete {startTime, endTime} pairs.
+  // Same weekday set each week, same clock time and duration as the form's start/end;
+  // only occurrences on/after the original start are kept (no creating into the past
+  // on week 0 for a weekday earlier in that week than the one you're creating from).
+  const buildOccurrences = () => {
+    const s0 = new Date(start);
+    const e0 = new Date(end);
+    const durationMs = e0.getTime() - s0.getTime();
+    const weekStartOf = (d) => { const x = new Date(d); x.setDate(x.getDate() - x.getDay()); x.setHours(0, 0, 0, 0); return x; };
+    const base = weekStartOf(s0);
+    const days = repeatDays.size ? [...repeatDays] : [s0.getDay()];
+    const out = [];
+    for (let w = 0; w < repeatWeeks; w++) {
+      for (const d of days) {
+        const occStart = new Date(base);
+        occStart.setDate(occStart.getDate() + w * 7 + d);
+        occStart.setHours(s0.getHours(), s0.getMinutes(), 0, 0);
+        if (occStart.getTime() < s0.getTime()) continue; // don't create into the past
+        out.push({ startTime: occStart.toISOString(), endTime: new Date(occStart.getTime() + durationMs).toISOString() });
+      }
+    }
+    out.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+    return out;
+  };
+
   const add = async () => {
     if (!title.trim()) return notify("Give the meeting a title", "warning");
     if (new Date(end) <= new Date(start)) return notify("End must be after start", "warning");
@@ -178,34 +225,62 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
       const attendees = people
         .filter((p) => attendeeIds.has(p.userId))
         .map((p) => ({ userId: p.userId, email: p.email || null }));
-      const body = {
+      const common = {
         title: title.trim(),
-        startTime: new Date(start).toISOString(),
-        endTime: new Date(end).toISOString(),
+        description: description.trim() || null,
+        meetingLink: meetingLink.trim() || null,
         busy,
         color: color || null,
         reminderMinutes: reminder ? Number(reminder) : null,
         attendees,
       };
+
       if (editing) {
-        await updateEvent(editing.id, body);
+        await updateEvent(editing.id, {
+          ...common,
+          startTime: new Date(start).toISOString(),
+          endTime: new Date(end).toISOString(),
+        });
+      } else if (repeatOn) {
+        const occurrences = buildOccurrences();
+        const results = await Promise.allSettled(
+          occurrences.map((o) => createEvent({ workspaceId, ...common, ...o })),
+        );
+        const failed = results.filter((r) => r.status === "rejected").length;
+        if (failed > 0) {
+          notify(`Created ${occurrences.length - failed}/${occurrences.length} occurrences — ${failed} failed`, "warning");
+        } else {
+          notify(`Created ${occurrences.length} occurrences`, "success");
+        }
       } else {
-        await createEvent({ workspaceId, ...body });
+        await createEvent({
+          ...common,
+          workspaceId,
+          startTime: new Date(start).toISOString(),
+          endTime: new Date(end).toISOString(),
+        });
       }
+
       setTitle("");
       setColor("");
+      setDescription("");
+      setMeetingLink("");
+      setRepeatOn(false);
+      setRepeatDays(new Set());
       setAttendeeIds(new Set());
       setQuickOpen(false);
       setEditing(null);
       await load();
-      notify(
-        editing
-          ? "Meeting updated"
-          : attendees.length
-            ? `Meeting added — invited ${attendees.length} ${attendees.length === 1 ? "person" : "people"}`
-            : "Meeting added — your status auto-updates during it",
-        "success",
-      );
+      if (!repeatOn || editing) {
+        notify(
+          editing
+            ? "Meeting updated"
+            : attendees.length
+              ? `Meeting added — invited ${attendees.length} ${attendees.length === 1 ? "person" : "people"}`
+              : "Meeting added — your status auto-updates during it",
+          "success",
+        );
+      }
     } catch (e) {
       notify(e?.response?.data?.message || (editing ? "Could not update — owner or admin only" : "Could not create meeting"), "error");
     } finally {
@@ -240,6 +315,29 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
               <input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} />
             </label>
           </div>
+
+          <label className="meet-field">
+            <span><AlignLeft size={14} /> Description</span>
+            <textarea
+              className="meet-textarea"
+              placeholder="What's this meeting for? (optional)"
+              rows={2}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </label>
+
+          <label className="meet-field">
+            <span><Link2 size={14} /> Meeting link</span>
+            <input
+              className="meet-input-sm"
+              type="url"
+              placeholder="https://meet.google.com/… (optional)"
+              value={meetingLink}
+              onChange={(e) => setMeetingLink(e.target.value)}
+            />
+          </label>
+
           <label className="meet-reminder">
             <span><Bell size={14} /> Reminder</span>
             <select value={reminder} onChange={(e) => setReminder(e.target.value)}>
@@ -248,6 +346,56 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
               ))}
             </select>
           </label>
+
+          {/* Repeat is only offered on create — editing always touches one occurrence. */}
+          {!editing && (
+            <div className="meet-repeat">
+              <label className="meet-repeat-toggle">
+                <input
+                  type="checkbox"
+                  checked={repeatOn}
+                  onChange={(e) => {
+                    setRepeatOn(e.target.checked);
+                    if (e.target.checked && repeatDays.size === 0) {
+                      setRepeatDays(new Set([new Date(start).getDay()]));
+                    }
+                  }}
+                />
+                <Repeat size={14} /> Repeat weekly
+              </label>
+              {repeatOn && (
+                <div className="meet-repeat-body">
+                  <div className="meet-repeat-days">
+                    {WEEKDAYS.map((wd) => (
+                      <button
+                        key={wd.d}
+                        type="button"
+                        className={`meet-day ${repeatDays.has(wd.d) ? "on" : ""}`}
+                        onClick={() =>
+                          setRepeatDays((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(wd.d)) next.delete(wd.d);
+                            else next.add(wd.d);
+                            return next;
+                          })
+                        }
+                      >
+                        {wd.label}
+                      </button>
+                    ))}
+                  </div>
+                  <label className="meet-repeat-weeks">
+                    for
+                    <input
+                      type="number" min={1} max={26} value={repeatWeeks}
+                      onChange={(e) => setRepeatWeeks(Math.max(1, Math.min(26, Number(e.target.value) || 1)))}
+                    />
+                    weeks
+                  </label>
+                </div>
+              )}
+            </div>
+          )}
 
           {people.length > 0 && (
             <div className="meet-attendees">
@@ -320,6 +468,18 @@ export default function MeetingsModal({ workspaceId, open, onClose, inline = fal
                   {e.busy && <span className="meet-busy-chip">busy</span>}
                 </span>
               </div>
+              {e.meetingLink && (
+                <a
+                  className="meet-row-link"
+                  href={e.meetingLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(ev) => ev.stopPropagation()}
+                  title="Join meeting link"
+                >
+                  <Link2 size={14} />
+                </a>
+              )}
               <button className="meet-del" onClick={() => remove(e.id)} title="Delete">
                 <Trash2 size={15} />
               </button>

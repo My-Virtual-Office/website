@@ -671,3 +671,110 @@
 .wk-ev.tinted .wk-ev-time {
   color: rgba(255, 255, 255, 0.85);
 }
+
+/* ── Description / meeting link / repeat ──────────────────────────────────── */
+.meet-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--content-muted, #616061);
+}
+.meet-field > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.meet-textarea,
+.meet-input-sm {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--input-fg);
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+}
+.meet-textarea:focus,
+.meet-input-sm:focus {
+  outline: none;
+  border-color: var(--link);
+}
+
+.meet-repeat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.meet-repeat-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--content-fg);
+  cursor: pointer;
+}
+.meet-repeat-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-left: 2px;
+  flex-wrap: wrap;
+}
+.meet-repeat-days {
+  display: flex;
+  gap: 4px;
+}
+.meet-day {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--content-fg);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.meet-day:hover {
+  background: var(--hover-bg, rgba(0, 0, 0, 0.04));
+}
+.meet-day.on {
+  background: var(--accent, #5048e5);
+  border-color: var(--accent, #5048e5);
+  color: #fff;
+}
+.meet-repeat-weeks {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--content-muted, #616061);
+}
+.meet-repeat-weeks input {
+  width: 48px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--input-fg);
+  font-size: 13px;
+}
+
+/* ── Meeting link on a list row ───────────────────────────────────────────── */
+.meet-row-link {
+  display: inline-flex;
+  align-items: center;
+  color: var(--link, #1a73e8);
+  padding: 4px;
+  border-radius: 6px;
+  flex: none;
+}
+.meet-row-link:hover {
+  background: var(--hover-bg, rgba(0, 0, 0, 0.04));
+}

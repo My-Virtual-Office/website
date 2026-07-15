@@ -184,18 +184,20 @@ export default function TasksBoard({ workspaceId, focus }) {
       key: "overdue", label: "Overdue", color: "#e01e5a", dropDue: undefined,
       match: (t) => t.dueDate && dayKey(t.dueDate) < today && t.status !== "COMPLETE",
     };
-    // Day set: a rolling window (today..+daysAhead) plus any day that actually has a (non-overdue) task.
+    // Day set: a rolling window (today..+daysAhead) plus any future day that actually
+    // has a task. Past days never get their own band — Overdue already covers every
+    // incomplete one, and a completed task due yesterday doesn't need a "Yesterday"
+    // lane of its own. Board reads Overdue -> Today -> Tomorrow -> ... forward only.
     const daySet = new Set();
     for (let i = 0; i <= daysAhead; i++) daySet.add(today + i * DAY);
     visible.forEach((t) => {
       if (!t.dueDate) return;
       const k = dayKey(t.dueDate);
-      const isOverdue = k < today && t.status !== "COMPLETE";
-      if (!isOverdue) daySet.add(k);
+      if (k >= today) daySet.add(k);
     });
     const dayLanes = [...daySet].sort((a, b) => a - b).map((k) => ({
       key: `d${k}`, label: dayLabel(k), color: dayColor(k), dropDue: noonISO(k),
-      match: (t) => t.dueDate && dayKey(t.dueDate) === k && !(dayKey(t.dueDate) < today && t.status !== "COMPLETE"),
+      match: (t) => t.dueDate && dayKey(t.dueDate) === k,
     }));
     const none = { key: "none", label: "No date", color: "#9aa0a6", dropDue: null, match: (t) => !t.dueDate };
     return [overdue, ...dayLanes, none];

@@ -11,6 +11,7 @@ export async function createEvent({
   reminderMinutes,
   attendees,
   color,
+  meetingLink,
 }) {
   const res = await axiosInstance.post("/api/calendar/events", {
     workspaceId,
@@ -21,6 +22,7 @@ export async function createEvent({
     busy: busy !== false,
     reminderMinutes: reminderMinutes ?? null,
     color: color || null,
+    meetingLink: meetingLink || null,
     attendees: attendees ?? [],
   });
   return res.data;
@@ -42,7 +44,7 @@ export async function getCurrentEvent(workspaceId) {
 }
 
 /** Update an event (author or workspace admin). */
-export async function updateEvent(id, { title, description, startTime, endTime, busy, reminderMinutes, attendees, color }) {
+export async function updateEvent(id, { title, description, startTime, endTime, busy, reminderMinutes, attendees, color, meetingLink }) {
   const res = await axiosInstance.put(`/api/calendar/events/${id}`, {
     title,
     description: description || null,
@@ -51,6 +53,7 @@ export async function updateEvent(id, { title, description, startTime, endTime, 
     busy: busy !== false,
     reminderMinutes: reminderMinutes ?? null,
     color: color || null,
+    meetingLink: meetingLink || null,
     attendees: attendees ?? [],
   });
   return res.data;
