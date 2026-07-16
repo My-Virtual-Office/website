@@ -123,8 +123,10 @@
   gap: 8px;
 }
 
-/* Held ≠ hidden — Slack keeps counts reachable on hover; we just leave it on screen. */
-.focus-held {
+/* Everything that ISN'T a mention — quieter than the Mentions button since it's
+   not the thing allowed to interrupt. Slack keeps counts reachable on hover;
+   we just leave it on screen. */
+.focus-quiet {
   font-size: 12px;
   color: var(--content-muted);
   padding: 3px 9px;
@@ -133,13 +135,53 @@
   font-variant-numeric: tabular-nums;
   transition: color 0.2s, background 0.2s;
 }
-/* Something is waiting. Enough contrast to notice on a glance, not enough to pull you out of
-   the work — the whole point is that it can wait until you leave. */
-.focus-held.some {
+.focus-quiet.some {
   color: var(--content-strong);
   background: var(--hover-bg);
   font-weight: 700;
 }
+
+/* ── Mentions button + panel ──────────────────────────────────────────────── */
+.focus-mentions-wrap { position: relative; }
+.focus-mentions-btn { position: relative; }
+.focus-mentions-btn.has { border-color: var(--accent); color: var(--accent); }
+.focus-mentions-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+  background: var(--accent); color: var(--accent-fg, #fff);
+  font-size: 10.5px; font-weight: 800; line-height: 1;
+}
+.focus-mentions-panel {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 5;
+  width: 340px; max-height: 360px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 10px; border-radius: 10px;
+  background: var(--panel-bg); border: 1px solid var(--border);
+  box-shadow: var(--overlay-shadow);
+}
+.focus-mentions-empty {
+  padding: 14px; text-align: center; font-size: 13px; color: var(--content-muted);
+}
+.focus-mention-actions {
+  display: flex; align-items: center; gap: 2px; flex-shrink: 0;
+}
+.focus-snooze { position: relative; }
+.focus-mention-snooze {
+  border: none; background: transparent; color: var(--content-muted);
+  cursor: pointer; padding: 4px; border-radius: 6px;
+}
+.focus-mention-snooze:hover { color: var(--content-fg); background: var(--hover-bg); }
+.focus-snooze-menu {
+  position: absolute; top: calc(100% + 4px); right: 0; z-index: 6;
+  display: flex; flex-direction: column; min-width: 140px;
+  border-radius: 8px; background: var(--panel-bg); border: 1px solid var(--border);
+  box-shadow: var(--overlay-shadow); overflow: hidden;
+}
+.focus-snooze-menu button {
+  border: none; background: transparent; color: var(--content-fg);
+  font-size: 12.5px; text-align: left; padding: 8px 12px; cursor: pointer;
+}
+.focus-snooze-menu button:hover { background: var(--hover-bg); }
 
 .focus-btn {
   display: inline-flex;
@@ -170,17 +212,6 @@
 }
 
 /* ── Mentions: the only thing allowed through ─────────────────────────────── */
-.focus-mentions {
-  position: absolute;
-  top: 62px;
-  right: 16px;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-width: 380px;
-}
-
 .focus-mention {
   display: flex;
   align-items: flex-start;
@@ -248,7 +279,7 @@
 
 @media (max-width: 820px) {
   .focus-actions .focus-btn span,
-  .focus-held {
+  .focus-quiet {
     display: none;
   }
   .focus-ask {

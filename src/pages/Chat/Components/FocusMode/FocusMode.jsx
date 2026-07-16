@@ -37,6 +37,16 @@ const DURATIONS = [
 ];
 const DURATION_KEY = "vo-focus-duration";
 
+// Snooze options for a single mention — short, because a mention is the one thing
+// that was already judged worth breaking Focus Mode for. "Remind me" defers it a
+// few minutes, it doesn't file it away.
+const SNOOZE_OPTIONS = [
+  { min: 5, label: "5 min" },
+  { min: 15, label: "15 min" },
+  { min: 30, label: "30 min" },
+  { min: 60, label: "1 hour" },
+];
+
 /** Total unread messages across every conversation. `unread` is { [id]: { count, mention } }. */
 const unreadTotal = (unread) =>
   Object.values(unread || {}).reduce((sum, u) => sum + (u?.count || 0), 0);
@@ -45,6 +55,9 @@ export default function FocusMode({ workspaceId, channels, members, unread, onEx
   const [notes, setNotes] = useState([]);       // non-mention notifications: counted, not shown
   const [mentions, setMentions] = useState([]); // the one thing allowed to interrupt
   const [shownChannels, setShownChannels] = useState([]); // channelIds we surfaced a mention for
+  const [mentionsOpen, setMentionsOpen] = useState(false);
+  const [snoozeMenuFor, setSnoozeMenuFor] = useState(null); // mention id whose snooze menu is open
+  const snoozeTimers = useRef([]);
   const [askOpen, setAskOpen] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [durationMin, setDurationMin] = useState(() => {
@@ -99,10 +112,30 @@ export default function FocusMode({ workspaceId, channels, members, unread, onEx
           // …the accounting is not. The publisher's fields (channelId, refType, messageId) ride
           // in `data`, not on the notification root — reading n.channelId gets you undefined.
           setShownChannels((c) => [...c, n.data?.channelId]);
+          setMentionsOpen(true); // a mention is the one thing allowed to interrupt — surface it
         } else setNotes((h) => [n, ...h]);
       }),
     [],
   );
+
+  // Cancel any pending "remind me" timers on unmount — a background setState
+  // after the component is gone is a leak, not a feature.
+  useEffect(() => () => snoozeTimers.current.forEach(clearTimeout), []);
+
+  const dismissMention = (id) => setMentions((list) => list.filter((x) => x.id !== id));
+
+  // "Remind me in Xm": the mention leaves the list now and comes back as if it
+  // just arrived, after the delay. It's the same interruption, deferred — not
+  // filed away and forgotten, which is what a plain dismiss would do.
+  const snoozeMention = (mention, minutes) => {
+    dismissMention(mention.id);
+    setSnoozeMenuFor(null);
+    const t = setTimeout(() => {
+      setMentions((m) => [mention, ...m].slice(0, 4));
+      setMentionsOpen(true);
+    }, minutes * 60000);
+    snoozeTimers.current.push(t);
+  };
 
   // What "held" actually means. In-app notifications only exist for MENTION, TASK_ASSIGNED and
   // TASK_REMINDER — and mentions are shown, not held — so counting notifications alone left the
@@ -172,12 +205,14 @@ export default function FocusMode({ workspaceId, channels, members, unread, onEx
     const onKey = (e) => {
       if (e.key !== "Escape") return;
       if (pickerOpen) setPickerOpen(false);
+      else if (snoozeMenuFor) setSnoozeMenuFor(null);
+      else if (mentionsOpen) setMentionsOpen(false);
       else if (askOpen) setAskOpen(false);
       else exit(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [askOpen, pickerOpen, exit]);
+  }, [askOpen, pickerOpen, mentionsOpen, snoozeMenuFor, exit]);
 
   // Click anywhere else to dismiss the duration menu.
   useEffect(() => {
@@ -188,6 +223,16 @@ export default function FocusMode({ workspaceId, channels, members, unread, onEx
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
   }, [pickerOpen]);
+
+  // Same pattern for the mentions panel and its per-item snooze submenu.
+  useEffect(() => {
+    if (!mentionsOpen) return;
+    const onDoc = (e) => {
+      if (!e.target.closest(".focus-mentions-wrap")) { setMentionsOpen(false); setSnoozeMenuFor(null); }
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [mentionsOpen]);
 
   return (
     <div className="focus-root" role="region" aria-label="Focus mode">
@@ -236,12 +281,13 @@ export default function FocusMode({ workspaceId, channels, members, unread, onEx
         </div>
 
         <div className="focus-actions">
-          {/* Held ≠ hidden: you can see noise exists without being pulled into it. */}
+          {/* Everything else that came in while heads-down — still visible, just quiet.
+              Reported again on exit; see the docstring above for why it's counted this way. */}
           <span
-            className={`focus-held ${heldCount > 0 ? "some" : ""}`}
+            className={`focus-quiet ${heldCount > 0 ? "some" : ""}`}
             title={
               heldCount === 0
-                ? "Nothing has come in since you started"
+                ? "Nothing else has come in since you started"
                 : `${newMessages} message${newMessages === 1 ? "" : "s"} and ${notes.length} notification${
                     notes.length === 1 ? "" : "s"
                   } — held until you leave, nothing is lost`
@@ -249,6 +295,69 @@ export default function FocusMode({ workspaceId, channels, members, unread, onEx
           >
             {heldCount} held
           </span>
+
+          {/* Mentions are the one thing allowed to interrupt — this button is that
+              interruption's home. Badge count, opens to the list, each one can be
+              answered, dismissed, or deferred a few minutes with "Remind me". */}
+          <div className="focus-mentions-wrap">
+            <button
+              className={`focus-btn focus-mentions-btn ${mentions.length ? "has" : ""} ${mentionsOpen ? "on" : ""}`}
+              onClick={() => setMentionsOpen((o) => !o)}
+              aria-haspopup="menu"
+              aria-expanded={mentionsOpen}
+            >
+              <AtSign size={15} /> Mentions
+              {mentions.length > 0 && <span className="focus-mentions-badge">{mentions.length}</span>}
+            </button>
+
+            {mentionsOpen && (
+              <div className="focus-mentions-panel" role="menu">
+                {mentions.length === 0 ? (
+                  <div className="focus-mentions-empty">No mentions waiting.</div>
+                ) : (
+                  mentions.map((m) => (
+                    <div key={m.id} className="focus-mention" role="alert">
+                      <AtSign size={15} />
+                      <div className="focus-mention-text">
+                        <b>{m.title || "You were mentioned"}</b>
+                        <span>{m.body}</span>
+                      </div>
+                      <div className="focus-mention-actions">
+                        <div className="focus-snooze">
+                          <button
+                            className="focus-mention-snooze"
+                            onClick={() => setSnoozeMenuFor((id) => (id === m.id ? null : m.id))}
+                            title="Remind me later"
+                            aria-haspopup="menu"
+                            aria-expanded={snoozeMenuFor === m.id}
+                          >
+                            <Clock size={13} />
+                          </button>
+                          {snoozeMenuFor === m.id && (
+                            <div className="focus-snooze-menu" role="menu">
+                              {SNOOZE_OPTIONS.map((o) => (
+                                <button key={o.min} role="menuitem" onClick={() => snoozeMention(m, o.min)}>
+                                  Remind in {o.label}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          className="focus-mention-x"
+                          onClick={() => dismissMention(m.id)}
+                          aria-label="Dismiss"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
           <button className={`focus-btn ${askOpen ? "on" : ""}`} onClick={() => setAskOpen((o) => !o)}>
             <Bot size={15} /> Ask AI
           </button>
@@ -257,29 +366,6 @@ export default function FocusMode({ workspaceId, channels, members, unread, onEx
           </button>
         </div>
       </div>
-
-      {/* A mention is the only thing worth ~23 minutes. Banner, not toast: no sound, no
-          auto-dismiss — it waits for you rather than flashing past. */}
-      {mentions.length > 0 && (
-        <div className="focus-mentions">
-          {mentions.map((m) => (
-            <div key={m.id} className="focus-mention" role="alert">
-              <AtSign size={15} />
-              <div className="focus-mention-text">
-                <b>{m.title || "You were mentioned"}</b>
-                <span>{m.body}</span>
-              </div>
-              <button
-                className="focus-mention-x"
-                onClick={() => setMentions((list) => list.filter((x) => x.id !== m.id))}
-                aria-label="Dismiss"
-              >
-                <X size={14} />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
 
       <div className="focus-stage">
         <MyDesk workspaceId={workspaceId} />
