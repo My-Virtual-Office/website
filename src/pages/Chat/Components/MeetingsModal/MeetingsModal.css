@@ -349,6 +349,12 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   border-bottom: 1px solid var(--border);
+  /* The body below scrolls and reserves a scrollbar, which narrows its 7 columns;
+     this header doesn't. Both now reserve the gutter unconditionally (stable), so
+     header and body columns line up whether or not the body is actually
+     scrolling — no drift, no gap past the last day. */
+  overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 .wk-dayhead {
   display: flex;
@@ -385,6 +391,7 @@
   grid-column: 1 / 3;
   display: flex;
   overflow-y: auto;
+  scrollbar-gutter: stable;   /* always reserve the gutter, so the header (which also does) stays aligned */
   max-height: 62vh;
   user-select: none;
 }
